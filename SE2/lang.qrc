@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>SE2.qm</file>
+        <file>Chart.qm</file>
+    </qresource>
+</RCC>

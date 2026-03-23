@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file alias="i_close">image/clsoe.ico</file>
+        <file alias="i_min">image/min.ico</file>
+        <file alias="new">image/new.png</file>
+        <file alias="clear">image/clear.png</file>
+        <file alias="edit">image/edit.png</file>
+    </qresource>
+</RCC>
