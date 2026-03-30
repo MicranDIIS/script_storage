@@ -1,0 +1,30 @@
+<RCC>
+    <qresource prefix="/">
+        <file alias="i_close">image/clsoe.ico</file>
+        <file alias="i_min">image/min.ico</file>
+        <file alias="new">image/new.png</file>
+        <file alias="clear">image/clear.png</file>
+        <file alias="edit">image/edit.png</file>
+        <file alias="rescan">image/rescan.png</file>
+        <file alias="delete">image/delete.png</file>
+        <file alias="launch">image/sweep.png</file>
+        <file alias="refresh">image/m3m_refresh.png</file>
+        <file alias="start">image/m3m_start.png</file>
+        <file alias="network">image/network.png</file>
+        <file alias="directory">image/directory.png</file>
+        <file alias="filter">image/filter.png</file>
+        <file alias="all">image/all.png</file>
+        <file alias="folder">image/folder.png</file>
+        <file alias="all_inakt">image/all_inakt.png</file>
+        <file alias="folder_inakt">image/folder_inakt.png</file>
+        <file alias="network_inakt">image/network_inakt.png</file>
+        <file alias="reload">image/reload.png</file>
+        <file alias="copy">image/copy.png</file>
+        <file alias="link">image/link.png</file>
+        <file alias="block">image/block.png</file>
+        <file alias="upd">image/upd.png</file>
+        <file alias="update_scr">image/update.png</file>
+        <file alias="restore">image/restore.png</file>
+        <file alias="restore_icon">image/restore_icon.png</file>
+    </qresource>
+</RCC>

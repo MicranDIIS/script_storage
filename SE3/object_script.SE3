@@ -1,0 +1,17 @@
+INPUT(
+./..\..\build\release\SE3\obj\scriptsmanager.o
+./..\..\build\release\SE3\obj\errormanager.o
+./..\..\build\release\SE3\obj\findmodules.o
+./..\..\build\release\SE3\obj\se3.o
+./..\..\build\release\SE3\obj\blockarea.o
+./..\..\build\release\SE3\obj\updater.o
+./..\..\build\release\SE3\obj\backuper.o
+./..\..\build\release\SE3\obj\scriptitemdelegate.o
+./..\..\build\release\SE3\obj\main.o
+./..\..\build\release\SE3\obj\qrc_rsrc.o
+./..\..\build\release\SE3\obj\moc_scriptsmanager.o
+./..\..\build\release\SE3\obj\moc_findmodules.o
+./..\..\build\release\SE3\obj\moc_se3.o
+./..\..\build\release\SE3\obj\moc_blockarea.o
+./..\..\build\release\SE3\obj\moc_updater.o
+);
