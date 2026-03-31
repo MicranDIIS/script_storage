@@ -1,0 +1,22 @@
+# Qt
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.autosave
+
+# Build
+build-*/
+debug/
+release/
+*.o
+*.obj
+*.exe
+*.dll
+
+# Qt Creator
+*.user
+CMakeLists.txt.user
+
+# OS
+.DS_Store
+Thumbs.db
