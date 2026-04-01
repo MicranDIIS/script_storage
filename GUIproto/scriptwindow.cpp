@@ -6,6 +6,7 @@
 #include <QTextStream>
 #include <QPluginLoader>
 #include <QMessageBox>
+#include <interfaces.h>
 
 ScriptWindow::ScriptWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -27,21 +28,24 @@ void ScriptWindow::openScriptUI(const QString &path, const QString &baseWinPath)
         return;
 
     if (!QFileInfo(baseWinPath).exists())
+
         return;
+//    qDebug("it exists");
 
-//    QPluginLoader loader(baseWinPath);
-//    pluginObject = loader.instance();
-//    PluginInterface *pluginInterface = qobject_cast<PluginInterface *>(pluginObject);
 
-//    if (!pluginInterface){
-//      QMessageBox::critical(this,tr("Error BasePlugin.dll"),loader.errorString());
-//      return;
-//    }
+    QPluginLoader loader(baseWinPath);
+    pluginObject = loader.instance();
+    PluginInterface *pluginInterface = qobject_cast<PluginInterface *>(pluginObject);
 
-//    QTextStream in(&file);
-//    ui->plainTextEdit->setPlainText(in.readAll());
+    if (!pluginInterface){
+      QMessageBox::critical(this,tr("Error BasePlugin.dll"),loader.errorString());
+      return;
+    }
 
-//    setWindowTitle(QFileInfo(path).fileName());
+    QTextStream in(&file);
+    ui->plainTextEdit->setPlainText(in.readAll());
+
+    setWindowTitle(QFileInfo(path).fileName());
 
 //    bool result = true;
 //    QDir dir(qApp->applicationDirPath());

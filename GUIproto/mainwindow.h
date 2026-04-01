@@ -3,7 +3,8 @@
 
 #include <QMainWindow>
 #include <QString>
-#include <QTreeWidgetItem>
+#include <QStandardItemModel>
+#include <QModelIndex>
 
 namespace Ui {
     class MainWindow;
@@ -19,14 +20,19 @@ public:
 
 private:
     Ui::MainWindow *ui;
+    QStandardItemModel *scriptsModel;
+
     void buildLayouts();
     void loadScripts();
-    void openSelectedScript();
+
+
 
 private slots:
     void showBasicPage();
     void showCustomPage();
-    void handleScriptDoubleClick(QTreeWidgetItem *item, int column);
+    void handleScriptDoubleClick(const QModelIndex &index);
+    void openSelectedScript();
+
 };
 
 #endif // MAINWINDOW_H

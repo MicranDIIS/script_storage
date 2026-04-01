@@ -2,6 +2,7 @@
 #define SCRIPTWINDOW_H
 
 #include <QMainWindow>
+#include <interfaces.h>
 
 namespace Ui {
 class ScriptWindow;
@@ -19,6 +20,7 @@ public:
 
 private:
     Ui::ScriptWindow *ui;
+    QObject *pluginObject;
 };
 
 #endif // SCRIPTWINDOW_H

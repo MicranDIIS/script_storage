@@ -8,27 +8,32 @@
 #include "scriptwindow.h"
 #include <QDir>
 #include <QFileInfoList>
-#include <QTreeWidgetItem>
+#include <QStandardItemModel>
+#include <QStandardItem>
 
 #include <QDebug>
 #include <QCoreApplication>
+#include <QApplication>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    scriptsModel(new QStandardItemModel(this))
 {
     ui->setupUi(this);
     setWindowTitle("SE2");
 
+    qDebug() << QCoreApplication::applicationDirPath();
+
     buildLayouts();
 
-//    loadScripts();
+    loadScripts();
 
-//    connect(ui->treeWidgetBasic, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)),
-//            this, SLOT(handleScriptDoubleClick(QTreeWidgetItem*,int)));
+    connect(ui->treeViewBasic, SIGNAL(doubleClicked(QModelIndex)),
+                this, SLOT(handleScriptDoubleClick(QModelIndex)));
 
-    connect(ui->pushButton, SIGNAL(clicked()),
-            this, SLOT(openSelectedScript()));
+        connect(ui->pushButton, SIGNAL(clicked()),
+                this, SLOT(openSelectedScript()));
 
     ui->radioBasic->setChecked(true);
     ui->stackedWidget->setCurrentWidget(ui->pageBasic);
@@ -42,46 +47,50 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-//void MainWindow::loadScripts()
-//{
-//    ui->treeWidgetBasic->clear();
+void MainWindow::loadScripts()
+{
+    scriptsModel->clear();
 
-//    QString scriptsPath = QCoreApplication::applicationDirPath() + "/scripts";
-//    QDir dir(scriptsPath);
+    QString scriptsPath = QCoreApplication::applicationDirPath() + "/scripts";
+    QDir dir(scriptsPath);
 
-//    QFileInfoList files = dir.entryInfoList(QStringList() << "*.lua", QDir::Files);
+    QFileInfoList files = dir.entryInfoList(QStringList() << "*.lua", QDir::Files);
 
-//    foreach (const QFileInfo &fileInfo, files) {
-//        QTreeWidgetItem *item = new QTreeWidgetItem(ui->treeWidgetBasic);
-//        item->setText(0, fileInfo.baseName());
-//        item->setData(0, Qt::UserRole, fileInfo.absoluteFilePath());
-//    }
-//}
+    foreach (const QFileInfo &fileInfo, files) {
+        QStandardItem *item = new QStandardItem(fileInfo.baseName());
+        item->setData(fileInfo.absoluteFilePath(), Qt::UserRole);
+        scriptsModel->appendRow(item);
+    }
 
-//void MainWindow::openSelectedScript()
-//{
-//    QTreeWidgetItem *item = ui->treeWidgetBasic->currentItem();
-//    if (!item)
-//        return;
+    ui->treeViewBasic->setModel(scriptsModel);
+}
 
-//    QString scriptPath = item->data(0, Qt::UserRole).toString();
-//    if (scriptPath.isEmpty())
-//        return;
+void MainWindow::openSelectedScript()
+{
+    QModelIndex index = ui->treeViewBasic->currentIndex();
+    if (!index.isValid())
+        return;
 
-//    QString baseWinPath = QApplication::applicationDirPath() + "/plugins/BaseWin.dll";
+    QString scriptPath = index.data(Qt::UserRole).toString();
+    if (scriptPath.isEmpty())
+        return;
 
-//    ScriptWindow *w = new ScriptWindow;
-//    w->setAttribute(Qt::WA_DeleteOnClose);
-//    w->openScriptUI(scriptPath, baseWinPath);
-//    w->show();
-//}
+    QString baseWinPath = QApplication::applicationDirPath() + "/plugins/BaseWin.dll";
 
-//void MainWindow::handleScriptDoubleClick(QTreeWidgetItem *item, int column)
-//{
-//    Q_UNUSED(item);
-//    Q_UNUSED(column);
-//    openSelectedScript();
-//}
+    ScriptWindow *w = new ScriptWindow;
+    w->setAttribute(Qt::WA_DeleteOnClose);
+    w->openScriptUI(scriptPath, baseWinPath);
+    w->show();
+}
+
+
+void MainWindow::handleScriptDoubleClick(const QModelIndex &index)
+{
+    if (!index.isValid())
+        return;
+
+    openSelectedScript();
+}
 
 //компоновка
 void MainWindow::buildLayouts()
