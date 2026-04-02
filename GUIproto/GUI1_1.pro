@@ -6,17 +6,19 @@
 
 QT       += core gui
 
-TARGET = GUI1_1
+TARGET = GUI
 TEMPLATE = app
 
 INCLUDEPATH += ../SE2/include
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    scriptwindow.cpp
+    scriptwindow.cpp \
+    scriptloader.cpp
 
 HEADERS  += mainwindow.h \
-    scriptwindow.h
+    scriptwindow.h \
+    scriptloader.h
 
 FORMS    += mainwindow.ui \
     scriptwindow.ui

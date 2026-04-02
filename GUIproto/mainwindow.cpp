@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "scriptloader.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -47,27 +48,47 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+
+//временный загрузчик - проверка обхода директории парсером
 void MainWindow::loadScripts()
 {
     scriptsModel->clear();
 
-    QString scriptsPath = QCoreApplication::applicationDirPath() + "/scripts";
-    QDir dir(scriptsPath);
+    ScriptLoader loader;
 
-    QFileInfoList files = dir.entryInfoList(QStringList() << "*.lua", QDir::Files);
+    QString appDir = QCoreApplication::applicationDirPath();
+    QString configPath = QDir(appDir).absoluteFilePath("../../../../config/app_config.ini"); // пока так, потом подумаю куда конфиг перенести поближе
 
-    foreach (const QFileInfo &fileInfo, files) {
-        QStandardItem *item = new QStandardItem(fileInfo.baseName());
-        item->setData(fileInfo.absoluteFilePath(), Qt::UserRole);
+    // qDebug() << "[MainWindow] configPath =" << configPath;
+
+    if (!loader.configLoad(configPath)) {
+        return;
+    }
+
+    QList<FindFileInfo> files = loader.scanSourcesAll();
+
+    for (int i = 0; i < files.size(); ++i) {
+        const FindFileInfo &fileInfo = files.at(i);
+
+        QStandardItem *item = new QStandardItem(fileInfo.relativePath);
+        item->setData(fileInfo.absolutePath, Qt::UserRole);
+
         scriptsModel->appendRow(item);
+
+//        qDebug() << "[MainWindow]"
+//                 << "source =" << fileInfo.sourceFile
+//                 << "| relativePath =" << fileInfo.relativePath
+//                 << "| absolutePath =" << fileInfo.absolutePath
+//                 << "| extension =" << fileInfo.extension;
     }
 
     ui->treeViewBasic->setModel(scriptsModel);
+
+    qDebug() << "[MainWindow] Loaded files count =" << files.size();
 }
 
 void MainWindow::openSelectedScript()
-{
-    QModelIndex index = ui->treeViewBasic->currentIndex();
+{    QModelIndex index = ui->treeViewBasic->currentIndex();
     if (!index.isValid())
         return;
 
