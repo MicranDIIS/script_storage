@@ -39,3 +39,20 @@
 
 # debug information files
 *.dwo
+
+# Qt / qmake
+build-*/
+debug/
+release/
+
+*.user
+*.pro.user
+*.pro.user.*
+
+Makefile
+Makefile.Debug
+Makefile.Release
+
+ui_*.h
+moc_*.cpp
+qrc_*.cpp
