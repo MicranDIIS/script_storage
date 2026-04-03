@@ -4,6 +4,9 @@
 #include <QtCore/QtCore>
 
 typedef struct git_t git_t;
+
+git_repository *git_get_repo(git_t *gt);
+
 /*
     делает git clone на локалку
     **
@@ -25,4 +28,11 @@ int core_git_clone(const QString &URL,const QString &path,const QString &token);
 */
 git_t *core_git_open(const QString &path);
 
-
+/*
+    делает git status 
+    **
+    git_repository *repo - репозиторий статус которого будем получать
+    **
+    в случае ошибки вернет пустой QList<QString>, иначе имена измененных файлов 
+*/
+QList<QString> core_git_status(git_repository *repo);
