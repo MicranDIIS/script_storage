@@ -15,6 +15,7 @@
 #include <QDebug>
 #include <QCoreApplication>
 #include <QApplication>
+#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -30,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     loadScripts();
 
-    connect(ui->treeViewBasic, SIGNAL(doubleClicked(QModelIndex)),
+    connect(ui->listViewBasic, SIGNAL(doubleClicked(QModelIndex)),
                 this, SLOT(handleScriptDoubleClick(QModelIndex)));
 
         connect(ui->pushButton, SIGNAL(clicked()),
@@ -49,7 +50,7 @@ MainWindow::~MainWindow()
 }
 
 
-//временный загрузчик - проверка обхода директории парсером
+// РІСЂРµРјРµРЅРЅР°СЏ Р·Р°РіСЂСѓР·РєР° РґР»СЏ РїСЂРѕРІРµСЂРєРё РѕР±С…РѕРґР° РґРёСЂРµРєС‚РѕСЂРёРё
 void MainWindow::loadScripts()
 {
     scriptsModel->clear();
@@ -57,11 +58,12 @@ void MainWindow::loadScripts()
     ScriptLoader loader;
 
     QString appDir = QCoreApplication::applicationDirPath();
-    QString configPath = QDir(appDir).absoluteFilePath("../../../../config/app_config.ini"); // пока так, потом подумаю куда конфиг перенести поближе
+    QString configPath = QDir(appDir).absoluteFilePath("../../../../config/app_config.ini"); // РїРѕРєР° С‚Р°Рє, РїРѕС‚РѕРј РєРѕРЅС„РёРі РїРѕР±Р»РёР¶Рµ РїРµСЂРµРЅРµСЃРµРј
 
     // qDebug() << "[MainWindow] configPath =" << configPath;
 
     if (!loader.configLoad(configPath)) {
+        QMessageBox::warning(this, "Config error","Configuration file could not loaded with this path:\n" + configPath);
         return;
     }
 
@@ -82,13 +84,13 @@ void MainWindow::loadScripts()
 //                 << "| extension =" << fileInfo.extension;
     }
 
-    ui->treeViewBasic->setModel(scriptsModel);
+    ui->listViewBasic->setModel(scriptsModel);
 
-    qDebug() << "[MainWindow] Loaded files count =" << files.size();
+//    qDebug() << "[MainWindow] Loaded files count =" << files.size();
 }
 
 void MainWindow::openSelectedScript()
-{    QModelIndex index = ui->treeViewBasic->currentIndex();
+{    QModelIndex index = ui->listViewBasic->currentIndex();
     if (!index.isValid())
         return;
 
@@ -113,7 +115,6 @@ void MainWindow::handleScriptDoubleClick(const QModelIndex &index)
     openSelectedScript();
 }
 
-//компоновка
 void MainWindow::buildLayouts()
 {
     //centralWidget
@@ -163,8 +164,11 @@ void MainWindow::buildLayouts()
     //searchWidget
     QHBoxLayout *searchLayout = new QHBoxLayout(ui->searchWidget);
     searchLayout->setContentsMargins(20, 8, 20, 8);
-    searchLayout->setSpacing(0);
+    searchLayout->setSpacing(8);
 
+    searchLayout->addWidget(ui->sLabel);
+    searchLayout->addWidget(ui->sComboBox);
+    searchLayout->addSpacing(12);
     searchLayout->addWidget(ui->lineEdit);
     searchLayout->addStretch();
 
@@ -173,7 +177,7 @@ void MainWindow::buildLayouts()
     contentLayout->setContentsMargins(20, 0, 20, 0);
     contentLayout->setSpacing(8);
 
-    contentLayout->addWidget(ui->treeViewBasic, 1);
+    contentLayout->addWidget(ui->listViewBasic, 1);
     contentLayout->addWidget(ui->sideWidgetBasic, 0);
 
      //sideWidgetBasic
@@ -216,7 +220,7 @@ void MainWindow::buildLayouts()
     contentLayoutCustom->setContentsMargins(20, 0, 20, 0);
     contentLayoutCustom->setSpacing(8);
 
-    contentLayoutCustom->addWidget(ui->treeViewCustom, 1);
+    contentLayoutCustom->addWidget(ui->listViewCustom, 1);
     contentLayoutCustom->addWidget(ui->sideWidgetCustom, 0);
 
      //sideWidgetCustom
@@ -253,8 +257,8 @@ void MainWindow::buildLayouts()
     ui->contentWidgetCustom->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     ui->bottomWidgetCustom->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
-    ui->treeViewBasic->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    ui->treeViewCustom->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    ui->listViewBasic->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    ui->listViewCustom->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     ui->sideWidgetBasic->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
     ui->sideWidgetCustom->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
 
@@ -280,7 +284,7 @@ void MainWindow::buildLayouts()
 
 }
 
-//переключение режима
+//РїРµСЂРµРєР»СЋС‡РµРЅРёРµ СЂРµР¶РёРјРѕРІ
 void MainWindow::showBasicPage()
 {
     ui->stackedWidget->setCurrentWidget(ui->pageBasic);

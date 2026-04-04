@@ -17,7 +17,7 @@ struct FindFileInfo {
 
 
 struct AppConfig {
-    QMap<QString, QString> scriptSource; // sourceFile -> путь, ключ значение
+    QMap<QString, QString> scriptSource; // sourceFile -> РїСѓС‚СЊ, РєР»СЋС‡ Р·РЅР°С‡РµРЅРёРµ
     QString allowExtension;
     bool recursive;
 };
@@ -27,16 +27,16 @@ class ScriptLoader {
 public:
 
     ScriptLoader();
-    QList<FindFileInfo> scanSourcesAll(); // сканирование dвсей директории скриптов
-    bool configLoad (QString& configPath); // проверка чтения конфига
+    QList<FindFileInfo> scanSourcesAll(); // СЃРєР°РЅРёСЂРѕРІР°РЅРёРµ dРІСЃРµР№ РґРёСЂРµРєС‚РѕСЂРёРё СЃРєСЂРёРїС‚РѕРІ
+    bool configLoad (QString& configPath); // РїСЂРѕРІРµСЂРєР° С‡С‚РµРЅРёСЏ РєРѕРЅС„РёРіР°
 
 private:
     AppConfig ex_config;
     QString configPath;
 
-    QList<FindFileInfo> scanSourcesOne(QString& sourceFile, QString& rootPath); // сканирование одной директории
-    bool allowedExtension(QString& filePath);//проверка корректности расширения
-    QString convertPath (QString& rawPath);//преобразование пути из относительного в абсолютный
+    QList<FindFileInfo> scanSourcesOne(QString& sourceFile, QString& rootPath); // СЃРєР°РЅРёСЂРѕРІР°РЅРёРµ РѕРґРЅРѕР№ РґРёСЂРµРєС‚РѕСЂРёРё
+    bool allowedExtension(QString& filePath);//РїСЂРѕРІРµСЂРєР° РєРѕСЂСЂРµРєС‚РЅРѕСЃС‚Рё СЂР°СЃС€РёСЂРµРЅРёСЏ
+    QString convertPath (QString& rawPath);//РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ РїСѓС‚Рё РёР· РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕРіРѕ РІ Р°Р±СЃРѕР»СЋС‚РЅС‹Р№
 };
 
 #endif // SCRIPTLOADER_H
