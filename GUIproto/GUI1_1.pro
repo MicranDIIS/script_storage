@@ -13,10 +13,13 @@ INCLUDEPATH += ../SE2/include
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    scriptwindow.cpp
+    scriptwindow.cpp \
+    diffviewerwindow.cpp
 
 HEADERS  += mainwindow.h \
-    scriptwindow.h
+    scriptwindow.h \
+    diffviewerwindow.h
 
 FORMS    += mainwindow.ui \
-    scriptwindow.ui
+    scriptwindow.ui \
+    diffviewerwindow.ui
