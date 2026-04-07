@@ -14,11 +14,13 @@ INCLUDEPATH += ../SE2/include
 SOURCES += main.cpp\
         mainwindow.cpp \
     scriptwindow.cpp \
-    scriptloader.cpp
+    scriptloader.cpp \
+    settingreader.cpp
 
 HEADERS  += mainwindow.h \
     scriptwindow.h \
-    scriptloader.h
+    scriptloader.h \
+    settingreader.h
 
 FORMS    += mainwindow.ui \
     scriptwindow.ui

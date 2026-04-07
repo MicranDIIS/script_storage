@@ -55,38 +55,42 @@ void MainWindow::loadScripts()
 {
     scriptsModel->clear();
 
-    ScriptLoader loader;
+    IniSettingReader *reader = new IniSettingReader();
+    ScriptLoader loader(reader);
 
     QString appDir = QCoreApplication::applicationDirPath();
-    QString configPath = QDir(appDir).absoluteFilePath("../../../../config/app_config.ini"); // пока так, потом конфиг поближе перенесем
 
-    // qDebug() << "[MainWindow] configPath =" << configPath;
+    QString configPath = QDir(appDir).absoluteFilePath("../../../../config/app_config.ini");
+    QString headerPath = QDir(appDir).absoluteFilePath("../../../../config/header_ref.ini");
 
     if (!loader.configLoad(configPath)) {
-        QMessageBox::warning(this, "Config error","Configuration file could not loaded with this path:\n" + configPath);
-        return;
-    }
+       QMessageBox::warning(this,"Config error", "Configuration file could not be loaded:\n" + configPath);
+            delete reader;
+            return;
+        }
+
+    if (!loader.headerLoad(headerPath)) {
+       QMessageBox::warning(this,"Header ref error","Header reference file could not be loaded:\n" + headerPath);
+            delete reader;
+            return;
+        }
 
     QList<FindFileInfo> files = loader.scanSourcesAll();
-
     for (int i = 0; i < files.size(); ++i) {
         const FindFileInfo &fileInfo = files.at(i);
+        if (!fileInfo.headerCorrect) {
+            continue;
+        }
 
-        QStandardItem *item = new QStandardItem(fileInfo.relativePath);
+        QStandardItem *item = new QStandardItem(fileInfo.displayName);
         item->setData(fileInfo.absolutePath, Qt::UserRole);
 
         scriptsModel->appendRow(item);
-
-//        qDebug() << "[MainWindow]"
-//                 << "source =" << fileInfo.sourceFile
-//                 << "| relativePath =" << fileInfo.relativePath
-//                 << "| absolutePath =" << fileInfo.absolutePath
-//                 << "| extension =" << fileInfo.extension;
     }
 
     ui->listViewBasic->setModel(scriptsModel);
 
-//    qDebug() << "[MainWindow] Loaded files count =" << files.size();
+    delete reader;
 }
 
 void MainWindow::openSelectedScript()
