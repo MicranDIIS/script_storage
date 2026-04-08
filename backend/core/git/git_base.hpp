@@ -36,3 +36,13 @@ git_t *core_git_open(const QString &path);
     в случае ошибки вернет пустой QList<QString>, иначе имена измененных файлов 
 */
 QList<QString> core_git_status(git_repository *repo);
+
+/*
+    выполняет git pull для обновления локального репозитория
+    **
+    git_t *gt - структура с открытым репозиторием
+    const QString &token - токен для доступа к репозиторию (опционально)
+    **
+    в случае ошибки вернет -1, иначе 0
+*/
+int core_git_pull(git_t *gt, const QString &token = QString());

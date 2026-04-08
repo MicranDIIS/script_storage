@@ -87,6 +87,74 @@ int core_git_clone(const QString &URL,const QString &path,const QString &token)
 //-----------------------------------------------------------------------------
 //конец реализации git clone
 
+
+// Простая версия pull - только fetch и merge с origin/current_branch
+int core_git_pull(git_t *gt, const QString &token)
+{
+    if(gt == nullptr || gt->repo == nullptr){
+        return -1;
+    }
+    
+    git_remote *remote = nullptr;
+    git_repository *repo = gt->repo;
+    
+    // Получаем remote "origin"
+    if(git_remote_lookup(&remote, repo, "origin") != 0){
+        return -1;
+    }
+    
+    // Настройка опций для fetch
+    git_fetch_options fetch_opts = GIT_FETCH_OPTIONS_INIT;
+    
+    // Если передан токен, настраиваем авторизацию
+    if(!token.isEmpty()){
+        GitCreds creds;
+        creds.token = token.toUtf8();
+        fetch_opts.callbacks.credentials = cred_callback;
+    }
+    
+    // Выполняем fetch
+    if(git_remote_fetch(remote, nullptr, &fetch_opts, nullptr) != 0){
+        git_remote_free(remote);
+        return -1;
+    }
+    
+    // Получаем ссылку на текущую ветку
+    git_reference *head_ref = nullptr;
+    if(git_repository_head(&head_ref, repo) != 0){
+        git_remote_free(remote);
+        return -1;
+    }
+    
+    const char *branch_name = git_reference_shorthand(head_ref);
+    
+    // Формируем имя upstream ветки
+    QString upstream_branch = QString("refs/remotes/origin/%1").arg(branch_name);
+    QByteArray upstream_bytes = upstream_branch.toUtf8();
+    
+    // Получаем annotated commit для upstream ветки
+    git_annotated_commit *upstream_commit = nullptr;
+    if(git_annotated_commit_lookup(&upstream_commit, repo, upstream_bytes.constData()) != 0){
+        git_reference_free(head_ref);
+        git_remote_free(remote);
+        return -1;
+    }
+    
+    // Выполняем слияние
+    git_merge_options merge_opts = GIT_MERGE_OPTIONS_INIT;
+    git_checkout_options checkout_opts = GIT_CHECKOUT_OPTIONS_INIT;
+    checkout_opts.checkout_strategy = GIT_CHECKOUT_SAFE;
+    
+    int result = git_merge(repo, &upstream_commit, 1, &merge_opts, &checkout_opts);
+    
+    // Очистка
+    git_annotated_commit_free(upstream_commit);
+    git_reference_free(head_ref);
+    git_remote_free(remote);
+    
+    return result == 0 ? 0 : -1;
+}
+
 //открывает локальный репозиторий для работы
 git_t *core_git_open(const QString &path)
 {
