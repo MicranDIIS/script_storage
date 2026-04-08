@@ -24,6 +24,7 @@ private:
 
     void buildLayouts();
     void loadScripts();
+    void openDiffForIndex(const QModelIndex &index);
 
 
 
@@ -32,7 +33,7 @@ private slots:
     void showCustomPage();
     void handleScriptDoubleClick(const QModelIndex &index);
     void openSelectedScript();
-
+    void showContextMenu(const QPoint& pos);
 };
 
 #endif // MAINWINDOW_H

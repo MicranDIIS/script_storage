@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "diffviewerwindow.h"
+
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QSpacerItem>
@@ -10,10 +12,10 @@
 #include <QFileInfoList>
 #include <QStandardItemModel>
 #include <QStandardItem>
-
 #include <QDebug>
 #include <QCoreApplication>
 #include <QApplication>
+#include <QMenu>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -40,6 +42,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->radioBasic, SIGNAL(clicked()), this, SLOT(showBasicPage()));
     connect(ui->radioCustom, SIGNAL(clicked()), this, SLOT(showCustomPage()));
+
+    ui->treeViewBasic->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->treeViewBasic, SIGNAL(customContextMenuRequested(const QPoint &)),
+            this, SLOT(showContextMenu(const QPoint &)));
 }
 
 MainWindow::~MainWindow()
@@ -270,3 +276,35 @@ void MainWindow::showCustomPage()
     ui->stackedWidget->setCurrentWidget(ui->pageCustom);
 }
 
+void MainWindow::showContextMenu(const QPoint& pos)
+{
+    qDebug() << "showContextMenu called, pos =" << pos;
+
+    QModelIndex index = ui->treeViewBasic->indexAt(pos);
+    if (!index.isValid()) return;
+
+    QMenu contextMenu(this);
+    QAction* openDiffAction = contextMenu.addAction(tr("show changes"));
+
+    QPoint globalPos = ui->treeViewBasic->viewport()->mapToGlobal(pos);
+    QAction *selectedAction = contextMenu.exec(globalPos);
+
+    if (selectedAction == openDiffAction)
+    {
+        openDiffForIndex(index);
+    }
+}
+
+void MainWindow::openDiffForIndex(const QModelIndex &index)
+{
+    QString scriptPath = index.data(Qt::UserRole).toString();
+
+    if (scriptPath.isEmpty())
+                return;
+
+    DiffViewerWindow* diffWindow = new DiffViewerWindow();
+    diffWindow->setAttribute(Qt::WA_DeleteOnClose);
+    diffWindow->setWindowTitle(tr("changes"));
+    diffWindow->setFilePath(scriptPath);
+    diffWindow->show();
+}

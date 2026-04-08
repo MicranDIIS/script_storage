@@ -505,6 +505,9 @@ p, li { white-space: pre-wrap; }
           <height>301</height>
          </size>
         </property>
+        <property name="contextMenuPolicy">
+         <enum>Qt::CustomContextMenu</enum>
+        </property>
         <attribute name="headerDefaultSectionSize">
          <number>0</number>
         </attribute>
