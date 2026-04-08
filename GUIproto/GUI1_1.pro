@@ -15,12 +15,14 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     scriptwindow.cpp \
     scriptloader.cpp \
-    settingreader.cpp
+    settingreader.cpp \
+    headerparser.cpp
 
 HEADERS  += mainwindow.h \
     scriptwindow.h \
     scriptloader.h \
-    settingreader.h
+    settingreader.h \
+    headerparser.h
 
 FORMS    += mainwindow.ui \
     scriptwindow.ui

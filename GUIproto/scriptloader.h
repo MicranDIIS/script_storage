@@ -2,6 +2,7 @@
 #define SCRIPTLOADER_H
 
 #include "settingreader.h"
+#include "headerparser.h"
 #include <QString>
 #include <QMap>
 #include <QList>
@@ -44,6 +45,7 @@ public:
 
 private:
     SettingReader *settingReader;
+    HeaderParser headerParser;
 
     AppConfig ex_config;
     HeaderRef ref;
@@ -53,13 +55,6 @@ private:
 
     bool allowedExtension(QString& filePath);//проверка корректности расширения
     QString convertPath (QString& rawPath);//преобразование пути из относительного в абсолютный
-
-    void readHeader(FindFileInfo& info);//чтение шапки из файла построчно
-    void validateHeader(FindFileInfo& info);//проверка шапки по справочнику + поля для модели
-
-    bool isHeaderLine(QString& line);//проверка, что это шапка
-    bool parseHeader(QString& line, QString& key, QStringList& values);//парсер прочитанных строк шапки
-    QStringList splitHeader(QString& value); // доп метод парсинга для разделения значениий и формирования списка
 };
 
 #endif // SCRIPTLOADER_H

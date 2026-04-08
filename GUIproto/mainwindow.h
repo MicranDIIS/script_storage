@@ -25,8 +25,6 @@ private:
     void buildLayouts();
     void loadScripts();
 
-
-
 private slots:
     void showBasicPage();
     void showCustomPage();
