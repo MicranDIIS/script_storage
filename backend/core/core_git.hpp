@@ -1,6 +1,6 @@
-#ifndef GIT_BASE.HPP
-#define GIT_BASE.HPP
+#pragma once
 
 #include "git/git_base.hpp"
 
-#endif
+void core_start();
+void core_close();
