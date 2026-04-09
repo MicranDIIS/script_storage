@@ -6,6 +6,34 @@ static QString get_git_error(){
     return msg;
 }
 
+//для коллбэк ф-ии
+struct GitData{
+    QByteArray username;
+    QByteArray token;
+
+    GitData(const QString &username_,const QString &token_) : username(username_.toUtf8()) , token(token_.toUtf8()) {}
+};
+
+//для git clone,git fetch и других
+static int callback(git_credential **out,const char *url,
+                         const char *username_from_url,
+                         unsigned int allowed_types,
+                         void *payload)
+{
+    GitData *data = static_cast<GitData*>(payload);
+
+    if(!data || data -> username.isEmpty() || data -> token.isEmpty()){
+        return -1;
+    }
+
+    if(!(allowed_types & GIT_CREDENTIAL_USERPASS_PLAINTEXT)){
+        return -1;
+    }
+    return git_credential_userpass_plaintext_new(out,
+                                                 data -> username.constData(),
+                                                 data -> token.constData());
+}
+
 //-----------------------------------------------------------------------------
 //конструктор и деконструктор
 static git_repository *repo_git_open(const QString &path){
@@ -47,7 +75,6 @@ Repo_git core_git_init(const QString &path){
 }
 
 //реализация status()
-//-----------------------------------------------------------------------------
 enum STATUS_FLAG{
     STATUS_NEW_TO_HEAD     = 1 << 0, //новый 
     STATUS_MODFILE_TO_HEAD = 1 << 1, //изменен
@@ -153,38 +180,11 @@ QList<FileStatus> Repo_git::status(){
 
     return list;
 }
-//-----------------------------------------------------------------------------
 
-//Реализация git clone
-//-----------------------------------------------------------------------------
-struct GitCreds{
-    QByteArray username;
-    QByteArray token;
 
-    GitCreds(const QString &username_,const QString &token_) : username(username_.toUtf8()) , token(token_.toUtf8()) {}
-};
+//реализация git clone
+typedef GitData GitClone;
 
-//сама коллбэк ф-я 
-static int cred_callback(git_credential **out,const char *url,
-                         const char *username_from_url,
-                         unsigned int allowed_types,
-                         void *payload)
-{
-    GitCreds *creds = static_cast<GitCreds*>(payload);
-
-    if(!creds || creds -> username.isEmpty() || creds -> token.isEmpty()){
-        return -1;
-    }
-
-    if(!(allowed_types & GIT_CREDENTIAL_USERPASS_PLAINTEXT)){
-        return -1;
-    }
-    return git_credential_userpass_plaintext_new(out,
-                                                 creds -> username.constData(),
-                                                 creds -> token.constData());
-}
-
-//git clone
 int core_git_clone(const QString &URL,const QString &path,const QString &username,const QString &token)
 {
     if(URL.isEmpty() || path.isEmpty() || token.isEmpty() || username.isEmpty()){
@@ -197,9 +197,9 @@ int core_git_clone(const QString &URL,const QString &path,const QString &usernam
     QByteArray url = URL.toUtf8();
     QByteArray path_ = path.toUtf8();
 
-    GitCreds creds(username,token);
+    GitClone creds(username,token);
 
-    clone_opts.fetch_opts.callbacks.credentials = cred_callback;
+    clone_opts.fetch_opts.callbacks.credentials = callback;
     clone_opts.fetch_opts.callbacks.payload = &creds;
 
     if(git_clone(&repo,url.constData(),path_.constData(),&clone_opts) != 0){
@@ -210,6 +210,72 @@ int core_git_clone(const QString &URL,const QString &path,const QString &usernam
 
     return 0;
 }
+
+
+//реализация git fetch 
+typedef GitData GitFetch;
+
+#include <string.h>
+int Repo_git::fetch(){
+    git_remote *remote = nullptr;
+    git_fetch_options fetchopt = GIT_FETCH_OPTIONS_INIT;
+    git_remote_callbacks callbacks = GIT_REMOTE_CALLBACKS_INIT;
+
+    callbacks.credentials = callback;
+    callbacks.payload = this;
+    fetchopt.callbacks = callbacks;
+    fetchopt.update_fetchhead = 1;
+
+    git_reference *head = nullptr;
+    git_buf remote_buf = GIT_BUF_INIT;
+    const char *remote_name = nullptr;
+
+    if(git_repository_head(&head,repo) != 0){
+        error = "Не получилось получить данные Head";
+        return -1;
+    }
+
+    const char *branch_name = nullptr;
+    if(git_branch_name(&branch_name,head) == 0){
+        if(git_branch_upstream_remote(&remote_buf,repo,branch_name) == 0){
+            remote_name = remote_buf.ptr;
+        }else{
+            remote_name = "origin";
+        }
+    }else{
+        remote_name = "origin";
+    }
+
+    if(!remote_name || strlen(remote_name) == 0){
+        error = "Не удалось определить имя remote";
+        git_reference_free(head);
+        git_buf_free(&remote_buf);
+        return -1;
+    }
+
+    if(git_remote_lookup(&remote,repo,remote_name) != 0){
+        error = "remote не найден";
+        git_reference_free(head);
+        git_buf_free(&remote_buf);
+        return -1;
+    }
+
+    if(git_remote_fetch(remote,nullptr,&fetchopt,nullptr) != 0){
+        error = "Ошибка fetch";
+        git_remote_free(remote);
+        git_reference_free(head);
+        git_buf_free(&remote_buf);
+        return -1;
+    }
+
+    git_remote_free(remote);
+    git_reference_free(head);
+    git_buf_free(&remote_buf);
+
+    return 0;
+}
+
+
 
 //Реализация git pull
 //-----------------------------------------------------------------------------

@@ -5,9 +5,9 @@
 
 //данная структура нужна для реализации ф-ии status
 struct FileStatus{
-    const QString new_path;
-    const QString old_path;
-    const int flags;
+    QString new_path;
+    QString old_path;
+    int flags;
     
     FileStatus(const QString &new_path_,const QString &old_path_,int flags_) : new_path(new_path_) , old_path(old_path_) , flags(flags_) {}
 };
@@ -47,10 +47,16 @@ class Repo_git{
         /*
             делает git pull
             **
-            в случае ошибки вернет -1 в error, иначе 0  
+            в случае ошибки вернет -1 и запишет в error, иначе 0  
         */
         int pull(const QString &username, const QString &token);
 
+        /*
+            делает git fetch
+            **
+            в случае ошибки вернет -1 и запишет в error, иначе 0
+        */
+        int fetch();
 };
 
 
