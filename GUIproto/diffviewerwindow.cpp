@@ -3,12 +3,14 @@
 
 #include <QFile>
 #include <QTextStream>
+#include <QSet>
 
 DiffViewerWindow::DiffViewerWindow(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::DiffViewerWindow)
 {
     ui->setupUi(this);
+    diffViewHighlighter = new DiffViewHighlighter(ui->ScriptPlainTextEdit->document());
 }
 
 DiffViewerWindow::~DiffViewerWindow()
@@ -32,4 +34,8 @@ void DiffViewerWindow::LoadFileText()
     QTextStream in(&scriptFile);
     QString content = in.readAll();
     ui->ScriptPlainTextEdit->setPlainText(content);
+
+    QSet<int> testLines;
+    testLines << 1 << 3 << 5 << 6 << 7;
+    diffViewHighlighter->setHighlightedLines(testLines);
 }
