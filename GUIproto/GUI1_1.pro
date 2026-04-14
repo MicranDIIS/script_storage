@@ -17,14 +17,12 @@ SOURCES += main.cpp\
     scriptloader.cpp \
     settingreader.cpp \
     headerparser.cpp \
-    viewmodel.cpp
 
 HEADERS  += mainwindow.h \
     scriptwindow.h \
     scriptloader.h \
     settingreader.h \
     headerparser.h \
-    viewmodel.hs
 
 FORMS    += mainwindow.ui \
     scriptwindow.ui
