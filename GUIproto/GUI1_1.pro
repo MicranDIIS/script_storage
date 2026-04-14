@@ -15,13 +15,16 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     scriptwindow.cpp \
     diffviewerwindow.cpp \
-    diffviewhighlighter.cpp
+    diffviewhighlighter.cpp \
+    historywindow.cpp
 
 HEADERS  += mainwindow.h \
     scriptwindow.h \
     diffviewerwindow.h \
-    diffviewhighlighter.h
+    diffviewhighlighter.h \
+    historywindow.h
 
 FORMS    += mainwindow.ui \
     scriptwindow.ui \
-    diffviewerwindow.ui
+    diffviewerwindow.ui \
+    historywindow.ui

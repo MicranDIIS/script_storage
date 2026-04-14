@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 
 #include "diffviewerwindow.h"
+#include "historywindow.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -45,7 +46,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->treeViewCustom->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->treeViewCustom, SIGNAL(customContextMenuRequested(const QPoint &)),
-            this, SLOT(showContextMenu(const QPoint &)));
+            this, SLOT(showCustomContextMenu(const QPoint &)));
+
+    ui->treeViewBasic->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->treeViewBasic, SIGNAL(customContextMenuRequested(const QPoint &)),
+            this, SLOT(showBasicContextMenu(const QPoint &)));
 }
 
 MainWindow::~MainWindow()
@@ -276,7 +281,7 @@ void MainWindow::showCustomPage()
     ui->stackedWidget->setCurrentWidget(ui->pageCustom);
 }
 
-void MainWindow::showContextMenu(const QPoint& pos)
+void MainWindow::showCustomContextMenu(const QPoint& pos)
 {
 //    qDebug() << "showContextMenu called, pos =" << pos;
 
@@ -307,4 +312,34 @@ void MainWindow::openDiffForIndex(const QModelIndex &index)
     diffWindow->setWindowTitle(tr("changes"));
     diffWindow->setFilePath(scriptPath);
     diffWindow->show();
+}
+
+void MainWindow::showBasicContextMenu(const QPoint& pos)
+{
+    QModelIndex index = ui->treeViewBasic->indexAt(pos);
+    if (!index.isValid()) return;
+
+    QMenu contextMenu(this);
+    QAction* openHistoryAction = contextMenu.addAction(tr("show history"));
+
+    QPoint globalPos = ui->treeViewBasic->viewport()->mapToGlobal(pos);
+    QAction *selectedAction = contextMenu.exec(globalPos);
+
+    if (selectedAction == openHistoryAction)
+    {
+        openHistoryForIndex(index);
+    }
+}
+
+void MainWindow::openHistoryForIndex(const QModelIndex &index)
+{
+    QString scriptPath = index.data(Qt::UserRole).toString();
+        if (scriptPath.isEmpty())
+            return;
+
+        HistoryWindow* w = new HistoryWindow();
+        w->setAttribute(Qt::WA_DeleteOnClose);
+        w->setWindowTitle(tr("file history"));
+        w->setFilePath(scriptPath);
+        w->show();
 }
