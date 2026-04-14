@@ -5,6 +5,7 @@
 #include <QString>
 #include <QStandardItemModel>
 #include <QModelIndex>
+#include "viewmodel.h"
 
 namespace Ui {
     class MainWindow;
@@ -20,7 +21,7 @@ public:
 
 private:
     Ui::MainWindow *ui;
-    QStandardItemModel *scriptsModel;
+    ViewModel *scriptsModel;
 
     void buildLayouts();
     void loadScripts();

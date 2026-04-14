@@ -24,7 +24,7 @@ HEADERS  += mainwindow.h \
     scriptloader.h \
     settingreader.h \
     headerparser.h \
-    viewmodel.hs
+    viewmodel.h
 
 FORMS    += mainwindow.ui \
     scriptwindow.ui

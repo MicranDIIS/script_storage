@@ -20,9 +20,11 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    scriptsModel(new QStandardItemModel(this))
+    scriptsModel(new ViewModel(this))
 {
     ui->setupUi(this);
+    ui->listViewBasic->setModel(scriptsModel);
+    ui->listViewCustom->setModel(scriptsModel);
     setWindowTitle("SE2");
 
     qDebug() << QCoreApplication::applicationDirPath();
@@ -34,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->listViewBasic, SIGNAL(doubleClicked(QModelIndex)),
                 this, SLOT(handleScriptDoubleClick(QModelIndex)));
 
-        connect(ui->pushButton, SIGNAL(clicked()),
+    connect(ui->pushButton, SIGNAL(clicked()),
                 this, SLOT(openSelectedScript()));
 
     ui->radioBasic->setChecked(true);
@@ -76,19 +78,23 @@ void MainWindow::loadScripts()
         }
 
     QList<FindFileInfo> files = loader.scanSourcesAll();
+//    qDebug() << "all scanned files =" << files.size();
+    QList<FindFileInfo> validFiles;
+    QStringList invalidHeader;
+
     for (int i = 0; i < files.size(); ++i) {
         const FindFileInfo &fileInfo = files.at(i);
         if (!fileInfo.headerCorrect) {
+            invalidHeader.append(fileInfo.fileName);
             continue;
         }
-
-        QStandardItem *item = new QStandardItem(fileInfo.displayName);
-        item->setData(fileInfo.absolutePath, Qt::UserRole);
-
-        scriptsModel->appendRow(item);
+        validFiles.append(fileInfo);
     }
-
-    ui->listViewBasic->setModel(scriptsModel);
+//    qDebug() << "valid files =" << validFiles.size();
+    scriptsModel->setFiles(validFiles);
+    if(validFiles.size()!= files.size()){
+        QMessageBox::warning(this,"Invalid script headers", "This files contain incorrect headers and could not be displayed:\n" +  invalidHeader.join("\n"));
+    }
 
     delete reader;
 }
@@ -292,10 +298,12 @@ void MainWindow::buildLayouts()
 void MainWindow::showBasicPage()
 {
     ui->stackedWidget->setCurrentWidget(ui->pageBasic);
+    scriptsModel->setViewMode(ViewModel::basicMode);
 }
 
 void MainWindow::showCustomPage()
 {
     ui->stackedWidget->setCurrentWidget(ui->pageCustom);
+    scriptsModel->setViewMode(ViewModel::customMode);
 }
 
