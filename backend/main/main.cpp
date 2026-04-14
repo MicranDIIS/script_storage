@@ -1,77 +1,50 @@
 #include <QtCore/QCoreApplication>
-#include <git2.h>
+#include <network.h>
+#include <local.h>
+#include <basedata.h>
 #include <stdio.h>
-struct GitData{
-    QByteArray username;
-    QByteArray token;
-
-    GitData(const QString &username_,const QString &token_) : username(username_.toUtf8()) , token(token_.toUtf8()) {}
-};
-
-//для git clone,git fetch и других
-static int callback(git_credential **out,const char *url,
-                         const char *username_from_url,
-                         unsigned int allowed_types,
-                         void *payload)
-{
-    GitData *data = static_cast<GitData*>(payload);
-
-    if(!data || data -> username.isEmpty() || data -> token.isEmpty()){
-        return -1;
-    }
-
-    if(!(allowed_types & GIT_CREDENTIAL_USERPASS_PLAINTEXT)){
-        return -1;
-    }
-    return git_credential_userpass_plaintext_new(out,
-                                                 data -> username.constData(),
-                                                 data -> token.constData());
-}
-
-
-
-typedef GitData GitClone;
-
-int core_git_clone(const QString &URL,const QString &path,const QString &username,const QString &token)
-{
-    if(URL.isEmpty() || path.isEmpty() || token.isEmpty() || username.isEmpty()){
-        return -1;
-    }
-    git_repository *repo = 0;
-    git_clone_options clone_opts = GIT_CLONE_OPTIONS_INIT;
-
-
-    QByteArray url = URL.toUtf8();
-    QByteArray path_ = path.toUtf8();
-
-    GitClone creds(username,token);
-
-    clone_opts.fetch_opts.callbacks.credentials = callback;
-    clone_opts.fetch_opts.callbacks.payload = &creds;
-
-    if(git_clone(&repo,url.constData(),path_.constData(),&clone_opts) != 0){
-        return -1;
-    }
-
-    git_repository_free(repo);
-
-    return 0;
-}
+#include <QDebug>
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication a(argc, argv);
 
     setlocale(LC_ALL,"Russian");
-    git_libgit2_init();
+    QCoreApplication a(argc, argv);
 
-    //аргументы свои передать надо
-    if(core_git_clone("https://github.com/MicranDIIS/script_storage","","","") != 0){
-        printf("сработало");
+    git_libgit2_init();
+    //клонируется наш репозиторий
+    const QString URL = "https://github.com/MicranDIIS/script_storage";
+    //path надо задать самому
+    const QString path = "";
+    //имя тоже самому
+    const QString username = "";
+    //токен тоже
+    const QString token = "";
+    if(repo_clone(URL,path,username,token) != 0){
+        printf("Не удалось клонировать репозиторий и обработчика ошибок еще нет\n . Но советую проверить аргументы ф-ии\n");
     }else{
-        printf("не сработало");
+        printf("Клонирование прошло успешно!\n");
+    }
+
+    const QString path_file = path + "\\text.txt";
+    //создаем новый файл в директории с гитом
+    FILE *f = fopen(path_file.toUtf8().constData(),"w");
+
+    //новый обьект типа Repo который в конструкторе сразу наш репозиторий открывает
+    Repo rep = Repo(path);
+    QList<FileStatus> list = rep.status();
+
+    if(list.isEmpty()){
+        printf("Все плохо и status не работает");
+    }else{
+        //имена статуса всех каких-то не таких файлов. В нашем случае должно вывести text.txt
+        foreach(FileStatus value,list){
+            qDebug() << value.path_new;
+        }
     }
 
     git_libgit2_shutdown();
+
+    fclose(f);
     return a.exec();
 }
