@@ -22,7 +22,8 @@ HEADERS  += mainwindow.h \
     scriptwindow.h \
     diffviewerwindow.h \
     diffviewhighlighter.h \
-    historywindow.h
+    historywindow.h \
+    commitinfo.h
 
 FORMS    += mainwindow.ui \
     scriptwindow.ui \
