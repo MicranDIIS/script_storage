@@ -26,19 +26,14 @@ bool HeaderParser::isHeaderLine(QString& line, AppConfig& ex_config) {
     if (trimmedLine.isEmpty()) {
         return false;
     }
-
-    if (!trimmedLine.startsWith(ex_config.prefix)) {
-        return false;
+    if (!trimmedLine.contains(ex_config.keySeparator)) {
+            return false;
     }
 
-    QString content = trimmedLine.mid(ex_config.prefix.length()).trimmed(); // убрать префикс
-    if (!content.contains(ex_config.keySeparator)) {
-        return false;
+    if (ex_config.lineSeparator.isEmpty()) {
+            return true;
     }
-    if (!ex_config.lineSeparator.isEmpty() && !content.endsWith(ex_config.lineSeparator)) {
-        return false;
-    }
-    return true;
+    return trimmedLine.endsWith(ex_config.lineSeparator);
 }
 
 // доп метод для разделения значений
@@ -51,16 +46,12 @@ QStringList HeaderParser::splitHeader(QString& value, AppConfig& ex_config) {
         return result;
     }
 
-    if (!ex_config.lineSeparator.isEmpty() && current.endsWith(ex_config.lineSeparator)) {
-        current.chop(ex_config.lineSeparator.length());
-        current = current.trimmed();
-    }
-
     if (ex_config.valueSeparator.isEmpty()) {
         result.append(current);
         return result;
     }
 
+    // разрезаем строку по разделителю, игнорируя пустые элементы
     QStringList rawValues = current.split(ex_config.valueSeparator, QString::SkipEmptyParts);
 
     for (int i = 0; i < rawValues.size(); ++i) {
@@ -75,32 +66,39 @@ QStringList HeaderParser::splitHeader(QString& value, AppConfig& ex_config) {
 }
 
 //парсинг прочитанной шапки
-bool HeaderParser::parseHeader(QString& line, QString& key, QStringList& values, AppConfig& ex_config) {
+bool HeaderParser::parseHeader(QString& line, FindFileInfo& info, AppConfig& ex_config) {
 
-    key.clear();
-    values.clear();
+    QMap<QString, QStringList> fields; //временное хранилище 
+    QString trimmedLine =line.trimmed();
 
-    if (!isHeaderLine(line, ex_config)) {
+    if (trimmedLine.isEmpty() || !trimmedLine.startsWith(ex_config.prefix)){
         return false;
     }
+    //разделяем строку на части по ;
+    QStringList parts = trimmedLine.split(ex_config.lineSeparator, QString::SkipEmptyParts);
+    for (int i=0; i < parts.size(); ++i){
 
-//  QString trimmedLine = line.trimmed();
-    QString content = line.mid(ex_config.prefix.length()).trimmed();
+        QString part = parts.at(i).trimmed();
+        if (part.startsWith(ex_config.prefix)) {
+            part = part.mid(ex_config.prefix.length()).trimmed(); // удаляем префикс, если он есть, в каждой паре ключ-значение
+        }
 
-    if (!ex_config.lineSeparator.isEmpty() && content.endsWith(ex_config.lineSeparator)) {
-        content.chop(ex_config.lineSeparator.length());
-        content = content.trimmed();
+        int sepPos = part.indexOf(ex_config.keySeparator);//ищем : в парах
+        if (sepPos == -1){
+//           qDebug() << "[HeaderParser::parseHeader] keySeparator not found in part:" << part << " script:"  << info.fileName;
+           return false;
+        }
+
+        QString key = part.left(sepPos).trimmed().toLower(); // то, что слева от : это ключ
+        QString valueText = part.mid(sepPos + ex_config.keySeparator.length()).trimmed(); // то, что справа от : это значение
+        QStringList values = splitHeader(valueText, ex_config); // разделяем на список, если несколько значений
+        fields.insert(key, values);
     }
 
-    int sepPos = content.indexOf(ex_config.keySeparator);
-    key = content.left(sepPos).trimmed().toLower();
-    QString valueText = content.mid(sepPos + ex_config.keySeparator.length()).trimmed();
-
-    if (key.isEmpty()) {
-        return false;
+    QMap<QString, QStringList>::const_iterator it;
+    for (it = fields.constBegin(); it != fields.constEnd(); ++it) {
+        info.headerField.insert(it.key(), it.value());
     }
-
-    values = splitHeader(valueText, ex_config);
     return true;
 }
 
@@ -114,6 +112,7 @@ void HeaderParser::readHeader(FindFileInfo& info, AppConfig& ex_config) {
 
     QTextStream in(&file);
     bool headerStarted = false;
+    QString headerText;
 
     while (!in.atEnd()) {
         QString line = in.readLine();
@@ -124,7 +123,7 @@ void HeaderParser::readHeader(FindFileInfo& info, AppConfig& ex_config) {
         }
 
         if (!headerStarted) {
-            if (!isHeaderLine(line, ex_config)) { //определение является ли первая непустая строка началом шапки
+            if (!isHeaderLine(line, ex_config)) {
                 return;
             }
             headerStarted = true;
@@ -132,20 +131,17 @@ void HeaderParser::readHeader(FindFileInfo& info, AppConfig& ex_config) {
         }
 
         if (!isHeaderLine(line, ex_config)) {
+//            qDebug() << "[HeaderParser::readHeader] header end on line:" << trimmedLine << " script:"  << info.fileName;
             break;
         }
 
-        QString key;
-        QStringList values;
-        if (!parseHeader(line, key, values, ex_config)) {
-            return;
+        headerText += trimmedLine;
+    }
+
+    if (!headerText.isEmpty()) {
+        if (!parseHeader(headerText, info, ex_config)) {
+            info.headerExist = false;
         }
-
-        // if (info.headerField.contains(key)){
-        //     return;
-        // }
-
-        info.headerField.insert(key, values); // тут логика такая, что не может быть повторяющихся ключей в шапке
     }
 }
 

@@ -16,6 +16,8 @@ release/
 # Qt Creator
 *.user
 CMakeLists.txt.user
+viewmodel.cpp
+viewmodel.h
 
 # OS
 .DS_Store

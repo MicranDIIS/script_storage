@@ -60,8 +60,8 @@ void MainWindow::loadScripts()
 
     QString appDir = QCoreApplication::applicationDirPath();
 
-    QString configPath = QDir(appDir).absoluteFilePath("../../../../config/app_config.ini");
-    QString headerPath = QDir(appDir).absoluteFilePath("../../../../config/header_ref.ini");
+    QString configPath = QDir(appDir).absoluteFilePath("../../GUIproto/config/app_config.ini");
+    QString headerPath = QDir(appDir).absoluteFilePath("../../GUIproto/config/header_ref.ini");
 
     if (!loader.configLoad(configPath)) {
        QMessageBox::warning(this,"Config error", "Configuration file could not be loaded:\n" + configPath);
