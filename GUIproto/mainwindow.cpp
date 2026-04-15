@@ -35,7 +35,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->treeViewBasic, SIGNAL(doubleClicked(QModelIndex)),
                 this, SLOT(handleScriptDoubleClick(QModelIndex)));
 
-        connect(ui->pushButton, SIGNAL(clicked()),
+    connect(ui->pushButton, SIGNAL(clicked()),
                 this, SLOT(openSelectedScript()));
 
     ui->radioBasic->setChecked(true);
