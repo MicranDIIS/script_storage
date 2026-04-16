@@ -334,12 +334,35 @@ void MainWindow::showBasicContextMenu(const QPoint& pos)
 void MainWindow::openHistoryForIndex(const QModelIndex &index)
 {
     QString scriptPath = index.data(Qt::UserRole).toString();
-        if (scriptPath.isEmpty())
-            return;
+    if (scriptPath.isEmpty())
+        return;
 
-        HistoryWindow* w = new HistoryWindow();
-        w->setAttribute(Qt::WA_DeleteOnClose);
-        w->setWindowTitle(tr("file history"));
-        w->setFilePath(scriptPath);
+    QString key = QFileInfo(scriptPath).absoluteFilePath();
+
+    if (m_historyWindows.contains(key))
+    {
+        HistoryWindow* w = m_historyWindows.value(key);
         w->show();
+        w->raise();
+        w->activateWindow();
+        return;
+    }
+
+    HistoryWindow* w = new HistoryWindow();
+    w->setAttribute(Qt::WA_DeleteOnClose);
+    w->setWindowTitle(tr("file history"));
+    w->setFilePath(scriptPath);
+    w->show();
+    m_historyWindows.insert(key, w);
+
+    w->setProperty("historyKey", key);
+
+    connect(w, SIGNAL(destroyed(QObject*)),
+            this, SLOT(onHistoryWindowDestroyed(QObject*)));
+}
+
+void MainWindow::onHistoryWindowDestroyed(QObject* obj)
+{
+    QString key = obj->property("historyKey").toString();
+    m_historyWindows.remove(key); // needs further testing
 }

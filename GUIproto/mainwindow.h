@@ -5,6 +5,9 @@
 #include <QString>
 #include <QStandardItemModel>
 #include <QModelIndex>
+#include <QHash>
+#include <QPointer>
+#include "historywindow.h"
 
 namespace Ui {
     class MainWindow;
@@ -26,7 +29,7 @@ private:
     void loadScripts();
     void openDiffForIndex(const QModelIndex &index);
     void openHistoryForIndex(const QModelIndex &index);
-
+    QHash<QString, QPointer<HistoryWindow> > m_historyWindows;
 
 
 private slots:
@@ -36,6 +39,7 @@ private slots:
     void openSelectedScript();
     void showCustomContextMenu(const QPoint& pos);
     void showBasicContextMenu(const QPoint &pos);
+    void onHistoryWindowDestroyed(QObject* obj);
 };
 
 #endif // MAINWINDOW_H
