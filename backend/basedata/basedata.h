@@ -5,14 +5,6 @@
 #include <QString>
 #include <QList>
 
-//git status
-struct FileStatus{
-    QString path_new;
-    QString path_old;
-    int flags;
-
-    FileStatus(const QString &path_new_, const QString &path_old_, int flags_) : path_new(path_new_), path_old(path_old_), flags(flags_){}
-};
 
 enum STATUS_FLAG{
     STATUS_NEW_TO_HEAD     = 1 << 0, //новый
@@ -22,9 +14,23 @@ enum STATUS_FLAG{
     STATUS_MODFILE_TO_DIR  = 1 << 4, //изменен в директории
     STATUS_DELETE_TO_DIR   = 1 << 5, //удален в директории
     STATUS_RENAME_TO_DIR   = 1 << 6, //переименован в директории
-    STATUS_NEW_TO_DIR      = 1 << 7 //новый в директории
+    STATUS_NEW_TO_DIR      = 1 << 7  //новый в директории
 };
-//конец git status
+
+class FileStatus{
+    private:
+        QString path_new;
+        QString path_old;
+        int flags;
+    public:
+        //конструктор
+        FileStatus(const QString &path_new_, const QString &path_old_, int flags_);
+        //геттеры
+        const QString& get_path_new(void)const;
+        const QString& get_path_old(void)const;
+        bool flag_check(STATUS_FLAG flag) const;
+};
+
 
 class Repo{
     private:
@@ -32,13 +38,14 @@ class Repo{
         QString path;
         QString token;
         QString error;
+        explicit Repo(const QString &path,const QString &token_);
+
     public:
-        //конструктор
-        Repo(const QString &path);
         //деконструктор
         ~Repo(void);
 
-        //get
+        //геттеры
+
         //возвращает путь
         const QString& get_path(void) const;
         //возвращает ошибку
@@ -46,16 +53,19 @@ class Repo{
         //возвращает токе
         const QString& get_token(void) const;
 
-        //set
-        void set_token(const QString &token_);
-
         //основное
 
-        QList<FileStatus> status(void);
+        static Repo clone(const QString &URL,const QString &path,const QString &username,const QString &token);
+
+        QList<FileStatus> status(void)const;
 
         int pull(void);
 
         int fetch(void);
+
+        //вспомогательные ф-ии
+        static Repo open(const QString &path, const QString &token);
+        bool valid(void)const;
 };
 
 #endif

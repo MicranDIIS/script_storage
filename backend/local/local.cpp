@@ -1,10 +1,9 @@
 #include "local.h"
 
 
-QList<FileStatus> Repo::status(){
+QList<FileStatus> Repo::status() const {
     QList<FileStatus> list;
     if(repo == NULL){
-        error = "пустой указатель на репозиторий";
         return list;
     }
 

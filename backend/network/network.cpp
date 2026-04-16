@@ -32,10 +32,9 @@ static int callback(git_credential **out,const char *url,
 //реализация git clone
 typedef GitData GitClone;
 
-int repo_clone(const QString &URL,const QString &path,const QString &username,const QString &token)
-{
+Repo Repo::clone(const QString &URL,const QString &path,const QString &username,const QString &token){
     if(URL.isEmpty() || path.isEmpty() || token.isEmpty() || username.isEmpty()){
-        return -1;
+        return Repo(path,token);
     }
     git_repository *repo = NULL;
     git_clone_options clone_opts = GIT_CLONE_OPTIONS_INIT;
@@ -50,10 +49,12 @@ int repo_clone(const QString &URL,const QString &path,const QString &username,co
     clone_opts.fetch_opts.callbacks.payload = &creds;
 
     if(git_clone(&repo,url.constData(),path_.constData(),&clone_opts) != 0){
-        return -1;
+        Repo repo_err(path,token);
+
+        return repo_err;
     }
 
     git_repository_free(repo);
 
-    return 0;
+    return Repo(path,token);
 }
