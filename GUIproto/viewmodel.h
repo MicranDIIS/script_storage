@@ -16,6 +16,13 @@ public:
         customMode
     };
 
+    enum CustomRoles { // пользовательские роли для комбобоксов
+        RoleRole = Qt::UserRole + 1,
+        DeviceRole,
+        StadeRole,
+        CategoryRole
+    };
+
     explicit ViewModel(QObject *parent = 0);
 
     int rowCount(const QModelIndex& parent = QModelIndex()) const;
@@ -32,7 +39,6 @@ private:
     ViewMode viewMode;
 
     void rebuildModeFiles();
-    QString displayNameForItem(const FindFileInfo& info) const;
 };
 
 #endif // VIEWMODEL_H

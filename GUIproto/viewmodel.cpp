@@ -12,7 +12,7 @@ int ViewModel::rowCount(const QModelIndex& parent) const {
     return modeFiles.size();
 }
 
-//данные для индекса строки и роли (пока только отображение)
+//данные для индекса строки и роли для фильтрации
 QVariant ViewModel::data(const QModelIndex& index, int role) const {
     if (!index.isValid()){
         return QVariant();
@@ -24,9 +24,27 @@ QVariant ViewModel::data(const QModelIndex& index, int role) const {
     }
 
     const FindFileInfo& info = modeFiles.at(row);
-    if (role == Qt::DisplayRole){
-        return displayNameForItem(info);
+
+    if (role == Qt::DisplayRole){ //текст отображения
+        return info.displayName;
     }
+
+    if (role == RoleRole){ // для фильтра по ролям
+        return info.roles;
+    }
+
+    if (role == DeviceRole){ // приборы и по аналогии дальше
+        return info.devices;
+    }
+
+    if (role == StadeRole){
+        return info.stades;
+    }
+
+    if (role == CategoryRole){
+        return info.categories;
+    }
+
     return QVariant();
 }
 
@@ -71,13 +89,6 @@ void ViewModel::rebuildModeFiles(){
 //     qDebug() << "rebuildModeFiles() result =" << modeFiles.size();
 }
 
-// имя для одного элемента
-QString ViewModel::displayNameForItem(const FindFileInfo& info) const{
-    if(!info.displayName.isEmpty()){
-        return info.displayName;
-    }
-    return QString();
-}
 
 void ViewModel::clear(){
     beginResetModel();

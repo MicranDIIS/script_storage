@@ -75,7 +75,7 @@
       </size>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="pageBasic">
       <property name="sizePolicy">
@@ -271,11 +271,6 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <item>
-         <property name="text">
-          <string>Метрология</string>
-         </property>
-        </item>
        </widget>
        <widget class="QLabel" name="sLabel">
         <property name="geometry">
@@ -363,11 +358,6 @@ p, li { white-space: pre-wrap; }
           <height>0</height>
          </size>
         </property>
-        <item>
-         <property name="text">
-          <string>Разработчик</string>
-         </property>
-        </item>
        </widget>
        <widget class="QLabel" name="dLabel">
         <property name="geometry">
@@ -401,11 +391,6 @@ p, li { white-space: pre-wrap; }
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <item>
-         <property name="text">
-          <string>PLS06</string>
-         </property>
-        </item>
        </widget>
       </widget>
      </widget>

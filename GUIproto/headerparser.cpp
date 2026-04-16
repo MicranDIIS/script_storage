@@ -92,6 +92,11 @@ bool HeaderParser::parseHeader(QString& line, FindFileInfo& info, AppConfig& ex_
         QString key = part.left(sepPos).trimmed().toLower(); // то, что слева от : это ключ
         QString valueText = part.mid(sepPos + ex_config.keySeparator.length()).trimmed(); // то, что справа от : это значение
         QStringList values = splitHeader(valueText, ex_config); // разделяем на список, если несколько значений
+
+        if(fields.contains(key)){//не допускаем повторение полей в шапке
+            return false;
+        }
+
         fields.insert(key, values);
     }
 
@@ -141,6 +146,7 @@ void HeaderParser::readHeader(FindFileInfo& info, AppConfig& ex_config) {
     if (!headerText.isEmpty()) {
         if (!parseHeader(headerText, info, ex_config)) {
             info.headerExist = false;
+            return;
         }
     }
 }

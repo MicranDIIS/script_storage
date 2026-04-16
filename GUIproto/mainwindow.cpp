@@ -17,14 +17,19 @@
 #include <QApplication>
 #include <QMessageBox>
 
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    scriptsModel(new ViewModel(this))
+    scriptsModel(new ViewModel(this)),
+    filterModel(new ScriptFilterModel(this))
 {
     ui->setupUi(this);
-    ui->listViewBasic->setModel(scriptsModel);
-    ui->listViewCustom->setModel(scriptsModel);
+
+    filterModel->setSourceModel(scriptsModel);
+
+    ui->listViewBasic->setModel(filterModel);
+    ui->listViewCustom->setModel(filterModel);
     setWindowTitle("SE2");
 
     qDebug() << QCoreApplication::applicationDirPath();
@@ -39,11 +44,18 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton, SIGNAL(clicked()),
                 this, SLOT(openSelectedScript()));
 
+    connect(ui->lineEdit, SIGNAL(textChanged(QString)), this, SLOT(applyTextSearch(QString)));
+    connect(ui->rComboBox, SIGNAL(currentIndexChanged(QString)),this, SLOT(applyRoleFilter()));
+    connect(ui->sComboBox, SIGNAL(currentIndexChanged(QString)),this, SLOT(applyStadeFilter()));
+    connect(ui->dComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(applyDeviceFilter()));
+    connect(ui->categoryComboBox, SIGNAL(currentIndexChanged(QString)),this, SLOT(applyCategoryFilter()));
+
     ui->radioBasic->setChecked(true);
     ui->stackedWidget->setCurrentWidget(ui->pageBasic);
 
     connect(ui->radioBasic, SIGNAL(clicked()), this, SLOT(showBasicPage()));
     connect(ui->radioCustom, SIGNAL(clicked()), this, SLOT(showCustomPage()));
+
 }
 
 MainWindow::~MainWindow()
@@ -91,12 +103,97 @@ void MainWindow::loadScripts()
         validFiles.append(fileInfo);
     }
 //    qDebug() << "valid files =" << validFiles.size();
+
     scriptsModel->setFiles(validFiles);
-    if(validFiles.size()!= files.size()){
+    if(validFiles.size()!= files.size()){ //файлы с шапкой, не прошедшей валидацию не отображаются
         QMessageBox::warning(this,"Invalid script headers", "This files contain incorrect headers and could not be displayed:\n" +  invalidHeader.join("\n"));
     }
 
+    fillComboBox(ui->categoryComboBox, files, "categories", false); // заполняем значения фильтров
+    fillComboBox(ui->rComboBox, files, "roles", true);
+    fillComboBox(ui->dComboBox, files, "devices", false);
+    fillComboBox(ui->sComboBox, files, "stades", true);
+
     delete reader;
+}
+
+
+//метод для наполнения комбобоксов
+//из полей шапки значения записываем в фильтр
+void MainWindow::fillComboBox(QComboBox *comboBox,const QList<FindFileInfo>& files,const QString& fieldName,bool translateValues)
+{
+    if (!comboBox) {
+        return;
+    }
+
+    QStringList values;
+
+    comboBox->clear();
+
+    for (int i = 0; i < files.size(); ++i) {
+        const FindFileInfo& info = files.at(i);
+
+        if (fieldName == "categories") {
+            QString value = info.categories;
+
+            if (!value.isEmpty() && !values.contains(value)) {
+                values.append(value);
+            }
+        }
+        else if (fieldName == "roles") {
+            for (int j = 0; j < info.roles.size(); ++j) {
+                QString value = info.roles.at(j);
+
+                if (!value.isEmpty() && !values.contains(value)) {
+                    values.append(value);
+                }
+            }
+        }
+        else if (fieldName == "devices") {
+            for (int j = 0; j < info.devices.size(); ++j) {
+                QString value = info.devices.at(j);
+
+                if (!value.isEmpty() && !values.contains(value)) {
+                    values.append(value);
+                }
+            }
+        }
+        else if (fieldName == "stades") {
+            for (int j = 0; j < info.stades.size(); ++j) {
+                QString value = info.stades.at(j);
+
+                if (!value.isEmpty() && !values.contains(value)) {
+                    values.append(value);
+                }
+            }
+        }
+    }
+
+    values.sort();
+
+    for (int i = 0; i < values.size(); ++i) {
+        QString value = values.at(i);
+        QString visibleText = value;
+
+        if (translateValues) { // перевод метаданных для гуи - костыльно, но групп пока не так много вроде :)
+            if (value == "developer")
+                visibleText = QString::fromUtf8("Разработчик");
+            else if (value == "production")
+                visibleText = QString::fromUtf8("Производство");
+            else if (value == "metrolog")
+                visibleText = QString::fromUtf8("Метролог");
+            else if (value == "PSI")
+                visibleText = QString::fromUtf8("ПСИ");
+            else if (value == "other")
+                visibleText = QString::fromUtf8("Другое");
+            else if (value == "test")
+                visibleText = QString::fromUtf8("Тест");
+            else if (value == "calibration")
+                visibleText = QString::fromUtf8("Калибровка");
+        }
+        comboBox->addItem(visibleText, value);
+    }
+    comboBox->setCurrentIndex(-1);
 }
 
 void MainWindow::openSelectedScript()
@@ -123,6 +220,51 @@ void MainWindow::handleScriptDoubleClick(const QModelIndex &index)
         return;
 
     openSelectedScript();
+}
+
+void MainWindow::applyTextSearch(const QString& text)
+{
+    ui->rComboBox->blockSignals(true);
+    ui->dComboBox->blockSignals(true);
+    ui->sComboBox->blockSignals(true);
+    ui->categoryComboBox->blockSignals(true);
+
+    ui->rComboBox->setCurrentIndex(-1);
+    ui->dComboBox->setCurrentIndex(-1);
+    ui->sComboBox->setCurrentIndex(-1);
+    ui->categoryComboBox->setCurrentIndex(-1);
+
+    ui->rComboBox->blockSignals(false);
+    ui->dComboBox->blockSignals(false);
+    ui->sComboBox->blockSignals(false);
+    ui->categoryComboBox->blockSignals(false);
+
+    filterModel->resetAllFilters();
+    filterModel->setTextSearch(text);
+}
+
+void MainWindow::applyStadeFilter()
+{
+    QString stade = ui->sComboBox->itemData(ui->sComboBox->currentIndex()).toString();
+    filterModel->setStadeFilter(stade);
+}
+
+void MainWindow::applyDeviceFilter()
+{
+    QString device = ui->dComboBox->itemData(ui->dComboBox->currentIndex()).toString();
+    filterModel->setDeviceFilter(device);
+}
+
+void MainWindow::applyRoleFilter()
+{
+    QString role = ui->rComboBox->itemData(ui->rComboBox->currentIndex()).toString();
+    filterModel->setRoleFilter(role);
+}
+
+void MainWindow::applyCategoryFilter()
+{
+    QString category = ui->categoryComboBox->itemData(ui->categoryComboBox->currentIndex()).toString();
+    filterModel->setCategoryFilter(category);
 }
 
 void MainWindow::buildLayouts()
@@ -299,11 +441,14 @@ void MainWindow::showBasicPage()
 {
     ui->stackedWidget->setCurrentWidget(ui->pageBasic);
     scriptsModel->setViewMode(ViewModel::basicMode);
+    filterModel->setMode(ViewModel::basicMode);
+
 }
 
 void MainWindow::showCustomPage()
 {
     ui->stackedWidget->setCurrentWidget(ui->pageCustom);
     scriptsModel->setViewMode(ViewModel::customMode);
+    filterModel->setMode(ViewModel::customMode);
 }
 
