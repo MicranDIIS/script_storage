@@ -7,6 +7,7 @@
 #include <QVector>
 #include <QStandardItemModel>
 #include <QStringList>
+#include <QSettings>
 
 namespace Ui {
     class HistoryWindow;
@@ -30,7 +31,9 @@ private:
     void loadHistory();
     QStringList m_headers;
     QVector<CommitInfo> makeMockHistory() const;
-
+    QSettings settings;
+protected:
+    void closeEvent(QCloseEvent *event);
 };
 
 #endif // HISTORYWINDOW_H
