@@ -4,6 +4,51 @@
 #include <basedata.h>
 #include <stdio.h>
 #include <QDebug>
+#include <QSettings>
+#include <QFile>
+
+
+struct RepoConfig {
+    QString url;
+    QString branch;
+    QString username;
+    QString token;
+    QString path;
+};
+
+bool loadRepoConfig(RepoConfig &config) {
+    if (!QFile::exists("repository.ini")) {
+        qWarning() << "Р¤Р°Р№Р» repository.ini РЅРµ РЅР°Р№РґРµРЅ";
+        return false;
+    }
+
+    QSettings settings("repository.ini", QSettings::IniFormat);
+
+    config.url      = settings.value("Repository/url").toString();
+    config.branch   = settings.value("Repository/branch", "main").toString();
+    config.path     = settings.value("Repository/path").toString();
+    config.username = settings.value("Credentials/username").toString();
+    config.token    = settings.value("Credentials/token").toString();
+
+    if (config.url.isEmpty()) {
+        qWarning() << "РћС‚СЃСѓС‚СЃС‚РІСѓРµС‚ РїРѕР»Рµ: Repository/url";
+        return false;
+    }
+    if (config.path.isEmpty()) {
+        qWarning() << "РћС‚СЃСѓС‚СЃС‚РІСѓРµС‚ РїРѕР»Рµ: Repository/path";
+        return false;
+    }
+    if (config.username.isEmpty()) {
+        qWarning() << "РћС‚СЃСѓС‚СЃС‚РІСѓРµС‚ РїРѕР»Рµ: Credentials/username";
+        return false;
+    }
+    if (config.token.isEmpty()) {
+        qWarning() << "РћС‚СЃСѓС‚СЃС‚РІСѓРµС‚ РїРѕР»Рµ: Credentials/token";
+        return false;
+    }
+
+    return true;
+}
 
 int main(int argc, char *argv[])
 {
@@ -11,34 +56,31 @@ int main(int argc, char *argv[])
     setlocale(LC_ALL,"Russian");
     QCoreApplication a(argc, argv);
 
-    git_libgit2_init();
-    //клонируется наш репозиторий
-    const QString URL = "https://github.com/MicranDIIS/script_storage";
-    //path надо задать самому
-    const QString path = "";
-    //имя тоже самому
-    const QString username = "";
-    //токен тоже
-    const QString token = "";
-    if(repo_clone(URL,path,username,token) != 0){
-        printf("Не удалось клонировать репозиторий и обработчика ошибок еще нет\n . Но советую проверить аргументы ф-ии\n");
-    }else{
-        printf("Клонирование прошло успешно!\n");
+    RepoConfig config;
+    if (!loadRepoConfig(config)) {
+        qCritical() << "РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РєРѕРЅС„РёРі СЂРµРїРѕР·РёС‚РѕСЂРёСЏ";
+        return 1;
     }
 
-    const QString path_file = path + "\\text.txt";
-    //создаем новый файл в директории с гитом
+    git_libgit2_init();
+
+    if (repo_clone(config.url, config.path, config.username, config.token) != 0) {
+        printf("РќРµ СѓРґР°Р»РѕСЃСЊ РїРѕРґРєР»СЋС‡РёС‚СЊСЃСЏ Рє СЂРµРїРѕР·РёС‚РѕСЂРёСЋ\n");
+    } else {
+        printf("РџРѕРґРєР»СЋС‡РµРЅРёРµ РїСЂРѕС€Р»Рѕ СѓСЃРїРµС€РЅРѕ!\n");
+    }
+
+
+    const QString path_file = config.path + "\\text.txt";
     FILE *f = fopen(path_file.toUtf8().constData(),"w");
 
-    //новый обьект типа Repo который в конструкторе сразу наш репозиторий открывает
-    Repo rep = Repo(path);
+    Repo rep = Repo(config.path);
     QList<FileStatus> list = rep.status();
 
     if(list.isEmpty()){
-        printf("Все плохо и status не работает");
+        printf("РќРµС‚ С„Р°Р№Р»РѕРІ РІ status");
     }else{
-        //имена статуса всех каких-то не таких файлов. В нашем случае должно вывести text.txt
-        foreach(FileStatus value,list){
+        foreach(FileStatus value, list) {
             qDebug() << value.path_new;
         }
     }
