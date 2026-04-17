@@ -12,12 +12,16 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
     ui->setupUi(this);
 //    qDebug("layout ptr = %p", this->layout());
 
-    restoreGeometry(settings.value("historyWindowGeometry").toByteArray());
+    restoreGeometry(settings.value("HistoryWindow/Geometry").toByteArray());
 
     ui->HistoryTableView->setModel(m_historyModel);
+
     m_historyModel->setColumnCount(3);
     m_headers << "date" << "name" << "commit";
     m_historyModel->setHorizontalHeaderLabels(m_headers);
+
+    QByteArray state = settings.value("HistoryTableView/State").toByteArray();
+    ui->HistoryTableView->horizontalHeader()->restoreState(state);
 }
 
 HistoryWindow::~HistoryWindow()
@@ -87,6 +91,10 @@ QVector<CommitInfo> HistoryWindow::makeMockHistory() const
 
 void HistoryWindow::closeEvent(QCloseEvent *event)
 {
-    settings.setValue("historyWindowGeometry", saveGeometry());
+    settings.setValue("HistoryWindow/Geometry", saveGeometry());
+
+    QByteArray tableState = ui->HistoryTableView->horizontalHeader()->saveState();
+    settings.setValue("HistoryTableView/State", tableState);
+
     QWidget::closeEvent(event);
 }
