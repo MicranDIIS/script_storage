@@ -18,14 +18,14 @@ bool FileStatus::flag_check(STATUS_FLAG flag) const {
 
 Repo::Repo(const QString &path_,const QString &token_) : repo(NULL), path(path_), token(token_), error(""){
     if(path_.isEmpty()){
-        error = "плохой путь";
+        error = "РїР»РѕС…РѕР№ РїСѓС‚СЊ";
         return;
     }
 
     git_repository *r = NULL;
     QByteArray Qpath_ = path_.toUtf8();
     if(git_repository_open(&r,Qpath_.constData()) != 0){
-        error = "Репозиторий не открылся";
+        error = "вЂ“РµРїРѕР·РёС‚РѕСЂРёР№ РЅРµ РѕС‚РєСЂС‹Р»СЃВ¤";
     }else{
         repo = r;
     }

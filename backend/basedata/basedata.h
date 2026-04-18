@@ -7,14 +7,14 @@
 
 
 enum STATUS_FLAG{
-    STATUS_NEW_TO_HEAD     = 1 << 0, //íîâûé
-    STATUS_MODFILE_TO_HEAD = 1 << 1, //èçìåíåí
-    STATUS_DELETE_TO_HEAD  = 1 << 2, //óäàëåí
-    STATUS_RENAME_TO_HEAD  = 1 << 3, //ïåðåèìåíîâàí
-    STATUS_MODFILE_TO_DIR  = 1 << 4, //èçìåíåí â äèðåêòîðèè
-    STATUS_DELETE_TO_DIR   = 1 << 5, //óäàëåí â äèðåêòîðèè
-    STATUS_RENAME_TO_DIR   = 1 << 6, //ïåðåèìåíîâàí â äèðåêòîðèè
-    STATUS_NEW_TO_DIR      = 1 << 7  //íîâûé â äèðåêòîðèè
+    STATUS_NEW_TO_HEAD     = 1 << 0, //Ð½Ð¾Ð²Ñ‹Ð¹
+    STATUS_MODFILE_TO_HEAD = 1 << 1, //Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½
+    STATUS_DELETE_TO_HEAD  = 1 << 2, //ÑƒÐ´Ð°Ð»ÐµÐ½
+    STATUS_RENAME_TO_HEAD  = 1 << 3, //Ð¿ÐµÑ€ÐµÐ¸Ð¼ÐµÐ½Ð¾Ð²Ð°Ð½
+    STATUS_MODFILE_TO_DIR  = 1 << 4, //Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½ Ð² Ð´Ð¸Ñ€ÐµÐºÑ‚Ð¾Ñ€Ð¸Ð¸
+    STATUS_DELETE_TO_DIR   = 1 << 5, //ÑƒÐ´Ð°Ð»ÐµÐ½ Ð² Ð´Ð¸Ñ€ÐµÐºÑ‚Ð¾Ñ€Ð¸Ð¸
+    STATUS_RENAME_TO_DIR   = 1 << 6, //Ð¿ÐµÑ€ÐµÐ¸Ð¼ÐµÐ½Ð¾Ð²Ð°Ð½ Ð² Ð´Ð¸Ñ€ÐµÐºÑ‚Ð¾Ñ€Ð¸Ð¸
+    STATUS_NEW_TO_DIR      = 1 << 7  //Ð½Ð¾Ð²Ñ‹Ð¹ Ð² Ð´Ð¸Ñ€ÐµÐºÑ‚Ð¾Ñ€Ð¸Ð¸
 };
 
 class FileStatus{
@@ -23,9 +23,9 @@ class FileStatus{
         QString path_old;
         int flags;
     public:
-        //êîíñòðóêòîð
+        //ÐºÐ¾Ð½ÑÑ‚Ñ€ÑƒÐºÑ‚Ð¾Ñ€
         FileStatus(const QString &path_new_, const QString &path_old_, int flags_);
-        //ãåòòåðû
+        //Ð³ÐµÑ‚Ñ‚ÐµÑ€Ñ‹
         const QString& get_path_new(void)const;
         const QString& get_path_old(void)const;
         bool flag_check(STATUS_FLAG flag) const;
@@ -41,19 +41,19 @@ class Repo{
         explicit Repo(const QString &path,const QString &token_);
 
     public:
-        //äåêîíñòðóêòîð
+        //Ð´ÐµÐºÐ¾Ð½ÑÑ‚Ñ€ÑƒÐºÑ‚Ð¾Ñ€
         ~Repo(void);
 
-        //ãåòòåðû
+        //Ð³ÐµÑ‚Ñ‚ÐµÑ€Ñ‹
 
-        //âîçâðàùàåò ïóòü
+        //Ð²Ð¾Ð·Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ Ð¿ÑƒÑ‚ÑŒ
         const QString& get_path(void) const;
-        //âîçâðàùàåò îøèáêó
+        //Ð²Ð¾Ð·Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ Ð¾ÑˆÐ¸Ð±ÐºÑƒ
         const QString& get_error(void) const;
-        //âîçâðàùàåò òîêå
+        //Ð²Ð¾Ð·Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ Ñ‚Ð¾ÐºÐµ
         const QString& get_token(void) const;
 
-        //îñíîâíîå
+        //Ð¾ÑÐ½Ð¾Ð²Ð½Ð¾Ðµ
 
         static Repo clone(const QString &URL,const QString &path,const QString &username,const QString &token);
 
@@ -63,7 +63,7 @@ class Repo{
 
         int fetch(void);
 
-        //âñïîìîãàòåëüíûå ô-èè
+        //Ð²ÑÐ¿Ð¾Ð¼Ð¾Ð³Ð°Ñ‚ÐµÐ»ÑŒÐ½Ñ‹Ðµ Ñ„-Ð¸Ð¸
         static Repo open(const QString &path, const QString &token);
         bool valid(void)const;
 };
