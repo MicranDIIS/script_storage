@@ -17,7 +17,9 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
     ui->HistoryTableView->setModel(m_historyModel);
 
     m_historyModel->setColumnCount(3);
-    m_headers << "date" << "name" << "commit";
+    m_headers << QString::fromLocal8Bit("Дата")
+              << QString::fromLocal8Bit("Автор")
+              << QString::fromLocal8Bit("Сообщение коммита");
     m_historyModel->setHorizontalHeaderLabels(m_headers);
 
     QByteArray state = settings.value("HistoryTableView/State").toByteArray();

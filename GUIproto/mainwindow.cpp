@@ -350,7 +350,6 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
 
     HistoryWindow* w = new HistoryWindow();
     w->setAttribute(Qt::WA_DeleteOnClose);
-    w->setWindowTitle(tr("file history"));
     w->setFilePath(scriptPath);
     w->show();
     m_historyWindows.insert(key, w);
