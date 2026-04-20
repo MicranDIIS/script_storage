@@ -1,0 +1,12 @@
+#ifndef BASEDATA_GLOBAL_H
+#define BASEDATA_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(BASEDATA_LIBRARY)
+#  define BASEDATASHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define BASEDATASHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // BASEDATA_GLOBAL_H
