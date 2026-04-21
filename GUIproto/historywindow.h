@@ -8,6 +8,7 @@
 #include <QStandardItemModel>
 #include <QStringList>
 #include <QSettings>
+#include <QSortFilterProxyModel>
 
 namespace Ui {
     class HistoryWindow;
@@ -32,8 +33,18 @@ private:
     QStringList m_headers;
     QVector<CommitInfo> makeMockHistory() const;
     QSettings settings;
+    QSortFilterProxyModel* m_proxy;
+
+private slots:
+    void onSortChanged(int);
+
 protected:
     void closeEvent(QCloseEvent *event);
+    enum {
+        RoleCommitHash = Qt::UserRole + 1,
+        RoleDateTime = Qt::UserRole + 2
+    };
+
 };
 
 #endif // HISTORYWINDOW_H
