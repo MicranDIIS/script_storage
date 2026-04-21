@@ -4,6 +4,7 @@
 #include <QString>
 #include <QList>
 #include <QDateTime>
+#include <basedata.h>
 
 struct CommitInfo {
     QDateTime dateTime;
@@ -29,7 +30,7 @@ public:
 
     virtual bool pull(const RepoConfig &config) = 0;
 
-    virtual QList<FileStatus> getStatus(const QString &repoPath) = 0;
+    virtual QList<FileStatus> getStatus() = 0;
 
     virtual QList<CommitInfo> getFileHistory(const QString &filePath) = 0;
 };
