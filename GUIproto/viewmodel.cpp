@@ -1,4 +1,6 @@
 #include <viewmodel.h>
+#include <QBrush>
+#include <QColor>
 
 ViewModel::ViewModel (QObject *parent): QStandardItemModel(parent), viewMode(basicMode) {
     setColumnCount(ColumnCount);
@@ -43,6 +45,9 @@ void ViewModel::rebuildModel() {
         QList<QStandardItem*> row;
 
         QStandardItem *displayItem = new QStandardItem(info.displayName);
+        if (info.displayName.contains("[" + info.fileName + "]")) {
+            displayItem->setForeground(QBrush(QColor(220, 20, 60)));// выделяем скрипты с одинаковыми метаданными цветом
+        }
 
         QStandardItem *deviceItem = new QStandardItem();
         deviceItem->setData(info.devices, Qt::UserRole);

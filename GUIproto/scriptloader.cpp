@@ -97,7 +97,7 @@ QList<FindFileInfo> ScriptLoader::scanSourcesOne(QString& sourceFile, QString& r
 
         result.append(info);
     }
-
+    compareHeaderKey(result);
     return result;
 }
 
@@ -127,7 +127,63 @@ QString ScriptLoader::convertPath(QString& rawPath) {
     return resolved;
 }
 
-//метод отслеживания файлов с одинаковыми метаданными - они оба будут отображаться в  гуи, но сначала будет окно с предупреждением о дублировании
-//как идея потом добавить в отображение подсказку с уточняющими данными (название файла/путь)
+//нормализация шапки для дальнейшего сравнения
+QString ScriptLoader::makeHeaderKey(const FindFileInfo& info){
+    QStringList parts;
+    QMap<QString, QStringList>::const_iterator it;
+    for (it = info.headerField.constBegin(); it != info.headerField.constEnd(); ++it){
+        QString fieldName = it.key();
+        QStringList values = it.value();
+
+        QStringList headerKey;
+        for (int i = 0; i < values.size(); i++){
+            QString value = values.at(i);
+            if(!value.isEmpty()){
+                headerKey.append(value);
+            }
+        }
+        headerKey.sort();
+        parts.append(fieldName + "=" + headerKey.join(","));
+    }
+    parts.sort();
+    return parts.join("|");
+}
+
+//метод для нахождения дубликатов, для разных скриптов с одинаковыми шапками приписывается имя файла
+void ScriptLoader::compareHeaderKey(QList<FindFileInfo>& files){
+   QList<FindFileInfo> result;
+   QStringList addedScriptKey;
+
+   QMap<QString, QList<int> > headerIndex;
+   for(int i = 0; i < files.size(); i++){
+       QString headerKey = makeHeaderKey(files.at(i));
+       QString scriptKey = headerKey + "|file" + files.at(i).fileName;
+       if (addedScriptKey.contains(scriptKey)) {
+           qWarning() << "[ScriptLoader] duplicate script hidden:" << files.at(i).absolutePath;
+           continue;
+       }
+       addedScriptKey.append(scriptKey);
+
+       int newIndex = result.size();
+       result.append(files.at(i));
+
+       QList<int> indexes = headerIndex.value(headerKey);
+       indexes.append(newIndex);
+       headerIndex.insert(headerKey, indexes);
+   }
+   QMap<QString, QList<int> >::const_iterator it;
+   for (it = headerIndex.constBegin(); it != headerIndex.constEnd(); ++it){
+       QList<int> indexes = it.value();
+       if (indexes.size() < 2) {//повторений нет, так как файл такой один
+           continue;
+       }
+       for (int i = 0; i < indexes.size(); ++i) {
+           int index = indexes.at(i);
+           QString cleanDisplayName = result[index].displayName;
+           result[index].displayName = cleanDisplayName + " [" + result[index].fileName + "]";
+       }
+   }
+   files = result;
+}
 
 
