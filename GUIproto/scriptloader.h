@@ -41,6 +41,8 @@ public:
 
     bool configLoad(QString& path);
     bool headerLoad(QString& path);
+    QString makeHeaderKey(const FindFileInfo& info);
+    void compareHeaderKey(QList<FindFileInfo>& files);
 
 
 private:
