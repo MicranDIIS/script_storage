@@ -2,11 +2,11 @@
 #define VIEWMODEL_H
 
 #include "scriptloader.h"
-#include <QAbstractListModel>
+#include <QStandardItemModel>
 #include <QVariant>
 
 
-class ViewModel: public QAbstractListModel
+class ViewModel: public QStandardItemModel
 {
     Q_OBJECT
 
@@ -16,29 +16,30 @@ public:
         customMode
     };
 
-    enum CustomRoles { // пользовательские роли для комбобоксов
-        RoleRole = Qt::UserRole + 1,
-        DeviceRole,
-        StadeRole,
-        CategoryRole
+    enum Columns {
+        DisplayColumn = 0,
+        DeviceColumn,
+        RoleColumn,
+        StadeColumn,
+        CategoryColumn,
+        ColumnCount
+    };
+
+    enum CustomRoles{
+
     };
 
     explicit ViewModel(QObject *parent = 0);
 
-    int rowCount(const QModelIndex& parent = QModelIndex()) const;
-    QVariant data(const QModelIndex& index, int role) const;
-
     void setFiles(QList<FindFileInfo>& files);
     void setViewMode(ViewMode mode);
-    void clear();
 
 private:
 
     QList<FindFileInfo> allFiles;
-    QList<FindFileInfo> modeFiles;
     ViewMode viewMode;
 
-    void rebuildModeFiles();
+    void rebuildModel();
 };
 
 #endif // VIEWMODEL_H

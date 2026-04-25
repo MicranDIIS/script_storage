@@ -18,7 +18,8 @@ SOURCES += main.cpp\
     settingreader.cpp \
     headerparser.cpp \
     viewmodel.cpp \
-    scriptfiltermodel.cpp
+    scriptfiltermodel.cpp \
+    combofiltermodel.cpp
 
 HEADERS  += mainwindow.h \
     scriptwindow.h \
@@ -26,7 +27,8 @@ HEADERS  += mainwindow.h \
     settingreader.h \
     headerparser.h \
     viewmodel.h \
-    scriptfiltermodel.h
+    scriptfiltermodel.h \
+    combofiltermodel.h
 
 FORMS    += mainwindow.ui \
     scriptwindow.ui

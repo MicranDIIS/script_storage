@@ -190,6 +190,10 @@ void HeaderParser::validateHeader(FindFileInfo& info, HeaderRef& ref) {
             continue;
         }
 
+        if (fieldName == "devices" || fieldName == "stades") { // прибор и этап теперь не валидируются
+                    continue;
+        }
+
         QStringList allowed = ref.allowedValues.value(fieldName);
         for (int i = 0; i < values.size(); ++i) {
             QString value = values.at(i).trimmed();

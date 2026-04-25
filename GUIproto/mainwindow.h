@@ -6,6 +6,7 @@
 #include <QModelIndex>
 #include <QComboBox>
 #include "scriptfiltermodel.h"
+#include "combofiltermodel.h"
 
 namespace Ui {
     class MainWindow;
@@ -23,10 +24,15 @@ private:
     Ui::MainWindow *ui;
     ViewModel *scriptsModel;
     ScriptFilterModel *filterModel;
+    ComboFilterModel *deviceComboModel;
+    ComboFilterModel *roleComboModel;
+    ComboFilterModel *stadeComboModel;
+    ComboFilterModel *categoryComboModel;
 
     void buildLayouts();
     void loadScripts();
-    void fillComboBox(QComboBox *comboBox, const QList<FindFileInfo>& files, const QString& fieldName,bool translateValues);
+    void resetComboBoxes();
+    void resetFilterState();
 
 private slots:
     void showBasicPage();

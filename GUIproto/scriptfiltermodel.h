@@ -18,10 +18,10 @@ public:
      void setStadeFilter(const QString& stade);
      void setCategoryFilter(const QString& category);
      void setRoleFilter(const QString& role);
-     void resetAllFilters();
+     void resetScriptFilters();
 
 protected:
-     bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const;
+     bool filterAcceptsRow(int source_row, const QModelIndex& source_parent) const;
 private:
      ViewModel::ViewMode currentMode;
 
@@ -30,6 +30,7 @@ private:
      QString stadeFilter;
      QString categoryFilter;
      QString roleFilter;
+     bool containsText(int row, int column, const QModelIndex& parent, const QString& value) const;
 };
 
 #endif // SCRIPTFILTERMODEL_H
