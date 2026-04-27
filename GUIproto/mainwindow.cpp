@@ -196,8 +196,8 @@ void MainWindow::resetFilterState() {
     resetComboBoxes();
 }
 
-void MainWindow::applyTextSearch(const QString& text)
-{
+void MainWindow::applyTextSearch(const QString& text){
+
     ui->categoryComboBox->blockSignals(true);
     ui->categoryComboBox->setCurrentIndex(0);
     ui->categoryComboBox->blockSignals(false);
@@ -214,28 +214,67 @@ void MainWindow::applyStadeFilter()
 }
 
 void MainWindow::applyDeviceFilter() {
+
     QString device = ui->dComboBox->currentText();
+    QString oldRole;
+    if (ui->rComboBox->currentIndex() >= 0) {
+        oldRole = ui->rComboBox->itemData(ui->rComboBox->currentIndex(), Qt::UserRole).toString();
+    }
+
+    QString oldStade = ui->sComboBox->currentText();
     filterModel->setDeviceFilter(device);
     roleComboModel->setFilter(ViewModel::DeviceColumn, device);
+
+    int roleIndex = ui->rComboBox->findData(oldRole, Qt::UserRole);
+    if (roleIndex >= 0) {
+        ui->rComboBox->setCurrentIndex(roleIndex);
+    } else {
+        ui->rComboBox->setCurrentIndex(0);
+        oldRole.clear();
+    }
+
+    stadeComboModel->clearFilters();
     stadeComboModel->setFilter(ViewModel::DeviceColumn, device);
 
-    ui->rComboBox->setCurrentIndex(0);
-    ui->sComboBox->setCurrentIndex(0);
+    if (!oldRole.isEmpty() && oldRole != QString::fromUtf8("Все")) {
+        stadeComboModel->setFilter(ViewModel::RoleColumn, oldRole);
+    }
+
+    int stadeIndex = ui->sComboBox->findText(oldStade);
+    if (stadeIndex >= 0) {
+        ui->sComboBox->setCurrentIndex(stadeIndex);
+    } else {
+        ui->sComboBox->setCurrentIndex(0);
+    }
 }
 
-void MainWindow::applyRoleFilter() {
+void MainWindow::applyRoleFilter(){
+
     QString role;
+
     if (ui->rComboBox->currentIndex() >= 0) {
-       role = ui->rComboBox->itemData(ui->rComboBox->currentIndex(),Qt::UserRole).toString();
+        role = ui->rComboBox->itemData(ui->rComboBox->currentIndex(), Qt::UserRole).toString();
     }
+    QString oldStade = ui->sComboBox->currentText();
     filterModel->setRoleFilter(role);
-    stadeComboModel->clearFilters();
+
     QString device = ui->dComboBox->currentText();
+    stadeComboModel->clearFilters();
 
-    stadeComboModel->setFilter(ViewModel::DeviceColumn, device);
-    stadeComboModel->setFilter(ViewModel::RoleColumn, role);
+    if (!device.isEmpty()) {
+        stadeComboModel->setFilter(ViewModel::DeviceColumn, device);
+    }
 
-    ui->sComboBox->setCurrentIndex(0);
+    if (!role.isEmpty()) {
+        stadeComboModel->setFilter(ViewModel::RoleColumn, role);
+    }
+
+    int stadeIndex = ui->sComboBox->findText(oldStade);
+    if (stadeIndex >= 0) {
+        ui->sComboBox->setCurrentIndex(stadeIndex);
+    } else {
+        ui->sComboBox->setCurrentIndex(0);
+    }
 }
 
 void MainWindow::applyCategoryFilter() {
