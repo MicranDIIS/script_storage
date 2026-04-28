@@ -75,10 +75,11 @@ void HistoryWindow::loadHistory()
 
         QStandardItem *dateItem = new QStandardItem(dateStr);
         QStandardItem *authorItem = new QStandardItem(c.author);
-        QStandardItem *msgItem = new QStandardItem(c.commitMessage);
+        QStandardItem *msgItem = new QStandardItem(getSummaryString(c.commitMessage));
 
         dateItem->setData(c.commitHash, RoleCommitHash);
         dateItem->setData(c.dateTime, RoleDateTime);
+        msgItem->setData(c.commitMessage, RoleCommitMessage);
 
         QList<QStandardItem*> row;
         row << dateItem << authorItem << msgItem;
@@ -115,6 +116,18 @@ QVector<CommitInfo> HistoryWindow::makeMockHistory() const
     c.commitMessage = "";
     c.commitHash = "d4e7y6a";
     mockHistory.append(c);
+
+    CommitInfo d;
+    d.dateTime = QDateTime::currentDateTime().addDays(-3);
+    d.author = "Anton";
+    d.authorEmail = "khrenkov@gmail.com";
+    d.commitMessage = QString::fromUtf8("Добавил первичную прибавку к мощности генератора\n"
+            "Определение и прибавка к мощности генератора осуществляется с\n"
+            "целью более быстрого поиска необходимого уровня мощности.\n"
+            "modified: scripts/sk4m/sk4m-50/PSI/50__9_9.lua");
+    d.commitHash = "d7h7y6a";
+    mockHistory.append(d);
+
 
     return mockHistory;
 }
@@ -167,7 +180,7 @@ void HistoryWindow::updateCommitMessagePanel(const QModelIndex &indexInRow)
         return;
     }
 
-    QString text = messageIndex.data(Qt::DisplayRole).toString();
+    QString text = messageIndex.data(RoleCommitMessage).toString();
     ui->CommitMessageTextEdit->setPlainText(text);
 }
 
@@ -178,5 +191,21 @@ void HistoryWindow::clearCommitMessagePanel()
 
 QString HistoryWindow::getSummaryString(const QString& fullMessage) const
 {
+    QString string = fullMessage;
 
+    string.replace("\r\n", "\n");
+    string.replace("\r", "\n");
+
+    QStringList lines = string.split("\n");
+
+    for (int i = 0; i < lines.size(); i++)
+    {
+        QString line = lines[i].trimmed();
+
+        if (!line.isEmpty())
+        {
+            return line;
+        }
+    }
+    return trUtf8("Сообщение коммита было пустым(");
 }

@@ -48,7 +48,8 @@ protected:
     void closeEvent(QCloseEvent *event);
     enum {
         RoleCommitHash = Qt::UserRole + 1,
-        RoleDateTime = Qt::UserRole + 2
+        RoleDateTime = Qt::UserRole + 2,
+        RoleCommitMessage = Qt::UserRole + 3
     };
 
 };
