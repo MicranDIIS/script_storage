@@ -67,6 +67,10 @@ void ViewModel::rebuildModel() {
         row.append(stadeItem);
         row.append(categoryItem);
         appendRow(row);
+
+        for (int j = 0; j < row.size(); j++){
+            row[j]->setEditable(false);
+        }
     }
 }
 
