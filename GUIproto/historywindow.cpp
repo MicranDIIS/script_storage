@@ -10,6 +10,7 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
     m_historyModel(new QStandardItemModel(this))
 {
     ui->setupUi(this);
+
 //    qDebug("layout ptr = %p", this->layout());
 
     restoreGeometry(settings.value("HistoryWindow/Geometry").toByteArray());
@@ -35,6 +36,12 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
 
     connect(ui->FilterComboBox, SIGNAL(currentIndexChanged(int)),
             this, SLOT(onSortChanged(int)));
+
+    ui->HistoryTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->HistoryTableView->setSelectionMode(QAbstractItemView::SingleSelection);
+
+    connect(ui->HistoryTableView->selectionModel(), SIGNAL(currentRowChanged(QModelIndex, QModelIndex)),
+            this,SLOT(onCurrentRowChanged(QModelIndex)));
 
 }
 
@@ -101,6 +108,14 @@ QVector<CommitInfo> HistoryWindow::makeMockHistory() const
     b.commitHash = "d4e5f6a";
     mockHistory.append(b);
 
+    CommitInfo c;
+    c.dateTime = QDateTime::currentDateTime().addDays(-3);
+    c.author = "Vasya";
+    c.authorEmail = "kd@gmail.com";
+    c.commitMessage = "";
+    c.commitHash = "d4e7y6a";
+    mockHistory.append(c);
+
     return mockHistory;
 }
 
@@ -122,5 +137,46 @@ void HistoryWindow::onSortChanged(int index)
         order = Qt::AscendingOrder;
     }
     m_proxy->sort(0, order);
+
+}
+// CommitMessageTextEdit
+void HistoryWindow::onCurrentRowChanged(const QModelIndex& current)
+{
+    if (!current.isValid())
+    {
+        clearCommitMessagePanel();
+        return;
+    }
+
+    updateCommitMessagePanel(current);
+}
+
+void HistoryWindow::updateCommitMessagePanel(const QModelIndex &indexInRow)
+{
+    if (!indexInRow.isValid())
+    {
+        clearCommitMessagePanel();
+        return;
+    }
+
+    QModelIndex messageIndex = indexInRow.sibling(indexInRow.row(), 2);
+
+    if (!messageIndex.isValid())
+    {
+        clearCommitMessagePanel();
+        return;
+    }
+
+    QString text = messageIndex.data(Qt::DisplayRole).toString();
+    ui->CommitMessageTextEdit->setPlainText(text);
+}
+
+void HistoryWindow::clearCommitMessagePanel()
+{
+    ui->CommitMessageTextEdit->clear();
+}
+
+QString HistoryWindow::getSummaryString(const QString& fullMessage) const
+{
 
 }

@@ -34,9 +34,15 @@ private:
     QVector<CommitInfo> makeMockHistory() const;
     QSettings settings;
     QSortFilterProxyModel* m_proxy;
+    void onCommitRowClicked(const QModelIndex& index);
+    void updateCommitMessagePanel(const QModelIndex &indexInRow);
+    void clearCommitMessagePanel();
+    QString getSummaryString(const QString& fullMessage) const;
+
 
 private slots:
     void onSortChanged(int);
+    void onCurrentRowChanged(const QModelIndex &current);
 
 protected:
     void closeEvent(QCloseEvent *event);
