@@ -35,7 +35,11 @@ QList<FileStatus> Repo::status() const {
             continue;
         }
 
+<<<<<<< HEAD
         //â HEAD
+=======
+        //Ğ² HEAD
+>>>>>>> origin/feat/33-git-reset
         if(entry -> head_to_index){
             if(entry -> status & GIT_STATUS_INDEX_NEW){
                 file_path_new = QString(entry -> head_to_index -> new_file.path);
@@ -92,3 +96,43 @@ QList<FileStatus> Repo::status() const {
 
     return list;
 }
+<<<<<<< HEAD
+=======
+
+int Repo::reset(void){
+    git_repository *repo = NULL;
+    git_object *head_commit = NULL;
+    git_checkout_options checopt = GIT_CHECKOUT_OPTIONS_INIT;
+
+    QByteArray path_ = path.toUtf8();
+    if(git_repository_open(&repo,path_.constData()) != 0){
+        return -1;
+    }
+
+    if(git_revparse_single(&head_commit,repo,"HEAD") != 0){
+        git_repository_free(repo);
+        git_object_free(head_commit);
+        return -1;
+    }
+
+    checopt.checkout_strategy = GIT_CHECKOUT_FORCE;
+
+    if(git_reset(repo,head_commit,GIT_RESET_HARD,&checopt) != 0){
+        git_repository_free(repo);
+        git_object_free(head_commit);
+        return -1;
+    }
+
+    checopt.checkout_strategy = GIT_CHECKOUT_FORCE | GIT_CHECKOUT_REMOVE_UNTRACKED;
+
+    if(git_checkout_index(repo,NULL,&checopt) != 0){
+        git_repository_free(repo);
+        git_object_free(head_commit);
+        return -1;
+    }
+
+    git_repository_free(repo);
+    git_object_free(head_commit);
+    return 0;
+}
+>>>>>>> origin/feat/33-git-reset

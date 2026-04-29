@@ -63,7 +63,16 @@ class Repo{
 
         int fetch(void);
 
+<<<<<<< HEAD
         //вспомогательные ф-ии
+=======
+        int status(void);
+
+        int reset(void);
+
+        //вспомогательные ф-ии
+        static int init(const QString &path);
+>>>>>>> origin/feat/33-git-reset
         static Repo open(const QString &path, const QString &token);
         bool valid(void)const;
 };

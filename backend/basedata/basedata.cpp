@@ -35,6 +35,23 @@ Repo Repo::open(const QString &path, const QString &token){
     return Repo(path,token);
 }
 
+<<<<<<< HEAD
+=======
+int Repo::init(const QString &path){
+    if(path.isEmpty()){
+        return -1;
+    }
+
+    git_repository *repo = NULL;
+    QByteArray path_ = path.toUtf8();
+    if(git_repository_init(&repo,path_.constData(),0) != -1){
+        return true;
+    }
+
+    return 0;
+}
+
+>>>>>>> origin/feat/33-git-reset
 Repo::~Repo(void){
     git_repository_free(repo);
 }
