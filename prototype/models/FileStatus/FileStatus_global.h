@@ -1,0 +1,12 @@
+#ifndef FILESTATUS_GLOBAL_H
+#define FILESTATUS_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(FILESTATUS_LIBRARY)
+#  define FILESTATUSSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define FILESTATUSSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // FILESTATUS_GLOBAL_H
