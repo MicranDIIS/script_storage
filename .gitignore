@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 # Prerequisites
 *.d
 
@@ -22,7 +20,6 @@
 # Compiled Dynamic libraries
 *.so
 *.dylib
->>>>>>> origin/feat/33-git-reset
 
 # Fortran module files
 *.mod

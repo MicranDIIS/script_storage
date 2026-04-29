@@ -1,32 +1,26 @@
-#-------------------------------------------------
-#
-# Project created by QtCreator 2026-04-14T14:16:41
-#
-#-------------------------------------------------
-
-QT       += core
-
-QT       -= gui
-
-TARGET = main
-CONFIG   += console
-CONFIG   -= app_bundle
-
 TEMPLATE = app
+TARGET = main
+QT += core
+QT -= gui
 
+CONFIG += console  # ← ЭТО КЛЮЧЕВОЕ
 
-SOURCES += main.cpp
-
-win32: LIBS += -L$$PWD/../libgit2 -lgit2
+# Пути к заголовкам
+INCLUDEPATH += $$PWD/../include/MGit
 INCLUDEPATH += $$PWD/../libgit2/include
 
-INCLUDEPATH += $$PWD/../basedata
-SOURCES += $$PWD/../basedata/basedata.cpp
+# Исходники
+SOURCES += main.cpp \
+            $$PWD/../src/local/local.cpp \
+            $$PWD/../src/network/network.cpp \
+           $$PWD/../src/Repository/repository.cpp
 
-INCLUDEPATH += $$PWD/../network
-SOURCES += $$PWD/../network/network.cpp
+# Заголовки
+HEADERS += $$PWD/../include/MGit/mgit.h \
+           $$PWD/../src/Repository/repository.h
 
-INCLUDEPATH += $$PWD/../local
-SOURCES += $$PWD/../local/local.cpp
+# Путь к libgit2.dll и линковка
+win32: LIBS += -L$$PWD/../libgit2 -lgit2
+
 
 
