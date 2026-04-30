@@ -78,26 +78,6 @@
           <string>название скрипта</string>
          </property>
         </widget>
-        <widget class="QComboBox" name="FilterComboBox">
-         <property name="geometry">
-          <rect>
-           <x>230</x>
-           <y>20</y>
-           <width>121</width>
-           <height>22</height>
-          </rect>
-         </property>
-         <item>
-          <property name="text">
-           <string>Сначала новые</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Сначала старые</string>
-          </property>
-         </item>
-        </widget>
         <widget class="QLabel" name="ScriptNameLabel_2">
          <property name="geometry">
           <rect>

@@ -34,8 +34,8 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
     QByteArray state = settings.value("HistoryTableView/State").toByteArray();
     ui->HistoryTableView->horizontalHeader()->restoreState(state);
 
-    connect(ui->FilterComboBox, SIGNAL(currentIndexChanged(int)),
-            this, SLOT(onSortChanged(int)));
+//    connect(ui->FilterComboBox, SIGNAL(currentIndexChanged(int)),
+//            this, SLOT(onSortChanged(int)));
 
     ui->HistoryTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->HistoryTableView->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -75,7 +75,13 @@ void HistoryWindow::loadHistory()
 
         QStandardItem *dateItem = new QStandardItem(dateStr);
         QStandardItem *authorItem = new QStandardItem(c.author);
+
         QStandardItem *msgItem = new QStandardItem(getSummaryString(c.commitMessage));
+
+        if (c.commitMessage.trimmed().isEmpty())
+        {
+            msgItem->setForeground(QBrush(Qt::gray));
+        }
 
         dateItem->setData(c.commitHash, RoleCommitHash);
         dateItem->setData(c.dateTime, RoleDateTime);
@@ -208,4 +214,9 @@ QString HistoryWindow::getSummaryString(const QString& fullMessage) const
         }
     }
     return trUtf8("Сообщение коммита было пустым(");
+}
+
+void changeCellColor(const QString &string)
+{
+
 }
