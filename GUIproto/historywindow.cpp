@@ -33,8 +33,8 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
     QByteArray state = settings.value("HistoryTableView/State").toByteArray();
     ui->HistoryTableView->horizontalHeader()->restoreState(state);
 
-    connect(ui->FilterComboBox, SIGNAL(currentIndexChanged(int)),
-            this, SLOT(onSortChanged(int)));
+//    connect(ui->FilterComboBox, SIGNAL(currentIndexChanged(int)),
+//            this, SLOT(onSortChanged(int)));
 
 }
 
