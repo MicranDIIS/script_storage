@@ -38,6 +38,7 @@ private:
     void updateCommitMessagePanel(const QModelIndex &indexInRow);
     void clearCommitMessagePanel();
     QString getSummaryString(const QString& fullMessage) const;
+    QString getBodyString(const QString& fullMessage) const;
 
 
 private slots:
