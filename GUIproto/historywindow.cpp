@@ -158,7 +158,7 @@ void HistoryWindow::onSortChanged(int index)
     m_proxy->sort(0, order);
 
 }
-// CommitMessageTextEdit
+
 void HistoryWindow::onCurrentRowChanged(const QModelIndex& current)
 {
     if (!current.isValid())
@@ -207,10 +207,6 @@ void HistoryWindow::updateCommitMessagePanel(const QModelIndex &indexInRow)
         cursor.insertBlock();
         cursor.insertText(body, normalFormat);
     }
-
-
-//    QString text = messageIndex.data(RoleCommitMessage).toString();
-//    ui->CommitMessageTextEdit->setPlainText(text);
 }
 
 void HistoryWindow::clearCommitMessagePanel()
