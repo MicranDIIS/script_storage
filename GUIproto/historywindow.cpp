@@ -14,16 +14,28 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
 
     restoreGeometry(settings.value("HistoryWindow/Geometry").toByteArray());
 
-    ui->HistoryTableView->setModel(m_historyModel);
+    m_proxy = new QSortFilterProxyModel(this);
+
+    m_proxy->setSourceModel(m_historyModel);
+    m_proxy->setSortRole(RoleDateTime);
+    m_proxy->setDynamicSortFilter(true);
+
+    ui->HistoryTableView->setModel(m_proxy);
+    ui->HistoryTableView->setSortingEnabled(true);
+    m_proxy->sort(0, Qt::DescendingOrder);
 
     m_historyModel->setColumnCount(3);
-    m_headers << QString::fromLocal8Bit("Äàòà")
-              << QString::fromLocal8Bit("Àâòîð")
-              << QString::fromLocal8Bit("Ñîîáùåíèå êîììèòà");
+    m_headers << trUtf8("Ð”Ð°Ñ‚Ð°")
+              << trUtf8("ÐÐ²Ñ‚Ð¾Ñ€")
+              << trUtf8("Ð¡Ð¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ ÐºÐ¾Ð¼Ð¼Ð¸Ñ‚Ð°");
     m_historyModel->setHorizontalHeaderLabels(m_headers);
 
     QByteArray state = settings.value("HistoryTableView/State").toByteArray();
     ui->HistoryTableView->horizontalHeader()->restoreState(state);
+
+//    connect(ui->FilterComboBox, SIGNAL(currentIndexChanged(int)),
+//            this, SLOT(onSortChanged(int)));
+
 }
 
 HistoryWindow::~HistoryWindow()
@@ -58,14 +70,15 @@ void HistoryWindow::loadHistory()
         QStandardItem *authorItem = new QStandardItem(c.author);
         QStandardItem *msgItem = new QStandardItem(c.commitMessage);
 
-        dateItem->setData(c.commitHash, Qt::UserRole);
+        dateItem->setData(c.commitHash, RoleCommitHash);
+        dateItem->setData(c.dateTime, RoleDateTime);
 
         QList<QStandardItem*> row;
         row << dateItem << authorItem << msgItem;
 
         m_historyModel->appendRow(row);
     }
-
+    m_proxy->sort(0, m_proxy->sortOrder());
 }
 
 QVector<CommitInfo> HistoryWindow::makeMockHistory() const
@@ -99,4 +112,15 @@ void HistoryWindow::closeEvent(QCloseEvent *event)
     settings.setValue("HistoryTableView/State", tableState);
 
     QWidget::closeEvent(event);
+}
+
+void HistoryWindow::onSortChanged(int index)
+{
+    Qt::SortOrder order = Qt::DescendingOrder;
+    if (index == 1)
+    {
+        order = Qt::AscendingOrder;
+    }
+    m_proxy->sort(0, order);
+
 }
