@@ -1,8 +1,8 @@
 #include "repository.h"
 
 
-IRepository* createRepository(){
-    return new Repository();
+IRepository* createRepository(const RepoConfig& cfg_){
+    return new Repository(cfg_);
 }
 
 void deleteRepository(IRepository *repo){

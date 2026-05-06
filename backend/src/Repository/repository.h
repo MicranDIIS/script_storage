@@ -8,33 +8,29 @@
 class Repository : public IRepository{
 private:
     git_repository *repo;
-    QString path;
-    QString token;
-public:
-    Repository() : repo(NULL), path(""), token("") {}
-    ~Repository(){
-        if(repo != NULL){
-            git_repository_free(repo);
-            repo = NULL;
-        }
-    }
-
-    const QString& getPath() const {return path;}
+    RepoConfig cfg;
     
-    Gerror open(const QString& path_);
+    //ф-ии которые не нужны фронту, но нужны для логики бэкэнда
+    Gerror fetch();
+public:
+    Repository(const RepoConfig& cfg_) : repo(NULL), cfg(cfg_) {}
+    ~Repository(){if(repo != NULL){git_repository_free(repo);repo = NULL;}}
 
-    void setToken(const QString& token_){token = token_;};
+    const QString& getUrl() const {return cfg.url;}
+    const QString& getBranch() const {return cfg.branch;}
+    const QString& getPath() const {return cfg.path;}
+    const QString& getUsername() const {return cfg.username;}
+    const QString& getToken() const {return cfg.token;}
 
+    Gerror open();
 
-    Gerror gitClone(const QString& URL, const QString& username);
-    Gerror gitFetch(const QString& username);
-    Gerror gitPull();
+    Gerror clone();
+    Gerror sync();
 
-    Gerror gitReset();
-    Gerror gitStatus(QList<FileStatus>& list) const;
-    Gerror gitLog(QList<CommitInfo>& list)const;
+    Gerror reset();
+    Gerror status(QList<FileStatus>& list) const;
+    Gerror log(QList<CommitInfo>& list)const;
 
-    bool isPathEmpty() const {return path.isEmpty();}
     bool hasRepo() const {return repo != NULL;}
 };
 

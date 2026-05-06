@@ -15,6 +15,14 @@ struct Gerror{
     Gerror(const QString& msg_) : succses(false) , msg(msg_) {}
 };
 
+struct RepoConfig{
+    QString url;
+    QString branch;
+    QString path;
+    QString username;
+    QString token;
+};
+
 //для git status
 enum STATUS_FLAG{
     STATUS_NEW_TO_HEAD     = 1 << 0, //новый
@@ -65,28 +73,28 @@ class IRepository{
 public:
     virtual ~IRepository() {}
 
+    virtual const QString& getUrl() const = 0;
+    virtual const QString& getBranch() const = 0;
     virtual const QString& getPath() const = 0;
-    
-    virtual void setToken(const QString& token_) = 0;
+    virtual const QString& getUsername() const = 0;
+    virtual const QString& getToken() const = 0;
 
-    virtual Gerror open(const QString& path_) = 0;
+    virtual Gerror open() = 0;
 
-    virtual Gerror gitClone(const QString& URL, const QString& username) = 0;
-    virtual Gerror gitFetch(const QString& username) = 0;
-    virtual Gerror gitPull() = 0;
+    virtual Gerror clone() = 0;
+    virtual Gerror sync() = 0;
 
-    virtual Gerror gitReset() = 0;
-    virtual Gerror gitStatus(QList<FileStatus>& list) const = 0;
-    virtual Gerror gitLog(QList<CommitInfo>& list) const = 0;
+    virtual Gerror reset() = 0;
+    virtual Gerror status(QList<FileStatus>& list) const = 0;
+    virtual Gerror log(QList<CommitInfo>& list) const = 0;
 
-    virtual bool isPathEmpty() const = 0;
     virtual bool hasRepo() const = 0;
 
 };
 
 //фабричные ф-ии
-IRepository* createRepository();
-void deleteRepository(IRepository *repo);
+IRepository* createRepository(const RepoConfig& cfg_);
+void deleteRepository(IRepository* repo);
 
 //запуск libgit2 через эти ф-ии производится. Просто что бы не тыкать libgit2 напрямую
 void mgit_init();
