@@ -34,15 +34,23 @@ private:
     QVector<CommitInfo> makeMockHistory() const;
     QSettings settings;
     QSortFilterProxyModel* m_proxy;
+    void onCommitRowClicked(const QModelIndex& index);
+    void updateCommitMessagePanel(const QModelIndex &indexInRow);
+    void clearCommitMessagePanel();
+    QString getSummaryString(const QString& fullMessage) const;
+    QString getBodyString(const QString& fullMessage) const;
+
 
 private slots:
     void onSortChanged(int);
+    void onCurrentRowChanged(const QModelIndex &current);
 
 protected:
     void closeEvent(QCloseEvent *event);
     enum {
         RoleCommitHash = Qt::UserRole + 1,
-        RoleDateTime = Qt::UserRole + 2
+        RoleDateTime = Qt::UserRole + 2,
+        RoleCommitMessage = Qt::UserRole + 3
     };
 
 };
