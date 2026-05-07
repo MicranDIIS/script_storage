@@ -21,7 +21,9 @@ SOURCES += main.cpp\
     headerparser.cpp \
     viewmodel.cpp \
     scriptfiltermodel.cpp \
-    combofiltermodel.cpp
+    combofiltermodel.cpp \
+    historywindow.cpp
+
 
 HEADERS  += mainwindow.h \
     scriptwindow.h \
@@ -32,9 +34,11 @@ HEADERS  += mainwindow.h \
     headerparser.h \
     viewmodel.h \
     scriptfiltermodel.h \
-    combofiltermodel.h
-
+    combofiltermodel.h \
+    historywindow.h \
+    commitinfo.h
 
 FORMS    += mainwindow.ui \
     scriptwindow.ui \
-    diffviewerwindow.ui
+    diffviewerwindow.ui \
+    historywindow.ui

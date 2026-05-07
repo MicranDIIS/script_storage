@@ -3,6 +3,7 @@
 #include "scriptloader.h"
 
 #include "diffviewerwindow.h"
+#include "historywindow.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -84,9 +85,19 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->radioBasic, SIGNAL(clicked()), this, SLOT(showBasicPage()));
     connect(ui->radioCustom, SIGNAL(clicked()), this, SLOT(showCustomPage()));
 
+
+//    ui->listViewCustom->setContextMenuPolicy(Qt::CustomContextMenu);
+//    connect(ui->listViewCustom, SIGNAL(customContextMenuRequested(const QPoint &)),
+//            this, SLOT(showContextMenu(const QPoint &)));
+
+    //?
     ui->listViewCustom->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->listViewCustom, SIGNAL(customContextMenuRequested(const QPoint &)),
-            this, SLOT(showContextMenu(const QPoint &)));
+            this, SLOT(showCustomContextMenu(const QPoint &)));
+
+    ui->listViewBasic->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->listViewBasic, SIGNAL(customContextMenuRequested(const QPoint &)),
+            this, SLOT(showBasicContextMenu(const QPoint &)));
 }
 
 MainWindow::~MainWindow()
@@ -152,7 +163,7 @@ void MainWindow::openSelectedScript()
     if (!index.isValid())
         return;
 
-    QString scriptPath = index.data(Qt::UserRole).toString();
+    QString scriptPath = index.data(ViewModel::FilePathRole).toString();
     if (scriptPath.isEmpty())
         return;
 
@@ -494,7 +505,7 @@ void MainWindow::showCustomPage()
 
 }
 
-void MainWindow::showContextMenu(const QPoint& pos)
+void MainWindow::showCustomContextMenu(const QPoint& pos)
 {
 //    qDebug() << "showContextMenu called, pos =" << pos;
 
@@ -530,4 +541,56 @@ void MainWindow::openDiffForIndex(const QModelIndex &index)
     diffWindow->setWindowTitle(tr("changes"));
     diffWindow->setFilePath(scriptPath);
     diffWindow->show();
+}
+
+void MainWindow::showBasicContextMenu(const QPoint& pos)
+{
+    QModelIndex index = ui->listViewBasic->indexAt(pos);
+    if (!index.isValid()) return;
+
+    QMenu contextMenu(this);
+    QAction* openHistoryAction = contextMenu.addAction(tr("show history"));
+
+    QPoint globalPos = ui->listViewBasic->viewport()->mapToGlobal(pos);
+    QAction *selectedAction = contextMenu.exec(globalPos);
+
+    if (selectedAction == openHistoryAction)
+    {
+        openHistoryForIndex(index);
+    }
+}
+
+void MainWindow::openHistoryForIndex(const QModelIndex &index)
+{
+    QString scriptPath = index.data(ViewModel::FilePathRole).toString();
+    if (scriptPath.isEmpty())
+        return;
+
+    QString key = QFileInfo(scriptPath).absoluteFilePath();
+
+    if (m_historyWindows.contains(key))
+    {
+        HistoryWindow* w = m_historyWindows.value(key);
+        w->show();
+        w->raise();
+        w->activateWindow();
+        return;
+    }
+
+    HistoryWindow* w = new HistoryWindow();
+    w->setAttribute(Qt::WA_DeleteOnClose);
+    w->setFilePath(scriptPath);
+    w->show();
+    m_historyWindows.insert(key, w);
+
+    w->setProperty("historyKey", key);
+
+    connect(w, SIGNAL(destroyed(QObject*)),
+            this, SLOT(onHistoryWindowDestroyed(QObject*)));
+}
+
+void MainWindow::onHistoryWindowDestroyed(QObject* obj)
+{
+    QString key = obj->property("historyKey").toString();
+    m_historyWindows.remove(key); // needs further testing
 }
