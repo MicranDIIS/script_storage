@@ -3,8 +3,10 @@
 
 #include <QMainWindow>
 #include <QString>
-#include <QStandardItemModel>
 #include <QModelIndex>
+#include <QComboBox>
+#include "scriptfiltermodel.h"
+#include "combofiltermodel.h"
 
 namespace Ui {
     class MainWindow;
@@ -20,12 +22,18 @@ public:
 
 private:
     Ui::MainWindow *ui;
-    QStandardItemModel *scriptsModel;
+    ViewModel *scriptsModel;
+    ScriptFilterModel *filterModel;
+    ComboFilterModel *deviceComboModel;
+    ComboFilterModel *roleComboModel;
+    ComboFilterModel *stadeComboModel;
+    ComboFilterModel *categoryComboModel;
 
     void buildLayouts();
     void loadScripts();
     void openDiffForIndex(const QModelIndex &index);
-
+    void resetComboBoxes();
+    void resetFilterState();
 
 
 private slots:
@@ -34,6 +42,11 @@ private slots:
     void handleScriptDoubleClick(const QModelIndex &index);
     void openSelectedScript();
     void showContextMenu(const QPoint& pos);
+    void applyStadeFilter();
+    void applyDeviceFilter();
+    void applyRoleFilter();
+    void applyCategoryFilter();
+    void applyTextSearch(const QString& text);
 };
 
 #endif // MAINWINDOW_H

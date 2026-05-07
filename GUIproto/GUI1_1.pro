@@ -6,7 +6,7 @@
 
 QT       += core gui
 
-TARGET = GUI1_1
+TARGET = GUI
 TEMPLATE = app
 
 INCLUDEPATH += ../SE2/include
@@ -15,12 +15,25 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     scriptwindow.cpp \
     diffviewerwindow.cpp \
-    diffviewhighlighter.cpp
+    diffviewhighlighter.cpp \
+    scriptloader.cpp \
+    settingreader.cpp \
+    headerparser.cpp \
+    viewmodel.cpp \
+    scriptfiltermodel.cpp \
+    combofiltermodel.cpp
 
 HEADERS  += mainwindow.h \
     scriptwindow.h \
     diffviewerwindow.h \
-    diffviewhighlighter.h
+    diffviewhighlighter.h \
+    scriptloader.h \
+    settingreader.h \
+    headerparser.h \
+    viewmodel.h \
+    scriptfiltermodel.h \
+    combofiltermodel.h
+
 
 FORMS    += mainwindow.ui \
     scriptwindow.ui \
