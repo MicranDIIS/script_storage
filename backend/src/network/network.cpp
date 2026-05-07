@@ -115,7 +115,7 @@ Gerror Repository::fetch(){
         return Gerror(error);
     }
     
-    QString refspec = QString("refs/heads/%1:refs/remotes/origin/%1")
+    QString refspec = QString("+refs/heads/%1:refs/remotes/origin/%1")
                       .arg(cfg.branch);
                       
     QByteArray refspecs_ = refspec.toUtf8();
