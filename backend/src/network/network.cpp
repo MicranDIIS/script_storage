@@ -22,7 +22,7 @@ static int callback(git_credential **out,const char *url,
 {
     GitData *data = static_cast<GitData*>(payload);
 
-    if(!data || data -> username.isEmpty() || data -> token.isEmpty()){
+    if(!data){
         return -1;
     }
 
@@ -34,112 +34,126 @@ static int callback(git_credential **out,const char *url,
                                                  data -> token.constData());
 }
 
+static int repo_has_remote_branch(git_repository* repo, const QString& branch){
+    git_reference* ref = NULL;
+    QByteArray branch_ = QString("refs/remotes/origin/%1").arg(branch).toUtf8();
 
-
-Gerror Repository::gitClone(const QString& URL,const QString& username){
-    if(token.isEmpty() || username.isEmpty() || URL.isEmpty()){
-        QString error = "token or username or URL is empty";
-        return Gerror(error);
+    if(git_reference_lookup(&ref, repo, branch_.constData()) != 0){
+        return -1;
     }
+
+    git_reference_free(ref);
+    return 0;
+}
+
+Gerror Repository::clone(){
     if(repo != NULL){
-        QString error = "repo is already there";
+        QString error = "repo is not NULL";
         return Gerror(error);
     }
 
     git_repository *repo_ = NULL;
     git_clone_options clone_opts = GIT_CLONE_OPTIONS_INIT;
 
-    QByteArray url = URL.toUtf8();
-    QByteArray path_ = path.toUtf8();
+    QByteArray url = cfg.url.toUtf8();
+    QByteArray path_ = cfg.path.toUtf8();
 
-    GitData creds(username,token);
+    QByteArray username_ = cfg.username.toUtf8();
+    QByteArray token_ = cfg.token.toUtf8();
+    GitData creds(username_,token_);
 
     clone_opts.fetch_opts.callbacks.credentials = callback;
     clone_opts.fetch_opts.callbacks.payload = &creds;
 
-    if(git_clone(&repo_,url.constData(),path_.constData(),&clone_opts) != 0){
+    if(git_clone(&repo_, url.constData(), path_.constData(), &clone_opts) != 0){
         QString error = git_get_error();
         return Gerror(error);
     }
 
     repo = repo_;
-    
+    if(cfg.branch == "main" || cfg.branch == "master"){
+        return Gerror();
+    }
+
+    if(repo_has_remote_branch(repo, cfg.branch) != 0){
+        QString error = git_get_error();
+        return Gerror(error);
+    }
+
+    if(repo_remote_branch_create_to_local(repo, cfg.branch) != 0){
+        QString error = git_get_error();
+        return Gerror(error);
+    }
+
+    if(repo_checkout_local_branch(repo, cfg.branch) != 0){
+        QString error = git_get_error();
+        return Gerror(error);
+    }
     return Gerror();
 }
 
-#include <string.h>
-Gerror Repository::gitFetch(const QString& username){
-    if(repo == NULL || username.isEmpty() || token.isEmpty()){
-        QString error = "repo is NULL or username is empty or token is empty";
-        return Gerror(error);
+Gerror Repository::fetch(){
+    if(repo == NULL){
+        return Gerror("repo is NULL");
     }
+    
     git_remote *remote = NULL;
     git_fetch_options fetchopt = GIT_FETCH_OPTIONS_INIT;
     git_remote_callbacks callbacks = GIT_REMOTE_CALLBACKS_INIT;
-
-    GitData creds(username,token);
-
+    
+    QByteArray username_ = cfg.username.toUtf8();
+    QByteArray token_ = cfg.token.toUtf8();
+    GitData creds(username_, token_);
+    
     callbacks.credentials = callback;
     callbacks.payload = &creds;
     fetchopt.callbacks = callbacks;
     fetchopt.update_fetchhead = 1;
-
-    git_reference *head = NULL;
-    git_buf remote_buf = GIT_BUF_INIT;
-    const char *remote_name = NULL;
-
-    if(git_repository_head(&head,repo) != 0){
+    
+    if(git_remote_lookup(&remote, repo, "origin") != 0){
         QString error = git_get_error();
         return Gerror(error);
     }
+    
+    QString refspec = QString("refs/heads/%1:refs/remotes/origin/%1")
+                      .arg(cfg.branch);
+                      
+    QByteArray refspecs_ = refspec.toUtf8();
+    const char *refspecs[] = { refspecs_.constData() };
 
-    const char *branch_name = NULL;
-    if(git_branch_name(&branch_name,head) == 0){
-        if(git_branch_upstream_remote(&remote_buf,repo,branch_name) == 0){
-            remote_name = remote_buf.ptr;
-        }else{
-            remote_name = "origin";
-        }
-    }else{
-        remote_name = "origin";
-    }
-
-    if(!remote_name || strlen(remote_name) == 0){
+    git_strarray refspec_array;
+    refspec_array.count = 1;
+    refspec_array.strings = (char**)refspecs;
+    
+    if(git_remote_fetch(remote, &refspec_array, &fetchopt, NULL) != 0){
         QString error = git_get_error();
-
-        git_reference_free(head);
-        git_buf_free(&remote_buf);
-
-        return Gerror(error);
-    }
-
-    if(git_remote_lookup(&remote,repo,remote_name) != 0){
-        QString error = git_get_error();
-
-        git_reference_free(head);
-        git_buf_free(&remote_buf);
-
-        return Gerror(error);
-    }
-
-    if(git_remote_fetch(remote,NULL,&fetchopt,NULL) != 0){
-        QString error = git_get_error();
-
         git_remote_free(remote);
-        git_reference_free(head);
-        git_buf_free(&remote_buf);
-
         return Gerror(error);
     }
-
+    
     git_remote_free(remote);
-    git_reference_free(head);
-    git_buf_free(&remote_buf);
-
     return Gerror();
 }
 
-Gerror Repository::gitPull(){
+Gerror Repository::sync(){
+    Gerror err = fetch();
+    if(!err.succses){
+        return err;
+    }
 
+    git_object *obj = NULL;
+    QString branch = QString("refs/remotes/origin/%1").arg(cfg.branch);
+    QByteArray branch_ = branch.toUtf8();
+
+    if(git_revparse_single(&obj, repo, branch_.constData()) != 0){ 
+        QString error = git_get_error();
+        return Gerror(error);
+    }
+
+    if(git_reset(repo, obj, GIT_RESET_HARD, NULL) != 0){
+        QString error = git_get_error();
+        return Gerror(error);
+    }
+
+    return Gerror();
 }
-

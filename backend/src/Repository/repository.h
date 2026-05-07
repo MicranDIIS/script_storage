@@ -34,6 +34,8 @@ public:
     bool hasRepo() const {return repo != NULL;}
 };
 
-
+//удобные оберкти для работы с ветками
+int repo_remote_branch_create_to_local(git_repository* repo, const QString& branch);
+int repo_checkout_local_branch(git_repository* repo, const QString& branch);
 
 #endif 

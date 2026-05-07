@@ -8,22 +8,42 @@ static QString git_get_error() {
     return "Unknown";
 }
 
-Gerror Repository::open(const QString& path_){
+static int repo_has_local_branch(git_repository* repo, const QString& branch){
+    git_reference* ref = NULL;
+    QByteArray branch_ = QString("refs/heads/%1").arg(branch).toUtf8();
+
+    if(git_reference_lookup(&ref, repo, branch_.constData()) != 0){
+        return -1;
+    }
+
+    git_reference_free(ref);
+    return 0;
+}
+
+Gerror Repository::open(){
     git_repository *repo_ = NULL;
 
-    QByteArray path__ = path_.toUtf8();
-    if(git_repository_open(&repo_,path__.constData()) != 0){
-        const git_error *err = git_error_last();
-        QString error = QString::fromUtf8(err -> message);
+    QByteArray path_ = cfg.path.toUtf8();
+    if(git_repository_open(&repo_,path_.constData()) != 0){
+        QString error = git_get_error();
         return Gerror(error);
     }
 
-    path = path_;
     repo = repo_;
+
+    if(repo_has_local_branch(repo, cfg.branch) != 0){
+        QString error = git_get_error();
+        return Gerror(error);
+    }
+
+    if(repo_checkout_local_branch(repo, cfg.branch) != 0){
+        QString error = git_get_error();
+        return Gerror(error);
+    }
     return Gerror();
 }
 
-Gerror Repository::gitStatus(QList<FileStatus>& list) const {
+Gerror Repository::status(QList<FileStatus>& list) const {
     if (repo == NULL) {
         return Gerror("repo is NULL");
     }
@@ -115,43 +135,39 @@ Gerror Repository::gitStatus(QList<FileStatus>& list) const {
     return Gerror();
 }
 
-Gerror Repository::gitReset() {
+Gerror Repository::reset() {
     if (repo == NULL) {
         return Gerror("repo is NULL");
     }
     
-    if (path.isEmpty()) {
-        return Gerror("path is empty");
+    git_object* obj = NULL;
+    
+    if (git_revparse_single(&obj, repo, "HEAD") != 0) {
+        QString error = git_get_error();
+        return Gerror(error);
     }
     
-    git_object* head_commit = NULL;
     git_checkout_options checopt = GIT_CHECKOUT_OPTIONS_INIT;
-    
-    if (git_revparse_single(&head_commit, repo, "origin/main") != 0) {
+    checopt.checkout_strategy = GIT_CHECKOUT_FORCE | 
+                                GIT_CHECKOUT_REMOVE_UNTRACKED | 
+                                GIT_CHECKOUT_REMOVE_IGNORED;
+    if (git_checkout_tree(repo, obj, &checopt) != 0) {
         QString error = git_get_error();
-        if (head_commit) git_object_free(head_commit);
+        git_object_free(obj);
+        return Gerror(error);
+    }
+
+    if (git_reset(repo, obj, GIT_RESET_HARD, NULL) != 0) {
+        QString error = git_get_error();
+        git_object_free(obj);
         return Gerror(error);
     }
     
-    checopt.checkout_strategy = GIT_CHECKOUT_FORCE;
-    if (git_reset(repo, head_commit, GIT_RESET_HARD, &checopt) != 0) {
-        QString error = git_get_error();
-        git_object_free(head_commit);
-        return Gerror(error);
-    }
-    
-    checopt.checkout_strategy = GIT_CHECKOUT_FORCE | GIT_CHECKOUT_REMOVE_UNTRACKED;
-    if (git_checkout_index(repo, NULL, &checopt) != 0) {
-        QString error = git_get_error();
-        git_object_free(head_commit);
-        return Gerror(error);
-    }
-    
-    git_object_free(head_commit);
+    git_object_free(obj);
     return Gerror();
 }
 
-Gerror Repository::gitLog(QList<CommitInfo>& list) const {
+Gerror Repository::log(QList<CommitInfo>& list) const {
     if (repo == NULL) {
         return Gerror("repo is NULL");
     }
@@ -184,7 +200,7 @@ Gerror Repository::gitLog(QList<CommitInfo>& list) const {
     while (git_revwalk_next(&oid, walker) == 0) {
         git_commit* commit = NULL;
         if (git_commit_lookup(&commit, repo, &oid) != 0) {
-            continue;  // пропускаем битые коммиты
+            continue; 
         }
         
         char hash_str[GIT_OID_HEXSZ + 1];
@@ -197,7 +213,6 @@ Gerror Repository::gitLog(QList<CommitInfo>& list) const {
         if (author != NULL) {
             author_name = QString::fromUtf8(author->name);
             author_email = QString::fromUtf8(author->email);
-            // git time в секундах, Qt в миллисекундах
             qint64 time_ms = static_cast<qint64>(author->when.time) * 1000;
             author_time = QDateTime::fromMSecsSinceEpoch(time_ms);
         }
