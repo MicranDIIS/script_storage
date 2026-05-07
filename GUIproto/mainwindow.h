@@ -7,6 +7,11 @@
 #include <QComboBox>
 #include "scriptfiltermodel.h"
 #include "combofiltermodel.h"
+#include <QHash>
+#include <QPointer>
+#include <QPoint>
+//#include "historywindow.h"
+class HistoryWindow;
 
 namespace Ui {
     class MainWindow;
@@ -34,6 +39,8 @@ private:
     void openDiffForIndex(const QModelIndex &index);
     void resetComboBoxes();
     void resetFilterState();
+    void openHistoryForIndex(const QModelIndex &index);
+    QHash<QString, QPointer<HistoryWindow> > m_historyWindows;
 
 
 private slots:
@@ -41,12 +48,15 @@ private slots:
     void showCustomPage();
     void handleScriptDoubleClick(const QModelIndex &index);
     void openSelectedScript();
-    void showContextMenu(const QPoint& pos);
+//    void showContextMenu(const QPoint& pos);
     void applyStadeFilter();
     void applyDeviceFilter();
     void applyRoleFilter();
     void applyCategoryFilter();
     void applyTextSearch(const QString& text);
+    void showCustomContextMenu(const QPoint& pos);
+    void showBasicContextMenu(const QPoint &pos);
+    void onHistoryWindowDestroyed(QObject* obj);
 };
 
 #endif // MAINWINDOW_H
