@@ -27,8 +27,12 @@ public:
 
 private:
     Ui::MainWindow *ui;
-    ViewModel *scriptsModel;
-    ScriptFilterModel *filterModel;
+    ViewModel *basicScriptsModel;
+    ViewModel *customScriptsModel;
+
+    ScriptFilterModel *basicFilterModel;
+    ScriptFilterModel *customFilterModel;
+
     ComboFilterModel *deviceComboModel;
     ComboFilterModel *roleComboModel;
     ComboFilterModel *stadeComboModel;

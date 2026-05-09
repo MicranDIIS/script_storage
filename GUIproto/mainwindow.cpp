@@ -25,8 +25,12 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    scriptsModel(new ViewModel(this)),
-    filterModel(new ScriptFilterModel(this)),
+    basicScriptsModel(new ViewModel(this)),
+    customScriptsModel(new ViewModel(this)),
+
+    basicFilterModel(new ScriptFilterModel(this)),
+    customFilterModel(new ScriptFilterModel(this)),
+
     deviceComboModel(new ComboFilterModel(this)),
     roleComboModel(new ComboFilterModel(this)),
     stadeComboModel(new ComboFilterModel(this)),
@@ -34,28 +38,34 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    filterModel->setSourceModel(scriptsModel);
+    basicScriptsModel->setViewMode(ViewModel::basicMode);
+    customScriptsModel->setViewMode(ViewModel::customMode);
 
+    basicFilterModel->setSourceModel(basicScriptsModel);
+    basicFilterModel->setMode(ViewModel::basicMode);
 
-    ui->listViewBasic->setModel(filterModel);
+    customFilterModel->setSourceModel(customScriptsModel);
+    customFilterModel->setMode(ViewModel::customMode);
+
+    ui->listViewBasic->setModel(basicFilterModel);
     ui->listViewBasic->setModelColumn(ViewModel::DisplayColumn);
 
-    ui->listViewCustom->setModel(filterModel);
+    ui->listViewCustom->setModel(customFilterModel);
     ui->listViewCustom->setModelColumn(ViewModel::DisplayColumn);
 
-    deviceComboModel->setSourceModel(scriptsModel);
+    deviceComboModel->setSourceModel(basicScriptsModel);
     deviceComboModel->setTargetColumn(ViewModel::DeviceColumn);
     ui->dComboBox->setModel(deviceComboModel);
 
-    roleComboModel->setSourceModel(scriptsModel);
+    roleComboModel->setSourceModel(basicScriptsModel);
     roleComboModel->setTargetColumn(ViewModel::RoleColumn);
     ui->rComboBox->setModel(roleComboModel);
 
-    stadeComboModel->setSourceModel(scriptsModel);
+    stadeComboModel->setSourceModel(basicScriptsModel);
     stadeComboModel->setTargetColumn(ViewModel::StadeColumn);
     ui->sComboBox->setModel(stadeComboModel);
 
-    categoryComboModel->setSourceModel(scriptsModel);
+    categoryComboModel->setSourceModel(customFilterModel);
     categoryComboModel->setTargetColumn(ViewModel::CategoryColumn);
     ui->categoryComboBox->setModel(categoryComboModel);
 
@@ -85,12 +95,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->radioBasic, SIGNAL(clicked()), this, SLOT(showBasicPage()));
     connect(ui->radioCustom, SIGNAL(clicked()), this, SLOT(showCustomPage()));
 
-
-//    ui->listViewCustom->setContextMenuPolicy(Qt::CustomContextMenu);
-//    connect(ui->listViewCustom, SIGNAL(customContextMenuRequested(const QPoint &)),
-//            this, SLOT(showContextMenu(const QPoint &)));
-
-    //?
     ui->listViewCustom->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->listViewCustom, SIGNAL(customContextMenuRequested(const QPoint &)),
             this, SLOT(showCustomContextMenu(const QPoint &)));
@@ -109,7 +113,8 @@ MainWindow::~MainWindow()
 // временная загрузка для проверки обхода директории
 void MainWindow::loadScripts()
 {
-    scriptsModel->clear();
+    basicScriptsModel->clear();
+    customScriptsModel->clear();
 
     IniSettingReader *reader = new IniSettingReader();
     ScriptLoader loader(reader);
@@ -146,7 +151,8 @@ void MainWindow::loadScripts()
     }
 //    qDebug() << "valid files =" << validFiles.size();
 
-    scriptsModel->setFiles(validFiles);
+    basicScriptsModel->setFiles(validFiles);
+    customScriptsModel->setFiles(validFiles);
     resetFilterState();
 
     if(validFiles.size()!= files.size()){ //файлы с шапкой, не прошедшей валидацию не отображаются
@@ -202,7 +208,8 @@ void MainWindow::resetComboBoxes() {
 }
 
 void MainWindow::resetFilterState() {
-    filterModel->resetScriptFilters();
+    basicFilterModel->resetScriptFilters();
+    customFilterModel->resetScriptFilters();
 
     deviceComboModel->clearFilters();
     roleComboModel->clearFilters();
@@ -218,14 +225,14 @@ void MainWindow::applyTextSearch(const QString& text){
     ui->categoryComboBox->setCurrentIndex(0);
     ui->categoryComboBox->blockSignals(false);
 
-    filterModel->setCategoryFilter(QString());
-    filterModel->setTextSearch(text);
+    customFilterModel->setCategoryFilter(QString());
+    customFilterModel->setTextSearch(text);
 }
 
 void MainWindow::applyStadeFilter()
 {
     QString stade = ui->sComboBox->currentText();
-    filterModel->setStadeFilter(stade);
+    basicFilterModel->setStadeFilter(stade);
 
 }
 
@@ -238,7 +245,7 @@ void MainWindow::applyDeviceFilter() {
     }
 
     QString oldStade = ui->sComboBox->currentText();
-    filterModel->setDeviceFilter(device);
+    basicFilterModel->setDeviceFilter(device);
     roleComboModel->setFilter(ViewModel::DeviceColumn, device);
 
     int roleIndex = ui->rComboBox->findData(oldRole, Qt::UserRole);
@@ -272,7 +279,7 @@ void MainWindow::applyRoleFilter(){
         role = ui->rComboBox->itemData(ui->rComboBox->currentIndex(), Qt::UserRole).toString();
     }
     QString oldStade = ui->sComboBox->currentText();
-    filterModel->setRoleFilter(role);
+    basicFilterModel->setRoleFilter(role);
 
     QString device = ui->dComboBox->currentText();
     stadeComboModel->clearFilters();
@@ -295,7 +302,7 @@ void MainWindow::applyRoleFilter(){
 
 void MainWindow::applyCategoryFilter() {
     QString category = ui->categoryComboBox->currentText();
-    filterModel->setCategoryFilter(category);
+    customFilterModel->setCategoryFilter(category);
 }
 
 void MainWindow::buildLayouts()
@@ -490,18 +497,18 @@ void MainWindow::showBasicPage()
 {
     ui->stackedWidget->setCurrentWidget(ui->pageBasic);
 
-    scriptsModel->setViewMode(ViewModel::basicMode);
-    filterModel->setMode(ViewModel::basicMode);
-    resetFilterState();
+//    scriptsModel->setViewMode(ViewModel::basicMode);
+//    filterModel->setMode(ViewModel::basicMode);
+//    resetFilterState();
 
 }
 
 void MainWindow::showCustomPage()
 {
     ui->stackedWidget->setCurrentWidget(ui->pageCustom);
-    scriptsModel->setViewMode(ViewModel::customMode);
-    filterModel->setMode(ViewModel::customMode);
-    resetFilterState();
+//    scriptsModel->setViewMode(ViewModel::customMode);
+//    filterModel->setMode(ViewModel::customMode);
+//    resetFilterState();
 
 }
 
