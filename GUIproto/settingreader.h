@@ -4,6 +4,7 @@
 #include <QStringList>
 #include <QString>
 #include <QMap>
+#include "mgit.h"
 
 struct AppConfig { // структура для конфига
     QMap<QString, QString> scriptSource; // sourceFile -> путь, ключ значение
@@ -24,19 +25,23 @@ struct HeaderRef { //струкутура для справочника
     QStringList textFields;
 };
 
+
 class SettingReader { // интерфейсный класс для загрузки справочника и конфига
 public:
     virtual ~SettingReader(){}
 
     virtual bool configLoad(QString& path, AppConfig& ex_config)=0;
     virtual bool headerLoad(QString& path, HeaderRef& ref)=0;
+    virtual bool repoLoad(QString& path, RepoConfig& repo_config)=0;
 };
 
 class IniSettingReader: public SettingReader { // реализация интерфейса для ini файлов
 public:
     virtual bool configLoad(QString& path, AppConfig& ex_config);
     virtual bool headerLoad(QString& path, HeaderRef& ref);
+    virtual bool repoLoad(QString& path, RepoConfig& repo_config);
 };
+
 
 
 #endif // SETTINGREADER_H

@@ -105,3 +105,28 @@ bool IniSettingReader::headerLoad(QString& path, HeaderRef& ref) { // загру
     }
     return true;
 }
+
+bool IniSettingReader::repoLoad(QString& path, RepoConfig& repo_config){ // конфиг репозитория
+    repo_config = RepoConfig();
+
+    QFileInfo rcfgFile(path);
+    if (!rcfgFile.exists() || !rcfgFile.isReadable()) {
+        return false;
+    }
+
+    QSettings settings(path, QSettings::IniFormat);
+
+    settings.beginGroup("Repository");
+    repo_config.url = settings.value("url").toString().trimmed();
+    repo_config.branch = settings.value("branch").toString().trimmed();
+    repo_config.path = settings.value("path").toString().trimmed();
+    settings.endGroup();
+
+    settings.beginGroup("Credentials");
+    repo_config.username = settings.value("username").toString().trimmed();
+    repo_config.token = settings.value("token").toString().trimmed();
+    settings.endGroup();
+
+    return !repo_config.url.isEmpty() && !repo_config.branch.isEmpty() && !repo_config.path.isEmpty();
+
+}

@@ -59,7 +59,7 @@ void HistoryWindow::setFilePath(const QString& filePath)
     setHistory(makeMockHistory());
 }
 
-void HistoryWindow::setHistory(const QVector<CommitInfo>& history)
+void HistoryWindow::setHistory(const QVector<GuiCommitInfo>& history)
 {
     m_commitInfo = history;
     loadHistory();
@@ -69,7 +69,7 @@ void HistoryWindow::loadHistory()
 {
     m_historyModel->setRowCount(0);
 
-    foreach (const CommitInfo& c, m_commitInfo)
+    foreach (const GuiCommitInfo& c, m_commitInfo)
     {
         QString dateStr = c.dateTime.toString("dd.MM.yyyy HH:mm");
 
@@ -95,11 +95,11 @@ void HistoryWindow::loadHistory()
     m_proxy->sort(0, m_proxy->sortOrder());
 }
 
-QVector<CommitInfo> HistoryWindow::makeMockHistory() const
+QVector<GuiCommitInfo> HistoryWindow::makeMockHistory() const
 {
-    QVector<CommitInfo> mockHistory;
+    QVector<GuiCommitInfo> mockHistory;
 
-    CommitInfo a;
+    GuiCommitInfo a;
     a.dateTime = QDateTime::currentDateTime().addDays(-1);
     a.author = "Sonya";
     a.authorEmail = "sofasennikovablablabla@gmail.com";
@@ -107,7 +107,7 @@ QVector<CommitInfo> HistoryWindow::makeMockHistory() const
     a.commitHash = "a1b2c3d";
     mockHistory.append(a);
 
-    CommitInfo b;
+    GuiCommitInfo b;
     b.dateTime = QDateTime::currentDateTime().addDays(-7);
     b.author = "Vanya";
     b.authorEmail = "kjhghkd@gmail.com";
@@ -115,7 +115,7 @@ QVector<CommitInfo> HistoryWindow::makeMockHistory() const
     b.commitHash = "d4e5f6a";
     mockHistory.append(b);
 
-    CommitInfo c;
+    GuiCommitInfo c;
     c.dateTime = QDateTime::currentDateTime().addDays(-3);
     c.author = "Vasya";
     c.authorEmail = "kd@gmail.com";
@@ -123,7 +123,7 @@ QVector<CommitInfo> HistoryWindow::makeMockHistory() const
     c.commitHash = "d4e7y6a";
     mockHistory.append(c);
 
-    CommitInfo d;
+    GuiCommitInfo d;
     d.dateTime = QDateTime::currentDateTime().addDays(-3);
     d.author = "Anton";
     d.authorEmail = "khrenkov@gmail.com";

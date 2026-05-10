@@ -75,6 +75,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     buildLayouts();
 
+    syncRepo();
     loadScripts();
 
     connect(ui->listViewBasic, SIGNAL(doubleClicked(QModelIndex)),
@@ -109,8 +110,77 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+// синхронизация или клонирование репозитория в локальную папку(все пути в конфиге repo.ini указываем)
+ bool MainWindow::syncRepo(){
 
-// временная загрузка для проверки обхода директории
+     QString appDir = QCoreApplication::applicationDirPath();
+     QString repoConfigPath = QDir(appDir).absoluteFilePath("../../GUIproto/config/repo.ini");
+
+//     qDebug() << "repo.ini path:" << repoConfigPath;
+
+     IniSettingReader reader;
+     RepoConfig repoConfig;
+
+     if (!reader.repoLoad(repoConfigPath, repoConfig)) {
+         QMessageBox::warning(this,"Сonfig error", "Configuration file for remote could not be loaded:\n" + repoConfigPath);
+         return false;
+     }
+
+//     qDebug() << "url:" << repoConfig.url;
+//     qDebug() << "branch:" << repoConfig.branch;
+//     qDebug() << "path:" << repoConfig.path;
+//     qDebug() << "username:" << repoConfig.username;
+//     qDebug() << "token is empty:" << repoConfig.token.isEmpty();
+
+     QDir repoDir(repoConfig.path);
+     QDir gitDir(repoDir.absoluteFilePath(".git"));
+
+     if (repoDir.exists() && !gitDir.exists()) {
+         QStringList entries = repoDir.entryList(QDir::NoDotAndDotDot | QDir::AllEntries);
+         if (!entries.isEmpty()) {
+             QMessageBox::warning(this,"Repository error", "Folder for remote repositiry is not empty.");
+             return false;
+         }
+     }
+
+     mgit_init();
+     IRepository *repo = createRepository(repoConfig);
+
+     if (!repo) {
+         mgit_shutdown();
+         QMessageBox::warning(this, "Repository error", "Repository object could not be create.");
+         return false;
+     }
+
+     Gerror err;
+
+     if (!gitDir.exists()) {
+         err = repo->clone();
+
+         if (err.succses) {
+             err = repo->sync();
+         }
+     } else {
+         err = repo->open();
+
+         if (!err.succses) {
+             err = repo->sync();
+         } else {
+             err = repo->sync();
+         }
+     }
+
+     deleteRepository(repo);
+     mgit_shutdown();
+     if (!err.succses) {
+             QMessageBox::warning(this,"Repository error", "Repository synchronization failed:\n" + err.msg);
+             return false;
+         }
+     return true;
+ }
+
+
+// загрузка для проверки обхода директории
 void MainWindow::loadScripts()
 {
     basicScriptsModel->clear();

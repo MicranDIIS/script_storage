@@ -43,6 +43,7 @@ private:
     void openDiffForIndex(const QModelIndex &index);
     void resetComboBoxes();
     void resetFilterState();
+    bool syncRepo();
     void openHistoryForIndex(const QModelIndex &index);
     QHash<QString, QPointer<HistoryWindow> > m_historyWindows;
 

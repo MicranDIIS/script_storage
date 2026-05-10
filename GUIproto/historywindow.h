@@ -22,16 +22,16 @@ public:
     explicit HistoryWindow(QWidget *parent = 0);
     ~HistoryWindow();
     void setFilePath(const QString& scriptPath);
-    void setHistory(const QVector<CommitInfo>& history);
+    void setHistory(const QVector<GuiCommitInfo>& history);
 
 private:
     Ui::HistoryWindow *ui;
     QString m_scriptPath;
-    QVector<CommitInfo> m_commitInfo;
+    QVector<GuiCommitInfo> m_commitInfo;
     QStandardItemModel* m_historyModel;
     void loadHistory();
     QStringList m_headers;
-    QVector<CommitInfo> makeMockHistory() const;
+    QVector<GuiCommitInfo> makeMockHistory() const;
     QSettings settings;
     QSortFilterProxyModel* m_proxy;
     void onCommitRowClicked(const QModelIndex& index);

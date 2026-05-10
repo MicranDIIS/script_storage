@@ -4,7 +4,7 @@
 #include <QString>
 #include <QDateTime>
 
-struct CommitInfo
+struct GuiCommitInfo
 {
     QDateTime dateTime;
     QString author;
