@@ -29,7 +29,8 @@ public:
 
     Gerror reset();
     Gerror status(QList<FileStatus>& list) const;
-    Gerror log(QList<CommitInfo>& list)const;
+    Gerror log(QList<CommitInfo>& list) const;
+    Gerror log(QList<CommitInfo>& list, const QString& filePath) const;
 
     bool hasRepo() const {return repo != NULL;}
 };

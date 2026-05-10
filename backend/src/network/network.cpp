@@ -20,7 +20,7 @@ static int callback(git_credential **out,const char *url,
                          unsigned int allowed_types,
                          void *payload)
 {
-    GitData *data = static_cast<GitData*>(payload);
+    GitData* data = static_cast<GitData*>(payload);
 
     if(!data){
         return -1;
