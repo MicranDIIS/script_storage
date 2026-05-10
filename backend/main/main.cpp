@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
     RepoConfig cfg;
     cfg.branch = "backend";
     //свое
-    cfg.path = "C:\\Users\\user\\running\\script_storage";
+    cfg.path = "";
     //свое
     cfg.token = "";
     cfg.url = "https://github.com/MicranDIIS/script_storage";
