@@ -2,6 +2,8 @@
 #include "ui_mainwindow.h"
 #include "scriptloader.h"
 
+#include <mgit.h>
+
 #include "diffviewerwindow.h"
 #include "historywindow.h"
 
@@ -34,9 +36,14 @@ MainWindow::MainWindow(QWidget *parent) :
     deviceComboModel(new ComboFilterModel(this)),
     roleComboModel(new ComboFilterModel(this)),
     stadeComboModel(new ComboFilterModel(this)),
-    categoryComboModel(new ComboFilterModel(this))
+    categoryComboModel(new ComboFilterModel(this)),
+
+    m_repo(0)
 {
     ui->setupUi(this);
+
+    if (!syncRepo())
+            return;
 
     basicScriptsModel->setViewMode(ViewModel::basicMode);
     customScriptsModel->setViewMode(ViewModel::customMode);
@@ -75,7 +82,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     buildLayouts();
 
-    syncRepo();
+//    syncRepo();
     loadScripts();
 
     connect(ui->listViewBasic, SIGNAL(doubleClicked(QModelIndex)),
@@ -107,11 +114,22 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
+    if (m_repo)
+    {
+        deleteRepository(m_repo);
+        m_repo = 0;
+    }
     delete ui;
 }
 
 // синхронизация или клонирование репозитория в локальную папку(все пути в конфиге repo.ini указываем)
  bool MainWindow::syncRepo(){
+
+     if (m_repo)
+     {
+         deleteRepository(m_repo);
+         m_repo = 0;
+     }
 
      QString appDir = QCoreApplication::applicationDirPath();
      QString repoConfigPath = QDir(appDir).absoluteFilePath("../../GUIproto/config/repo.ini");
@@ -125,6 +143,8 @@ MainWindow::~MainWindow()
          QMessageBox::warning(this,"Сonfig error", "Configuration file for remote could not be loaded:\n" + repoConfigPath);
          return false;
      }
+
+     m_repoRoot = repoConfig.path;
 
 //     qDebug() << "url:" << repoConfig.url;
 //     qDebug() << "branch:" << repoConfig.branch;
@@ -143,39 +163,44 @@ MainWindow::~MainWindow()
          }
      }
 
-     mgit_init();
-     IRepository *repo = createRepository(repoConfig);
-
-     if (!repo) {
-         mgit_shutdown();
-         QMessageBox::warning(this, "Repository error", "Repository object could not be create.");
+     m_repo = createRepository(repoConfig);
+     if (!m_repo)
+     {
+         QMessageBox::warning(this, "Repository error",
+                              "Repository object could not be created.");
          return false;
      }
 
      Gerror err;
 
      if (!gitDir.exists()) {
-         err = repo->clone();
+         err = m_repo->clone();
 
          if (err.succses) {
-             err = repo->sync();
+             err = m_repo->sync();
          }
      } else {
-         err = repo->open();
+         err = m_repo->open();
 
          if (!err.succses) {
-             err = repo->sync();
+             err = m_repo->sync();
          } else {
-             err = repo->sync();
+             err = m_repo->sync(); // тут пока трогать не буду
          }
      }
 
-     deleteRepository(repo);
-     mgit_shutdown();
-     if (!err.succses) {
-             QMessageBox::warning(this,"Repository error", "Repository synchronization failed:\n" + err.msg);
-             return false;
-         }
+     if (!err.succses)
+     {
+         QMessageBox::warning(this, "Repository error",
+                              "Repository synchronization failed:\n" + err.msg);
+
+         deleteRepository(m_repo);
+         m_repo = 0;
+         return false;
+     }
+
+     qDebug() << "[syncRepo] ok, repoRoot =" << m_repoRoot << "repo ptr =" << m_repo;
+
      return true;
  }
 
@@ -643,11 +668,64 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
     if (scriptPath.isEmpty())
         return;
 
+    if (!m_repo)
+    {
+        QMessageBox::warning(this, tr("Repository error"),
+                             tr("Repository is not initialized."));
+        return;
+    }
+
+    if (m_repoRoot.isEmpty())
+    {
+        QMessageBox::warning(this, tr("Repository error"),
+                             tr("Repository root path is empty."));
+        return;
+    }
+
+    QString relPath = QDir(m_repoRoot).relativeFilePath(scriptPath);
+    relPath.replace('\\', '/');
+
+    if (relPath.startsWith(".."))
+    {
+        QMessageBox::warning(this, tr("Repository error"),
+                             tr("Selected file is outside the repository:\n%1").arg(scriptPath));
+        return;
+    }
+
+    QList<CommitInfo> backendList;
+    Gerror err = m_repo->log(backendList, relPath);
+    if (!err.succses)
+    {
+        QMessageBox::warning(this, tr("Git log error"), err.msg);
+        return;
+    }
+
+    QVector<GuiCommitInfo> guiHistory;
+    guiHistory.reserve(backendList.size());
+
+    for (int i = 0; i < backendList.size(); ++i)
+    {
+        const CommitInfo &c = backendList.at(i);
+
+        GuiCommitInfo g;
+        g.dateTime = c.authorDateTime;
+        g.author = c.authorName;
+        g.authorEmail = c.authorEmail;
+        g.commitMessage = c.commitMsg;
+        g.commitHash = c.commitHash;
+
+        guiHistory.append(g);
+    }
+
     QString key = QFileInfo(scriptPath).absoluteFilePath();
+
+    qDebug() << "[history] repo ptr =" << m_repo << "repoRoot =" << m_repoRoot;
+    qDebug() << "[history] scriptPath =" << scriptPath;
 
     if (m_historyWindows.contains(key))
     {
         HistoryWindow* w = m_historyWindows.value(key);
+        w->setHistory(guiHistory);
         w->show();
         w->raise();
         w->activateWindow();
@@ -657,6 +735,9 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
     HistoryWindow* w = new HistoryWindow();
     w->setAttribute(Qt::WA_DeleteOnClose);
     w->setFilePath(scriptPath);
+
+    w->setHistory(guiHistory);
+
     w->show();
     m_historyWindows.insert(key, w);
 
