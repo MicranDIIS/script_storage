@@ -178,7 +178,8 @@ Gerror Repository::log(QList<CommitInfo>& list) const {
     git_revwalk* walker = NULL;
     
     if (git_revwalk_new(&walker, repo) != 0) {
-        return Gerror(git_get_error());
+        QString error = git_get_error();
+        return Gerror(error);
     }
     
     git_revwalk_sorting(walker, GIT_SORT_TIME);
@@ -237,6 +238,157 @@ Gerror Repository::log(QList<CommitInfo>& list) const {
         git_commit_free(commit);
     }
     
+    git_revwalk_free(walker);
+    return Gerror();
+}
+
+struct LogFile {
+    QString file_path;
+    bool found;
+};
+
+static int diff_file_callback(const git_diff_delta* delta, float progress, 
+                              void* payload)
+{
+    (void)progress;
+    LogFile* file = static_cast<LogFile*>(payload);
+    
+    const QString old_path = delta->old_file.path ? QString::fromUtf8(delta->old_file.path) : QString();
+    const QString new_path = delta->new_file.path ? QString::fromUtf8(delta->new_file.path) : QString();
+    
+    if (old_path == file->file_path || new_path == file->file_path) {
+        file -> found = true;
+        return 1; 
+    }
+    
+    return 0;
+}
+
+Gerror Repository::log(QList<CommitInfo>& list, const QString& filePath) const{
+    if (repo == NULL) {
+        return Gerror("repo is NULL");
+    }
+
+    list.clear();
+    list.reserve(100);
+
+    git_revwalk* walker = NULL;
+    
+    if (git_revwalk_new(&walker, repo) != 0) {
+        QString error = git_get_error();
+        return Gerror(error);
+    }
+    
+    git_revwalk_sorting(walker, GIT_SORT_TIME);
+    
+    git_oid oid_head;
+    if (git_reference_name_to_id(&oid_head, repo, "HEAD") != 0) {
+        QString error = git_get_error();
+        git_revwalk_free(walker);
+        return Gerror(error);
+    }
+    
+    if (git_revwalk_push(walker, &oid_head) != 0) {
+        QString error = git_get_error();
+        git_revwalk_free(walker);
+        return Gerror(error);
+    }
+    
+    git_oid oid;
+    while (git_revwalk_next(&oid, walker) == 0) {
+        git_commit* commit = NULL;
+        if (git_commit_lookup(&commit, repo, &oid) != 0) {
+            continue;
+        }
+
+        git_tree* tree = NULL;
+        if (git_commit_tree(&tree, commit) != 0) {
+            git_commit_free(commit);
+            continue;
+        }
+
+        git_tree* tree_parent = NULL;
+        if (git_commit_parentcount(commit) != 0) {
+            git_commit* parent = NULL;
+            if (git_commit_parent(&parent, commit, 0) != 0) {
+                git_tree_free(tree);
+                git_commit_free(commit);
+                continue;
+            }
+            if (git_commit_tree(&tree_parent, parent) != 0) {
+                git_commit_free(parent);
+                git_tree_free(tree);
+                git_commit_free(commit);
+                continue;
+            }
+            git_commit_free(parent);
+        }
+
+        QByteArray file_path = filePath.toUtf8();
+        const char* file_path_ = file_path.constData();
+        
+        git_diff_options opts = GIT_DIFF_OPTIONS_INIT;
+        opts.pathspec.strings = (char**)&file_path_;
+        opts.pathspec.count = 1;
+
+        git_diff* diff = NULL;
+        if (git_diff_tree_to_tree(&diff, repo, tree_parent, tree, &opts) != 0) {
+            git_diff_free(diff);
+            git_tree_free(tree_parent);
+            git_tree_free(tree);
+            git_commit_free(commit);
+            continue;
+        }
+
+        LogFile file = {filePath, false};
+
+        if(git_diff_foreach(diff, diff_file_callback, NULL, NULL, NULL, &file) < 0){
+            git_diff_free(diff);
+            git_tree_free(tree_parent);
+            git_tree_free(tree);
+            git_commit_free(commit);
+            continue;
+        }
+
+        if (file.found) {
+            char hash_str[GIT_OID_HEXSZ + 1];
+            git_oid_tostr(hash_str, sizeof(hash_str), &oid);
+            QString commit_hash = QString::fromUtf8(hash_str);
+            
+            const git_signature* author = git_commit_author(commit);
+            QString author_name, author_email;
+            QDateTime author_time;
+            if (author != NULL) {
+                author_name = QString::fromUtf8(author->name);
+                author_email = QString::fromUtf8(author->email);
+                qint64 time_ms = static_cast<qint64>(author->when.time) * 1000;
+                author_time = QDateTime::fromMSecsSinceEpoch(time_ms);
+            }
+            
+            const git_signature* committer = git_commit_committer(commit);
+            QString committer_name, committer_email;
+            QDateTime committer_time;
+            if (committer != NULL) {
+                committer_name = QString::fromUtf8(committer->name);
+                committer_email = QString::fromUtf8(committer->email);
+                qint64 time_ms = static_cast<qint64>(committer->when.time) * 1000;
+                committer_time = QDateTime::fromMSecsSinceEpoch(time_ms);
+            }
+            
+            const char* msg_raw = git_commit_message(commit);
+            QString msg = msg_raw ? QString::fromUtf8(msg_raw) : "";
+            
+            list.append(CommitInfo(author_time, author_name, author_email,
+                                   msg, commit_hash,
+                                   committer_time, committer_name, committer_email));
+        }
+
+        git_diff_free(diff);
+        git_tree_free(tree_parent);
+        git_tree_free(tree);
+        git_commit_free(commit);
+    }
+
     git_revwalk_free(walker);
     return Gerror();
 }

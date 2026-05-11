@@ -1,5 +1,6 @@
 #include <QtGui/QApplication>
 #include "mainwindow.h"
+#include <mgit.h>
 
 int main(int argc, char *argv[])
 {
@@ -8,8 +9,15 @@ int main(int argc, char *argv[])
     QCoreApplication::setOrganizationName("MicranDIIS");
     QCoreApplication::setApplicationName("SE2");
 
-    MainWindow w;
-    w.show();
+    mgit_init();
 
-    return a.exec();
+    int rc = 0;
+    {
+        MainWindow w;
+        w.show();
+        rc = a.exec();
+    }
+
+    mgit_shutdown();
+    return rc;
 }

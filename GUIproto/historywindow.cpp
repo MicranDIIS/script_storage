@@ -56,7 +56,8 @@ void HistoryWindow::setFilePath(const QString& filePath)
     ui->ScriptNameLabel->setText(QFileInfo(filePath).fileName());
     ui->ScriptNameLabel->setToolTip(m_scriptPath);
 
-    setHistory(makeMockHistory());
+//    setHistory(makeMockHistory());
+
 }
 
 void HistoryWindow::setHistory(const QVector<GuiCommitInfo>& history)

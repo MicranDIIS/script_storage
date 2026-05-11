@@ -47,6 +47,9 @@ private:
     void openHistoryForIndex(const QModelIndex &index);
     QHash<QString, QPointer<HistoryWindow> > m_historyWindows;
 
+    IRepository* m_repo;
+    QString m_repoRoot;
+
 
 private slots:
     void showBasicPage();
