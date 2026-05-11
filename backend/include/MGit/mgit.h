@@ -123,6 +123,12 @@ public:
     *просто структуру с логами получаем
     */
     virtual Gerror log(QList<CommitInfo>& list) const = 0;
+    /*
+    *возвращает list со всеми данными из коммитов
+    *где файл был как-то изменен. Путь до файла откладывается
+    *относительно .git 
+    */
+    virtual Gerror log(QList<CommitInfo>& list, const QString& filePath) const = 0;
 
     virtual bool hasRepo() const = 0;
 

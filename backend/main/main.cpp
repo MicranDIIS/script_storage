@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
     QCoreApplication a(argc, argv);
 
     mgit_init();
-    
+
     RepoConfig cfg;
     cfg.branch = "backend";
     //свое
@@ -18,29 +18,32 @@ int main(int argc, char *argv[])
     //свое
     cfg.username = "";
 
-    IRepository* repo = createRepository(cfg);
-    Gerror err = repo->clone();
+    IRepository *repo = createRepository(cfg);
+
+    Gerror err = repo->open();
     if(!err.succses){
         qDebug() << err.msg;
-        return a.exec();
     }else{
-        printf("good clone!\n");
+        printf("good\n");
     }
+
+    QList<CommitInfo> list;
+    err = repo->log(list, "backend/include/MGit/mgit.h");
+    if(!err.succses){
+        qDebug() << err.msg;
+    }else{
+        foreach (const CommitInfo& ci, list) {
+            qDebug() << "commit" << ci.commitHash;
+            qDebug() << "Author:" << ci.authorName << "<" << ci.authorEmail << ">";
+            qDebug() << "Date:  " << ci.authorDateTime.toString("yyyy-MM-dd HH:mm:ss");
+            qDebug() << "";
+            qDebug() << "    " << ci.commitMsg.trimmed();
+            qDebug() << "";
+        }
+    }
+
 
     deleteRepository(repo);
-
-    cfg.branch = "main";
-    IRepository *repo_ = createRepository(cfg);
-    err = repo->open();
-    if(!err.succses){
-            qDebug() << err.msg;
-            return a.exec();
-    }else{
-        printf("open is branch main\n");
-    }
-
-
-    deleteRepository(repo_);
     mgit_shutdown();
     return a.exec();
 }
