@@ -51,6 +51,7 @@ private:
 
 private slots:
     void onCurrentRowChanged(const QModelIndex &current);
+    void copyHashToClipboard(const QModelIndex& index);
 
 protected:
     void closeEvent(QCloseEvent *event);

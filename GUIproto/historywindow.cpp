@@ -3,6 +3,8 @@
 
 #include <QDebug>
 #include <QFileInfo>
+#include <QClipboard>
+#include <QApplication>
 
 HistoryWindow::HistoryWindow(QWidget *parent) :
     QWidget(parent),
@@ -37,6 +39,8 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
 
     connect(ui->HistoryTableView->selectionModel(), SIGNAL(currentRowChanged(QModelIndex, QModelIndex)),
             this,SLOT(onCurrentRowChanged(QModelIndex)));
+    connect(ui->HistoryTableView, SIGNAL(doubleClicked(QModelIndex)),
+            this, SLOT(copyHashToClipboard(QModelIndex)));
 }
 
 HistoryWindow::~HistoryWindow()
@@ -208,4 +212,22 @@ QString HistoryWindow::getBodyString(const QString& fullMessage) const
         bodyLines.removeAt(0);
 
     return bodyLines.join("\n");
+}
+
+void HistoryWindow::copyHashToClipboard(const QModelIndex& index)
+{
+    if (!index.isValid())
+    {
+        return;
+    }
+
+    QString hash = index.sibling(index.row(), DateColumn).data(RoleCommitHash).toString();
+
+    if (hash.isEmpty())
+    {
+        return;
+    }
+
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setText(hash);
 }
