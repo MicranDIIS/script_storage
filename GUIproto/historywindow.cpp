@@ -162,14 +162,17 @@ void HistoryWindow::clearCommitMessagePanel()
     ui->CommitMessageTextEdit->clear();
 }
 
-QString HistoryWindow::getSummaryString(const QString& fullMessage) const
+QStringList HistoryWindow::splitString(const QString& fullMessage)  const
 {
     QString string = fullMessage;
-
     string.replace("\r\n", "\n");
     string.replace("\r", "\n");
+    return string.split("\n");
+}
 
-    QStringList lines = string.split("\n");
+QString HistoryWindow::getSummaryString(const QString& fullMessage) const
+{
+    QStringList lines = splitString(fullMessage);
 
     for (int i = 0; i < lines.size(); i++)
     {
@@ -185,12 +188,7 @@ QString HistoryWindow::getSummaryString(const QString& fullMessage) const
 
 QString HistoryWindow::getBodyString(const QString& fullMessage) const
 {
-    QString string = fullMessage;
-
-    string.replace("\r\n", "\n");
-    string.replace("\r", "\n");
-
-    QStringList lines = string.split("\n");
+    QStringList lines = splitString(fullMessage);
 
     int summaryIndex = -1;
     for (int i = 0; i < lines.size(); ++i)

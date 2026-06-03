@@ -39,7 +39,7 @@ private:
     void clearCommitMessagePanel();
     QString getSummaryString(const QString& fullMessage) const;
     QString getBodyString(const QString& fullMessage) const;
-
+    QStringList splitString(const QString& fullMessage) const;
 
 private slots:
     void onSortChanged(int);
