@@ -68,9 +68,10 @@ void HistoryWindow::loadHistory()
         QStandardItem *dateItem = new QStandardItem(dateStr);
         QStandardItem *authorItem = new QStandardItem(c.author);
 
-        QStandardItem *msgItem = new QStandardItem(getSummaryString(c.commitMessage));
+        QString summary = getSummaryString(c.commitMessage);
+        QStandardItem *msgItem = new QStandardItem(summary);
 
-        if (c.commitMessage.trimmed().isEmpty())
+        if (summary.isEmpty())
         {
             msgItem->setForeground(QBrush(Qt::gray));
         }
@@ -124,7 +125,13 @@ void HistoryWindow::updateCommitMessagePanel(const QModelIndex &indexInRow)
         return;
     }
 
-    QString summary = getSummaryString(messageIndex.data(RoleCommitMessage).toString());
+//    QString summary = getSummaryString(messageIndex.data(RoleCommitMessage).toString());
+    QString summary = messageIndex.data(Qt::DisplayRole).toString();
+    if (summary.isEmpty())
+    {
+        summary = trUtf8("Сообщение коммита было пустым(");
+    }
+
     QString body = getBodyString(messageIndex.data(RoleCommitMessage).toString());
 
     ui->CommitMessageTextEdit->clear();
@@ -173,7 +180,7 @@ QString HistoryWindow::getSummaryString(const QString& fullMessage) const
             return line;
         }
     }
-    return trUtf8("Сообщение коммита было пустым(");
+    return "";
 }
 
 QString HistoryWindow::getBodyString(const QString& fullMessage) const
