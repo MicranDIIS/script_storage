@@ -11,8 +11,6 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-//    qDebug("layout ptr = %p", this->layout());
-
     restoreGeometry(settings.value("HistoryWindow/Geometry").toByteArray());
 
     m_proxy = new QSortFilterProxyModel(this);
@@ -34,15 +32,11 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
     QByteArray state = settings.value("HistoryTableView/State").toByteArray();
     ui->HistoryTableView->horizontalHeader()->restoreState(state);
 
-//    connect(ui->FilterComboBox, SIGNAL(currentIndexChanged(int)),
-//            this, SLOT(onSortChanged(int)));
-
     ui->HistoryTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->HistoryTableView->setSelectionMode(QAbstractItemView::SingleSelection);
 
     connect(ui->HistoryTableView->selectionModel(), SIGNAL(currentRowChanged(QModelIndex, QModelIndex)),
             this,SLOT(onCurrentRowChanged(QModelIndex)));
-
 }
 
 HistoryWindow::~HistoryWindow()
@@ -55,9 +49,6 @@ void HistoryWindow::setFilePath(const QString& filePath)
     m_scriptPath = filePath;
     ui->ScriptNameLabel->setText(QFileInfo(filePath).fileName());
     ui->ScriptNameLabel->setToolTip(m_scriptPath);
-
-//    setHistory(makeMockHistory());
-
 }
 
 void HistoryWindow::setHistory(const QVector<GuiCommitInfo>& history)
@@ -96,49 +87,6 @@ void HistoryWindow::loadHistory()
     m_proxy->sort(0, m_proxy->sortOrder());
 }
 
-QVector<GuiCommitInfo> HistoryWindow::makeMockHistory() const
-{
-    QVector<GuiCommitInfo> mockHistory;
-
-    GuiCommitInfo a;
-    a.dateTime = QDateTime::currentDateTime().addDays(-1);
-    a.author = "Sonya";
-    a.authorEmail = "sofasennikovablablabla@gmail.com";
-    a.commitMessage = "blablablablablablablabla";
-    a.commitHash = "a1b2c3d";
-    mockHistory.append(a);
-
-    GuiCommitInfo b;
-    b.dateTime = QDateTime::currentDateTime().addDays(-7);
-    b.author = "Vanya";
-    b.authorEmail = "kjhghkd@gmail.com";
-    b.commitMessage = "Refactor header parsing (long message to test table resizing)";
-    b.commitHash = "d4e5f6a";
-    mockHistory.append(b);
-
-    GuiCommitInfo c;
-    c.dateTime = QDateTime::currentDateTime().addDays(-3);
-    c.author = "Vasya";
-    c.authorEmail = "kd@gmail.com";
-    c.commitMessage = "";
-    c.commitHash = "d4e7y6a";
-    mockHistory.append(c);
-
-    GuiCommitInfo d;
-    d.dateTime = QDateTime::currentDateTime().addDays(-3);
-    d.author = "Anton";
-    d.authorEmail = "khrenkov@gmail.com";
-    d.commitMessage = QString::fromUtf8("Добавил первичную прибавку к мощности генератора\n"
-            "Определение и прибавка к мощности генератора осуществляется с\n"
-            "целью более быстрого поиска необходимого уровня мощности.\n"
-            "modified: scripts/sk4m/sk4m-50/PSI/50__9_9.lua");
-    d.commitHash = "d7h7y6a";
-    mockHistory.append(d);
-
-
-    return mockHistory;
-}
-
 void HistoryWindow::closeEvent(QCloseEvent *event)
 {
     settings.setValue("HistoryWindow/Geometry", saveGeometry());
@@ -157,7 +105,6 @@ void HistoryWindow::onSortChanged(int index)
         order = Qt::AscendingOrder;
     }
     m_proxy->sort(0, order);
-
 }
 
 void HistoryWindow::onCurrentRowChanged(const QModelIndex& current)
