@@ -21,9 +21,9 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
 
     ui->HistoryTableView->setModel(m_proxy);
     ui->HistoryTableView->setSortingEnabled(true);
-    m_proxy->sort(0, Qt::DescendingOrder);
+    m_proxy->sort(DateColumn, Qt::DescendingOrder);
 
-    m_historyModel->setColumnCount(3);
+    m_historyModel->setColumnCount(ColumnCount);
     m_headers << trUtf8("Дата")
               << trUtf8("Автор")
               << trUtf8("Сообщение коммита");
@@ -84,7 +84,7 @@ void HistoryWindow::loadHistory()
 
         m_historyModel->appendRow(row);
     }
-    m_proxy->sort(0, m_proxy->sortOrder());
+    m_proxy->sort(DateColumn, m_proxy->sortOrder());
 }
 
 void HistoryWindow::closeEvent(QCloseEvent *event)
@@ -95,16 +95,6 @@ void HistoryWindow::closeEvent(QCloseEvent *event)
     settings.setValue("HistoryTableView/State", tableState);
 
     QWidget::closeEvent(event);
-}
-
-void HistoryWindow::onSortChanged(int index)
-{
-    Qt::SortOrder order = Qt::DescendingOrder;
-    if (index == 1)
-    {
-        order = Qt::AscendingOrder;
-    }
-    m_proxy->sort(0, order);
 }
 
 void HistoryWindow::onCurrentRowChanged(const QModelIndex& current)
@@ -126,7 +116,7 @@ void HistoryWindow::updateCommitMessagePanel(const QModelIndex &indexInRow)
         return;
     }
 
-    QModelIndex messageIndex = indexInRow.sibling(indexInRow.row(), 2);
+    QModelIndex messageIndex = indexInRow.sibling(indexInRow.row(), CommitColumn);
 
     if (!messageIndex.isValid())
     {

@@ -40,14 +40,22 @@ private:
     QString getSummaryString(const QString& fullMessage) const;
     QString getBodyString(const QString& fullMessage) const;
     QStringList splitString(const QString& fullMessage) const;
+    enum Column
+    {
+        DateColumn = 0,
+        AuthorColumn = 1,
+        CommitColumn = 2,
+        ColumnCount = 3
+    };
+
 
 private slots:
-    void onSortChanged(int);
     void onCurrentRowChanged(const QModelIndex &current);
 
 protected:
     void closeEvent(QCloseEvent *event);
-    enum {
+    enum
+    {
         RoleCommitHash = Qt::UserRole + 1,
         RoleDateTime = Qt::UserRole + 2,
         RoleCommitMessage = Qt::UserRole + 3
