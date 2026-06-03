@@ -689,17 +689,10 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
     if (scriptPath.isEmpty())
         return;
 
-    if (!m_repo)
+    if (!m_repo || m_repoRoot.isEmpty())
     {
         QMessageBox::warning(this, tr("Repository error"),
                              tr("Repository is not initialized."));
-        return;
-    }
-
-    if (m_repoRoot.isEmpty())
-    {
-        QMessageBox::warning(this, tr("Repository error"),
-                             tr("Repository root path is empty."));
         return;
     }
 
@@ -709,7 +702,7 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
     if (relPath.startsWith(".."))
     {
         QMessageBox::warning(this, tr("Repository error"),
-                             tr("Selected file is outside the repository:\n%1").arg(scriptPath));
+            tr("Selected file is outside the repository:\n%1").arg(scriptPath));
         return;
     }
 
@@ -721,22 +714,8 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
         return;
     }
 
-    QVector<GuiCommitInfo> guiHistory = convertCommitInfoToGuiCommitInfo(backendList);
-//    guiHistory.reserve(backendList.size());
-
-//    for (int i = 0; i < backendList.size(); ++i)
-//    {
-//        const CommitInfo &c = backendList.at(i);
-
-//        GuiCommitInfo g;
-//        g.dateTime = c.authorDateTime;
-//        g.author = c.authorName;
-//        g.authorEmail = c.authorEmail;
-//        g.commitMessage = c.commitMsg;
-//        g.commitHash = c.commitHash;
-
-//        guiHistory.append(g);
-//    }
+    QVector<GuiCommitInfo> guiHistory =
+            convertCommitInfoToGuiCommitInfo(backendList);
 
     QString key = QFileInfo(scriptPath).absoluteFilePath();
 
@@ -753,14 +732,11 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
     HistoryWindow* w = new HistoryWindow();
     w->setAttribute(Qt::WA_DeleteOnClose);
     w->setFilePath(scriptPath);
-
     w->setHistory(guiHistory);
-
-    w->show();
     m_historyWindows.insert(key, w);
+    w->show();
 
     w->setProperty("historyKey", key);
-
     connect(w, SIGNAL(destroyed(QObject*)),
             this, SLOT(onHistoryWindowDestroyed(QObject*)));
 }
@@ -768,5 +744,5 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
 void MainWindow::onHistoryWindowDestroyed(QObject* obj)
 {
     QString key = obj->property("historyKey").toString();
-    m_historyWindows.remove(key); // needs further testing
+    m_historyWindows.remove(key);
 }
