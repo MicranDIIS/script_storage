@@ -662,6 +662,27 @@ void MainWindow::showBasicContextMenu(const QPoint& pos)
     }
 }
 
+QVector<GuiCommitInfo> convertCommitInfoToGuiCommitInfo(const QList<CommitInfo>& backendList)
+{
+    QVector<GuiCommitInfo> guiHistory;
+    guiHistory.reserve(backendList.size());
+
+    for (int i = 0; i < backendList.size(); ++i)
+    {
+        const CommitInfo &c = backendList.at(i);
+
+        GuiCommitInfo g;
+        g.dateTime = c.authorDateTime;
+        g.author = c.authorName;
+        g.authorEmail = c.authorEmail;
+        g.commitMessage = c.commitMsg;
+        g.commitHash = c.commitHash;
+
+        guiHistory.append(g);
+    }
+    return guiHistory;
+}
+
 void MainWindow::openHistoryForIndex(const QModelIndex &index)
 {
     QString scriptPath = index.data(ViewModel::FilePathRole).toString();
@@ -700,27 +721,24 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
         return;
     }
 
-    QVector<GuiCommitInfo> guiHistory;
-    guiHistory.reserve(backendList.size());
+    QVector<GuiCommitInfo> guiHistory = convertCommitInfoToGuiCommitInfo(backendList);
+//    guiHistory.reserve(backendList.size());
 
-    for (int i = 0; i < backendList.size(); ++i)
-    {
-        const CommitInfo &c = backendList.at(i);
+//    for (int i = 0; i < backendList.size(); ++i)
+//    {
+//        const CommitInfo &c = backendList.at(i);
 
-        GuiCommitInfo g;
-        g.dateTime = c.authorDateTime;
-        g.author = c.authorName;
-        g.authorEmail = c.authorEmail;
-        g.commitMessage = c.commitMsg;
-        g.commitHash = c.commitHash;
+//        GuiCommitInfo g;
+//        g.dateTime = c.authorDateTime;
+//        g.author = c.authorName;
+//        g.authorEmail = c.authorEmail;
+//        g.commitMessage = c.commitMsg;
+//        g.commitHash = c.commitHash;
 
-        guiHistory.append(g);
-    }
+//        guiHistory.append(g);
+//    }
 
     QString key = QFileInfo(scriptPath).absoluteFilePath();
-
-    qDebug() << "[history] repo ptr =" << m_repo << "repoRoot =" << m_repoRoot;
-    qDebug() << "[history] scriptPath =" << scriptPath;
 
     if (m_historyWindows.contains(key))
     {

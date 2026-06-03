@@ -11,6 +11,7 @@
 #include <QPointer>
 #include <QPoint>
 //#include "historywindow.h"
+#include <commitinfo.h>
 class HistoryWindow;
 
 namespace Ui {
@@ -65,6 +66,9 @@ private slots:
     void showCustomContextMenu(const QPoint& pos);
     void showBasicContextMenu(const QPoint &pos);
     void onHistoryWindowDestroyed(QObject* obj);
+
+//    QVector<GuiCommitInfo> convertCommitInfoToGuiCommitInfo(const QList<CommitInfo>& backendList);
+
 };
 
 #endif // MAINWINDOW_H
