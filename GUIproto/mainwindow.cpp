@@ -315,23 +315,6 @@ void MainWindow::handleScriptDoubleClick(const QModelIndex &index)
     openSelectedScript();
 }
 
-void MainWindow::resetComboBoxes() {
-    ui->dComboBox->blockSignals(true);
-    ui->rComboBox->blockSignals(true);
-    ui->sComboBox->blockSignals(true);
-    ui->categoryComboBox->blockSignals(true);
-
-    ui->dComboBox->setCurrentIndex(0);
-    ui->rComboBox->setCurrentIndex(0);
-    ui->sComboBox->setCurrentIndex(0);
-    ui->categoryComboBox->setCurrentIndex(0);
-
-    ui->dComboBox->blockSignals(false);
-    ui->rComboBox->blockSignals(false);
-    ui->sComboBox->blockSignals(false);
-    ui->categoryComboBox->blockSignals(false);
-}
-
 void MainWindow::resetFilterState() {
     basicFilterModel->resetScriptFilters();
     customFilterModel->resetScriptFilters();
@@ -341,7 +324,10 @@ void MainWindow::resetFilterState() {
     stadeComboModel->clearFilters();
     categoryComboModel->clearFilters();
 
-    resetComboBoxes();
+    ui->dComboBox->setCurrentIndex(0);
+    ui->rComboBox->setCurrentIndex(0);
+    ui->sComboBox->setCurrentIndex(0);
+    ui->categoryComboBox->setCurrentIndex(0);
 }
 
 void MainWindow::applyTextSearch(const QString& text){
@@ -422,6 +408,7 @@ void MainWindow::applyRoleFilter(){
     } else {
         ui->sComboBox->setCurrentIndex(0);
     }
+
 }
 
 void MainWindow::applyCategoryFilter() {

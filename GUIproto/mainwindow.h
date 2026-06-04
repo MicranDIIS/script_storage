@@ -45,7 +45,6 @@ private:
 
     void loadScripts();
     void openDiffForIndex(const QModelIndex &index);
-    void resetComboBoxes();
     void resetFilterState();
     bool syncRepo();
     void loadState();
