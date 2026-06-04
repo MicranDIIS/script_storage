@@ -495,44 +495,8 @@ void MainWindow::showBasicContextMenu(const QPoint& pos)
     }
 }
 
-void MainWindow::openHistoryForIndex(const QModelIndex &index)
+QVector<GuiCommitInfo> convertCommitInfoToGuiCommitInfo(const QList<CommitInfo>& backendList)
 {
-    QString scriptPath = index.data(ViewModel::FilePathRole).toString();
-    if (scriptPath.isEmpty())
-        return;
-
-    if (!m_repo)
-    {
-        QMessageBox::warning(this, tr("Repository error"),
-                             tr("Repository is not initialized."));
-        return;
-    }
-
-    if (m_repoRoot.isEmpty())
-    {
-        QMessageBox::warning(this, tr("Repository error"),
-                             tr("Repository root path is empty."));
-        return;
-    }
-
-    QString relPath = QDir(m_repoRoot).relativeFilePath(scriptPath);
-    relPath.replace('\\', '/');
-
-    if (relPath.startsWith(".."))
-    {
-        QMessageBox::warning(this, tr("Repository error"),
-                             tr("Selected file is outside the repository:\n%1").arg(scriptPath));
-        return;
-    }
-
-    QList<CommitInfo> backendList;
-    Gerror err = m_repo->log(backendList, relPath);
-    if (!err.succses)
-    {
-        QMessageBox::warning(this, tr("Git log error"), err.msg);
-        return;
-    }
-
     QVector<GuiCommitInfo> guiHistory;
     guiHistory.reserve(backendList.size());
 
@@ -549,11 +513,44 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
 
         guiHistory.append(g);
     }
+    return guiHistory;
+}
+
+void MainWindow::openHistoryForIndex(const QModelIndex &index)
+{
+    QString scriptPath = index.data(ViewModel::FilePathRole).toString();
+    if (scriptPath.isEmpty())
+        return;
+
+    if (!m_repo || m_repoRoot.isEmpty())
+    {
+        QMessageBox::warning(this, tr("Repository error"),
+                             tr("Repository is not initialized."));
+        return;
+    }
+
+    QString relPath = QDir(m_repoRoot).relativeFilePath(scriptPath);
+    relPath.replace('\\', '/');
+
+    if (relPath.startsWith(".."))
+    {
+        QMessageBox::warning(this, tr("Repository error"),
+            tr("Selected file is outside the repository:\n%1").arg(scriptPath));
+        return;
+    }
+
+    QList<CommitInfo> backendList;
+    Gerror err = m_repo->log(backendList, relPath);
+    if (!err.succses)
+    {
+        QMessageBox::warning(this, tr("Git log error"), err.msg);
+        return;
+    }
+
+    QVector<GuiCommitInfo> guiHistory =
+            convertCommitInfoToGuiCommitInfo(backendList);
 
     QString key = QFileInfo(scriptPath).absoluteFilePath();
-
-    qDebug() << "[history] repo ptr =" << m_repo << "repoRoot =" << m_repoRoot;
-    qDebug() << "[history] scriptPath =" << scriptPath;
 
     if (m_historyWindows.contains(key))
     {
@@ -568,14 +565,11 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
     HistoryWindow* w = new HistoryWindow();
     w->setAttribute(Qt::WA_DeleteOnClose);
     w->setFilePath(scriptPath);
-
     w->setHistory(guiHistory);
-
-    w->show();
     m_historyWindows.insert(key, w);
+    w->show();
 
     w->setProperty("historyKey", key);
-
     connect(w, SIGNAL(destroyed(QObject*)),
             this, SLOT(onHistoryWindowDestroyed(QObject*)));
 }
@@ -583,6 +577,6 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
 void MainWindow::onHistoryWindowDestroyed(QObject* obj)
 {
     QString key = obj->property("historyKey").toString();
-    m_historyWindows.remove(key); // needs further testing
+    m_historyWindows.remove(key);
 }
 
