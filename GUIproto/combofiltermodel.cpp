@@ -116,7 +116,6 @@ QString ComboFilterModel::displayText(const QString& value) const{
 
             if (value == "metrolog") {
                 return QString::fromUtf8("Метролог");
-
         }
     }
     return value;
