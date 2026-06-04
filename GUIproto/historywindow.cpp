@@ -5,6 +5,7 @@
 #include <QFileInfo>
 #include <QClipboard>
 #include <QApplication>
+#include <QTimer>
 
 HistoryWindow::HistoryWindow(QWidget *parent) :
     QWidget(parent),
@@ -36,6 +37,8 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
 
     ui->HistoryTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->HistoryTableView->setSelectionMode(QAbstractItemView::SingleSelection);
+
+    ui->hashLabel->hide();
 
     connect(ui->HistoryTableView->selectionModel(), SIGNAL(currentRowChanged(QModelIndex, QModelIndex)),
             this,SLOT(onCurrentRowChanged(QModelIndex)));
@@ -230,4 +233,8 @@ void HistoryWindow::copyHashToClipboard(const QModelIndex& index)
 
     QClipboard *clipboard = QApplication::clipboard();
     clipboard->setText(hash);
+//    QToolTip::showText(QCursor::pos(), trUtf8("Хэш скопирован"));
+    ui->hashLabel->setText(trUtf8("Хэш скопирован!"));
+    ui->hashLabel->show();
+    QTimer::singleShot(2000, ui->hashLabel, SLOT(hide()));
 }
