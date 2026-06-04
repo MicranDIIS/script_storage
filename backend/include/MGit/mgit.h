@@ -5,27 +5,36 @@
 #include <QDateTime>
 #include <QList>
 
-//структура ошибки
-struct Gerror{
-    bool succses;
-    QString msg;
+//коды ошибок связанных с пользователем 
+enum Errors{
+    OK = 0,
+    UNKNOW = 1,
+    REPO_IS_NULL = 2
+};
 
-    Gerror() : succses(true), msg("") {}
+//класс ошибки
+class Gerror{
+private:
+    bool success_;
+    QString msg_;
+    int code_;
+public:
+    Gerror() : success_(true), msg_(""), code_(OK) {}
+    Gerror(const QString& msg, int code) : success_(false), msg_(msg), code_(code) {}
 
-    Gerror(const QString& msg_) : succses(false) , msg(msg_) {}
+    bool hasError() const {return !success_;}
+    bool matchesCode(int code) {return code_ == code;}
+
+    const QString& getMsg() const {return msg_;}
+    int getCode() const {return code_;}
 };
 
 //конфиг нашего репозитория
 struct RepoConfig{
-    //URL адрес удаленного репозитория(может лежать на гитхабе, гитлабе и тд)
     QString url;
-    //ветка с которой будет идти работа
     QString branch;
-    //путь где репозитория лежит либо куда будет клонировать
     QString path;
-    //имя пользователя
     QString username;
-    //токен пользователя
     QString token;
 };
 
@@ -41,41 +50,68 @@ enum STATUS_FLAG{
     STATUS_NEW_TO_DIR      = 1 << 7  //новый в директории
 };
 
-struct FileStatus{
-    //путь относительно .git строится
-    QString pathNew;
-    QString pathOld;
-    int flags;
+class FileStatus{
+private:
+    QString pathNew_;
+    QString pathOld_;
+    int flags_;
 
-    FileStatus(const QString& pathNew_, const QString& pathOld_, int flags_) : pathNew(pathNew_), pathOld(pathOld_), flags(flags_) {}
-    bool flagCheck(STATUS_FLAG flag) const {return flags & flag;}
-     
+public:
+    FileStatus(const QString& pathNew, const QString& pathOld, int flags) : pathNew_(pathNew), pathOld_(pathOld), flags_(flags) {}
+
+    const QString& getPathNew() const {return pathNew_;}
+    const QString& getPathOld() const {return pathOld_;}
+
+    bool statusNewToHead() const {return flags_ & STATUS_NEW_TO_HEAD;}
+    bool statusModfileToHead() const {return flags_ & STATUS_MODFILE_TO_HEAD;}
+    bool statusDeleteToHead() const {return flags_ & STATUS_DELETE_TO_HEAD;}
+    bool statusRenameToHead() const {return flags_ & STATUS_RENAME_TO_HEAD;}
+
+    bool statusNewToDir() const {return flags_ & STATUS_NEW_TO_DIR;}
+    bool statusModfileToDir() const {return flags_ & STATUS_MODFILE_TO_DIR;}
+    bool statusDeleteToDir() const {return flags_ & STATUS_DELETE_TO_DIR;}
+    bool statusRenameToDir() const {return flags_ & STATUS_RENAME_TO_DIR;}
+
+    bool flagCheck(STATUS_FLAG flag) const {return flags_ & flag;}
 };
 
 //для git log
-struct CommitInfo{
-    QDateTime authorDateTime;
-    QString authorName;
-    QString  authorEmail;
+class CommitInfo{
+private:
+    QDateTime authorDateTime_;
+    QString authorName_;
+    QString authorEmail_;
 
-    QString commitMsg;
-    QString commitHash;
+    QString commitMsg_;
+    QString commitHash_;
 
-    QDateTime committerDateTime;
-    QString committerName;
-    QString  committerEmail;
+    QDateTime committerDateTime_;
+    QString committerName_;
+    QString committerEmail_;
 
-    CommitInfo(const QDateTime& authorDateTime_, const QString& authorName_,
-               const QString& authorEmail_, const QString& commitMsg_,
-               const QString& commitHash_, const QDateTime& committerDateTime_,
-               const QString& committerName_, const QString& committerEmail_) :
-               authorDateTime(authorDateTime_), authorName(authorName_),
-               authorEmail(authorEmail_), commitMsg(commitMsg_),
-               commitHash(commitHash_), committerDateTime(committerDateTime_),
-               committerName(committerName_), committerEmail(committerEmail_) {}
+public:
+    CommitInfo(const QDateTime& authorDateTime, const QString& authorName,
+               const QString& authorEmail, const QString& commitMsg,
+               const QString& commitHash, const QDateTime& committerDateTime,
+               const QString& committerName, const QString& committerEmail) :
+               authorDateTime_(authorDateTime), authorName_(authorName),
+               authorEmail_(authorEmail), commitMsg_(commitMsg),
+               commitHash_(commitHash), committerDateTime_(committerDateTime),
+               committerName_(committerName), committerEmail_(committerEmail) {}
+
+    const QDateTime& getAuthorDateTime() const {return authorDateTime_;}
+    const QString& getAuthorName() const {return authorName_;}
+    const QString& getAuthorEmail() const {return authorEmail_;}
+
+    const QString& getCommitMsg() const {return commitMsg_;}
+    const QString& getCommitHash() const {return commitHash_;}
+
+    const QDateTime& getCommitterDateTime() const {return committerDateTime_;}
+    const QString& getCommitterName() const {return committerName_;}
+    const QString& getCommitterEmail() const {return committerEmail_;}
+
 };
 
-//сам класс с виртуальными методами
 class IRepository{
 public:
     virtual ~IRepository() {}
@@ -88,58 +124,47 @@ public:
     virtual const QString& getToken() const = 0;
 
     /*
-    * открывает репозитрий на ветке из нашего конфига. Не работае если
-    * ветки нет на локале, но есть в refs/remotes/origin.
-    * только с локальными ветками которые УЖЕ ЕСТЬ
+    * Открывает репозиторий
     */
     virtual Gerror open() = 0;
 
     /*
-    * Клонирует весь репозиторий и сразу переключает на нужную ветку
-    * В этом же случае, если ветка не main или master
-    * То создается локальная ее копия с которой можно работать
-    * После клонирования будет нужная нам ветка
+    * Клонирует только ветку заданную в конфиге
     */
     virtual Gerror clone() = 0;
     /*
-    * git fetch + git reset --hard origin/branch наш
-    * git fetch фетчит ТОЛЬКО нашу ветку, а после уже применяет
-    * git reset --hard origin/branch
-    * ВАЖНО: файлы которые не отслеживаются не трогаются 
+    * Фетчит ветку из конфига и применяет ресетит до актуального фетча
+    * Не трогает локальные файле
     */
     virtual Gerror sync() = 0;
 
     /*
-    *git reset --hard HEAD~
-    *ВАЖНО: ресетит все к ласт коммиту и файлы которые не отслеживаются тоже
+    * Ресетит все к ласт коммиту. Локальные файлы удаляются
     */
     virtual Gerror reset() = 0;
     /*
-    *просто статус.
-    *Флаги самим тыкать придется
+    * Статус файлов в индексе и локальные
     */
     virtual Gerror status(QList<FileStatus>& list) const = 0;
     /*
-    *просто структуру с логами получаем
+    * Логи всех коммитов
     */
     virtual Gerror log(QList<CommitInfo>& list) const = 0;
     /*
-    *возвращает list со всеми данными из коммитов
-    *где файл был как-то изменен. Путь до файла откладывается
-    *относительно .git 
+    * Логи с коммитами в которых был изменен файл
     */
     virtual Gerror log(QList<CommitInfo>& list, const QString& filePath) const = 0;
 
+    /*
+    * Проверка валидности репозитория
+    */
     virtual bool hasRepo() const = 0;
 
 };
 
 //фабричные ф-ии
-IRepository* createRepository(const RepoConfig& cfg_);
+IRepository* createRepository(const RepoConfig& cfg);
 void deleteRepository(IRepository* repo);
 
-//запуск libgit2 через эти ф-ии производится. Просто что бы не тыкать libgit2 напрямую
-void mgit_init();
-void mgit_shutdown();
 
-#endif 
+#endif
