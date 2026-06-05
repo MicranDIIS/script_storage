@@ -18,7 +18,6 @@
 #include <QApplication>
 #include <QMenu>
 #include <QMessageBox>
-#include <QCloseEvent>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -37,6 +36,13 @@ MainWindow::MainWindow(QWidget *parent) :
     m_repo(0)
 {
     ui->setupUi(this);
+
+    mgitlib.setFileName("mgit.dll");
+    if (!mgitlib.load()){
+        qDebug()<< mgitlib.errorString();
+    }
+    m_deleteRepository = (DeleteRepositoryFunc)mgitlib.resolve("deleteRepository");
+    m_createRepository = (CreateRepositoryFunc)mgitlib.resolve("createRepository");
 
     if (!syncRepo())
             return;
@@ -104,7 +110,7 @@ MainWindow::~MainWindow()
 {
     if (m_repo)
     {
-        deleteRepository(m_repo);
+        m_deleteRepository(m_repo);
         m_repo = 0;
     }
     delete ui;
@@ -125,7 +131,7 @@ void MainWindow::closeEvent(QCloseEvent *event){
     QMainWindow::closeEvent(event);
 }
 
-void MainWindow::loadState(){
+void MainWindow::loadState(){  //добавить обработку пропавшего фильтра
 
     settings.beginGroup("mainwindow");
     QString resDevice = settings.value("filters/device").toString();
@@ -160,13 +166,12 @@ void MainWindow::loadState(){
     settings.endGroup();
 }
 
-
 // синхронизация или клонирование репозитория в локальную папку(все пути в конфиге repo.ini указываем)
  bool MainWindow::syncRepo(){
 
      if (m_repo)
      {
-         deleteRepository(m_repo);
+         m_deleteRepository(m_repo);
          m_repo = 0;
      }
 
@@ -179,7 +184,7 @@ void MainWindow::loadState(){
      RepoConfig repoConfig;
 
      if (!reader.repoLoad(repoConfigPath, repoConfig)) {
-         QMessageBox::warning(this,"Сonfig error", "Configuration file for remote could not be loaded:\n" + repoConfigPath);
+         QMessageBox::warning(this,"Config error", "Configuration file for remote could not be loaded:\n" + repoConfigPath);
          return false;
      }
 
@@ -202,7 +207,7 @@ void MainWindow::loadState(){
          }
      }
 
-     m_repo = createRepository(repoConfig);
+     m_repo = m_createRepository(repoConfig);
      if (!m_repo)
      {
          QMessageBox::warning(this, "Repository error",
@@ -214,18 +219,19 @@ void MainWindow::loadState(){
 
      if (!gitDir.exists()) {
          err = m_repo->clone();
-         if (!err.succses) {
+         if (err.hasError()) {
              return false;
          }
+         err = m_repo->open();
      } else {
          err = m_repo->open();
          err = m_repo->sync();
          }
-     if (!err.succses)
+     if (err.hasError())
      {
-         QMessageBox::warning(this, "Repository error","Repository synchronization failed:\n" + err.msg);
+         QMessageBox::warning(this, "Repository error","Repository synchronization failed:\n" + err.getMsg());
 
-         deleteRepository(m_repo);
+         m_deleteRepository(m_repo);
          m_repo = 0;
          return false;
      }
@@ -492,11 +498,11 @@ QVector<GuiCommitInfo> convertCommitInfoToGuiCommitInfo(const QList<CommitInfo>&
         const CommitInfo &c = backendList.at(i);
 
         GuiCommitInfo g;
-        g.dateTime = c.authorDateTime;
-        g.author = c.authorName;
-        g.authorEmail = c.authorEmail;
-        g.commitMessage = c.commitMsg;
-        g.commitHash = c.commitHash;
+        g.dateTime = c.getAuthorDateTime();
+        g.author = c.getAuthorName();
+        g.authorEmail = c.getAuthorEmail();
+        g.commitMessage = c.getCommitMsg();
+        g.commitHash = c.getCommitHash();
 
         guiHistory.append(g);
     }
@@ -528,9 +534,9 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
 
     QList<CommitInfo> backendList;
     Gerror err = m_repo->log(backendList, relPath);
-    if (!err.succses)
+    if (err.hasError())
     {
-        QMessageBox::warning(this, tr("Git log error"), err.msg);
+        QMessageBox::warning(this, tr("Git log error"), err.getMsg());
         return;
     }
 

@@ -11,7 +11,11 @@
 #include <QPointer>
 #include <QPoint>
 #include <QSettings>
+#include <QCloseEvent>
+#include <QTextCodec>
 #include <commitinfo.h>
+#include <QLibrary>
+
 
 class HistoryWindow;
 
@@ -29,6 +33,7 @@ public:
 
 protected:
     void closeEvent(QCloseEvent *event);
+
 
 private:
     Ui::MainWindow *ui;
@@ -48,12 +53,18 @@ private:
     void resetFilterState();
     bool syncRepo();
     void loadState();
+//    void loadMgit();
     void openHistoryForIndex(const QModelIndex &index);
     QHash<QString, QPointer<HistoryWindow> > m_historyWindows;
 
     IRepository* m_repo;
     QString m_repoRoot;
     QSettings settings;
+    QLibrary mgitlib;
+    typedef IRepository* (*CreateRepositoryFunc)(const RepoConfig&);
+    typedef void (*DeleteRepositoryFunc)(IRepository*);
+    DeleteRepositoryFunc m_deleteRepository;
+    CreateRepositoryFunc m_createRepository;
 
 private slots:
     void showBasicPage();
