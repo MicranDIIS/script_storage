@@ -164,8 +164,9 @@ public:
 };
 
 //фабричные ф-ии
+extern "C"{
 MGITSHARED_EXPORT IRepository* createRepository(const RepoConfig& cfg);
 MGITSHARED_EXPORT void deleteRepository(IRepository* repo);
-
+}
 
 #endif 
