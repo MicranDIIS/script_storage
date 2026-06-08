@@ -100,18 +100,6 @@ bool ScriptFilterModel::filterAcceptsRow(int source_row, const QModelIndex& sour
     }
     QString text = scriptsModel->data(index, Qt::DisplayRole).toString();
 
-//     //логика отображения такая, что хотя бы один фильтр должен быть активен
-//    bool hasAnyFilter = false;
-//    if(currentMode == ViewModel::basicMode){
-//           hasAnyFilter = !roleFilter.isEmpty() || !deviceFilter.isEmpty() || !stadeFilter.isEmpty() ;
-//    } else {
-//        hasAnyFilter = !categoryFilter.isEmpty() || !textSearch.isEmpty();
-//    }
-
-//    if (!hasAnyFilter) {
-//        return false;
-//    }
-
     // фильтрация в зависимости от выбранного режима
     if (currentMode == ViewModel::basicMode){
         if (!containsText(source_row, ViewModel::DeviceColumn, source_parent, deviceFilter)){
