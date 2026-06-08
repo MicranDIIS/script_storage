@@ -10,27 +10,18 @@
 HistoryWindow::HistoryWindow(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::HistoryWindow),
-    m_historyModel(new QStandardItemModel(this))
+    m_historyModel(new QStandardItemModel(this)),
+    m_proxy(new QSortFilterProxyModel(this))
 {
     ui->setupUi(this);
 
+    setupModels();
+
     restoreGeometry(settings.value("HistoryWindow/Geometry").toByteArray());
-
-    m_proxy = new QSortFilterProxyModel(this);
-
-    m_proxy->setSourceModel(m_historyModel);
-    m_proxy->setSortRole(RoleDateTime);
-    m_proxy->setDynamicSortFilter(true);
 
     ui->HistoryTableView->setModel(m_proxy);
     ui->HistoryTableView->setSortingEnabled(true);
     m_proxy->sort(DateColumn, Qt::DescendingOrder);
-
-    m_historyModel->setColumnCount(ColumnCount);
-    m_headers << trUtf8("Дата")
-              << trUtf8("Автор")
-              << trUtf8("Сообщение коммита");
-    m_historyModel->setHorizontalHeaderLabels(m_headers);
 
     QByteArray state = settings.value("HistoryTableView/State").toByteArray();
     ui->HistoryTableView->horizontalHeader()->restoreState(state);
@@ -44,6 +35,20 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
             this,SLOT(onCurrentRowChanged(QModelIndex)));
     connect(ui->HistoryTableView, SIGNAL(doubleClicked(QModelIndex)),
             this, SLOT(copyHashToClipboard(QModelIndex)));
+}
+
+void HistoryWindow::setupModels()
+{
+    m_historyModel->setColumnCount(ColumnCount);
+    m_headers.clear();
+    m_headers << trUtf8("Дата")
+              << trUtf8("Автор")
+              << trUtf8("Сообщение коммита");
+    m_historyModel->setHorizontalHeaderLabels(m_headers);
+
+    m_proxy->setSourceModel(m_historyModel);
+    m_proxy->setSortRole(RoleDateTime);
+    m_proxy->setDynamicSortFilter(true);
 }
 
 HistoryWindow::~HistoryWindow()

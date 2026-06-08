@@ -34,7 +34,6 @@ private:
     QVector<GuiCommitInfo> makeMockHistory() const;
     QSettings settings;
     QSortFilterProxyModel* m_proxy;
-    void onCommitRowClicked(const QModelIndex& index);
     void updateCommitMessagePanel(const QModelIndex &indexInRow);
     void clearCommitMessagePanel();
     QString getSummaryString(const QString& fullMessage) const;
@@ -47,6 +46,7 @@ private:
         CommitColumn = 2,
         ColumnCount = 3
     };
+    void setupModels();
 
 
 private slots:
