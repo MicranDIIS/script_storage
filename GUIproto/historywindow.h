@@ -19,10 +19,16 @@ class HistoryWindow : public QWidget
     Q_OBJECT
 
 public:
-    explicit HistoryWindow(QWidget *parent = 0);
+    explicit HistoryWindow(
+        const QString& filePath,
+        const QVector<GuiCommitInfo>& history,
+        QWidget *parent = 0);
     ~HistoryWindow();
     void setFilePath(const QString& scriptPath);
     void setHistory(const QVector<GuiCommitInfo>& history);
+    void updateData(
+        const QString& filePath,
+        const QVector<GuiCommitInfo>& history);
 
 private:
     Ui::HistoryWindow *ui;
@@ -34,20 +40,32 @@ private:
     QVector<GuiCommitInfo> makeMockHistory() const;
     QSettings settings;
     QSortFilterProxyModel* m_proxy;
-    void onCommitRowClicked(const QModelIndex& index);
     void updateCommitMessagePanel(const QModelIndex &indexInRow);
     void clearCommitMessagePanel();
     QString getSummaryString(const QString& fullMessage) const;
     QString getBodyString(const QString& fullMessage) const;
+    QStringList splitString(const QString& fullMessage) const;
+    enum Column
+    {
+        DateColumn = 0,
+        AuthorColumn = 1,
+        CommitColumn = 2,
+        ColumnCount = 3
+    };
+    void setupModels();
+    void setupView();
+    void restoreUiGeometry();
+    void saveUiState();
 
 
 private slots:
-    void onSortChanged(int);
     void onCurrentRowChanged(const QModelIndex &current);
+    void copyHashToClipboard(const QModelIndex& index);
 
 protected:
     void closeEvent(QCloseEvent *event);
-    enum {
+    enum
+    {
         RoleCommitHash = Qt::UserRole + 1,
         RoleDateTime = Qt::UserRole + 2,
         RoleCommitMessage = Qt::UserRole + 3

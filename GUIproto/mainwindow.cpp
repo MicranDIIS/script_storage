@@ -1,11 +1,12 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+
 #include "scriptloader.h"
-
-#include <mgit.h>
-
 #include "diffviewerwindow.h"
 #include "historywindow.h"
+#include "scriptwindow.h"
+
+#include <mgit.h>
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -13,16 +14,11 @@
 
 #include "scriptwindow.h"
 
-#include <QDir>
-#include <QFileInfoList>
-#include <QStandardItemModel>
-#include <QStandardItem>
-#include <QDebug>
 #include <QCoreApplication>
 #include <QApplication>
 #include <QMenu>
 #include <QMessageBox>
-
+#include <QCloseEvent>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -78,18 +74,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
     setWindowTitle("SE2");
 
-    qDebug() << QCoreApplication::applicationDirPath();
+//    qDebug() << QCoreApplication::applicationDirPath();
 
-    buildLayouts();
-
-//    syncRepo();
     loadScripts();
 
-    connect(ui->listViewBasic, SIGNAL(doubleClicked(QModelIndex)),
-                this, SLOT(handleScriptDoubleClick(QModelIndex)));
-
-    connect(ui->pushButton, SIGNAL(clicked()),
-                this, SLOT(openSelectedScript()));
+    connect(ui->listViewBasic, SIGNAL(doubleClicked(QModelIndex)),this, SLOT(handleScriptDoubleClick(QModelIndex)));
+    connect(ui->pushButton, SIGNAL(clicked()),this, SLOT(openSelectedScript()));
 
     connect(ui->lineEdit, SIGNAL(textChanged(QString)), this, SLOT(applyTextSearch(QString)));
     connect(ui->dComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(applyDeviceFilter()));
@@ -104,12 +94,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->radioCustom, SIGNAL(clicked()), this, SLOT(showCustomPage()));
 
     ui->listViewCustom->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(ui->listViewCustom, SIGNAL(customContextMenuRequested(const QPoint &)),
-            this, SLOT(showCustomContextMenu(const QPoint &)));
+    connect(ui->listViewCustom, SIGNAL(customContextMenuRequested(const QPoint &)),this, SLOT(showCustomContextMenu(const QPoint &)));
 
     ui->listViewBasic->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(ui->listViewBasic, SIGNAL(customContextMenuRequested(const QPoint &)),
-            this, SLOT(showBasicContextMenu(const QPoint &)));
+    connect(ui->listViewBasic, SIGNAL(customContextMenuRequested(const QPoint &)),this, SLOT(showBasicContextMenu(const QPoint &)));
 }
 
 MainWindow::~MainWindow()
@@ -121,6 +109,57 @@ MainWindow::~MainWindow()
     }
     delete ui;
 }
+
+void MainWindow::closeEvent(QCloseEvent *event){
+
+    settings.beginGroup("mainwindow");
+
+    settings.setValue("filters/device", ui->dComboBox->currentText());
+    settings.setValue("filters/role",ui->rComboBox->itemData(ui->rComboBox->currentIndex(),Qt::UserRole).toString());
+    settings.setValue("filters/stade",ui->sComboBox->currentText());
+    settings.setValue("filters/category",ui->categoryComboBox->currentText());
+    settings.setValue("win/geometry", saveGeometry());
+    settings.setValue("win/state", saveState());
+    settings.endGroup();
+
+    QMainWindow::closeEvent(event);
+}
+
+void MainWindow::loadState(){
+
+    settings.beginGroup("mainwindow");
+    QString resDevice = settings.value("filters/device").toString();
+    int deviceIndex = ui->dComboBox->findText(resDevice);
+    if (deviceIndex >= 0) {
+        ui->dComboBox->setCurrentIndex(deviceIndex);
+    }
+    applyDeviceFilter();
+
+    QString resRole = settings.value("filters/role").toString();
+    int roleIndex = ui->rComboBox->findData(resRole, Qt::UserRole);
+    if (roleIndex >= 0) {
+        ui->rComboBox->setCurrentIndex(roleIndex);
+    }
+    applyRoleFilter();
+
+    QString resStade = settings.value("filters/stade").toString();
+    int stadeIndex = ui->sComboBox->findText(resStade);
+    if (stadeIndex >= 0) {
+        ui->sComboBox->setCurrentIndex(stadeIndex);
+    }
+    applyStadeFilter();
+
+    QString resCategory = settings.value("filters/category").toString();
+    int categoryIndex = ui->categoryComboBox->findText(resCategory);
+    if (categoryIndex >= 0) {
+        ui->categoryComboBox->setCurrentIndex(categoryIndex);
+    }
+    applyCategoryFilter();
+
+    restoreGeometry(settings.value("win/geometry").toByteArray());
+    settings.endGroup();
+}
+
 
 // синхронизация или клонирование репозитория в локальную папку(все пути в конфиге repo.ini указываем)
  bool MainWindow::syncRepo(){
@@ -175,32 +214,23 @@ MainWindow::~MainWindow()
 
      if (!gitDir.exists()) {
          err = m_repo->clone();
-
-         if (err.succses) {
-             err = m_repo->sync();
+         if (!err.succses) {
+             return false;
          }
      } else {
          err = m_repo->open();
-
-         if (!err.succses) {
-             err = m_repo->sync();
-         } else {
-             err = m_repo->sync(); // тут пока трогать не буду
+         err = m_repo->sync();
          }
-     }
-
      if (!err.succses)
      {
-         QMessageBox::warning(this, "Repository error",
-                              "Repository synchronization failed:\n" + err.msg);
+         QMessageBox::warning(this, "Repository error","Repository synchronization failed:\n" + err.msg);
 
          deleteRepository(m_repo);
          m_repo = 0;
          return false;
      }
 
-     qDebug() << "[syncRepo] ok, repoRoot =" << m_repoRoot << "repo ptr =" << m_repo;
-
+//     qDebug() << "[syncRepo] ok, repoRoot =" << m_repoRoot << "repo ptr =" << m_repo;
      return true;
  }
 
@@ -249,11 +279,11 @@ void MainWindow::loadScripts()
     basicScriptsModel->setFiles(validFiles);
     customScriptsModel->setFiles(validFiles);
     resetFilterState();
+    loadState();
 
     if(validFiles.size()!= files.size()){ //файлы с шапкой, не прошедшей валидацию не отображаются
         QMessageBox::warning(this,"Invalid script headers", "This files contain incorrect headers and could not be displayed:\n" +  invalidHeader.join("\n"));
     }
-
     delete reader;
 }
 
@@ -285,23 +315,6 @@ void MainWindow::handleScriptDoubleClick(const QModelIndex &index)
     openSelectedScript();
 }
 
-void MainWindow::resetComboBoxes() {
-    ui->dComboBox->blockSignals(true);
-    ui->rComboBox->blockSignals(true);
-    ui->sComboBox->blockSignals(true);
-    ui->categoryComboBox->blockSignals(true);
-
-    ui->dComboBox->setCurrentIndex(0);
-    ui->rComboBox->setCurrentIndex(0);
-    ui->sComboBox->setCurrentIndex(0);
-    ui->categoryComboBox->setCurrentIndex(0);
-
-    ui->dComboBox->blockSignals(false);
-    ui->rComboBox->blockSignals(false);
-    ui->sComboBox->blockSignals(false);
-    ui->categoryComboBox->blockSignals(false);
-}
-
 void MainWindow::resetFilterState() {
     basicFilterModel->resetScriptFilters();
     customFilterModel->resetScriptFilters();
@@ -311,7 +324,10 @@ void MainWindow::resetFilterState() {
     stadeComboModel->clearFilters();
     categoryComboModel->clearFilters();
 
-    resetComboBoxes();
+    ui->dComboBox->setCurrentIndex(0);
+    ui->rComboBox->setCurrentIndex(0);
+    ui->sComboBox->setCurrentIndex(0);
+    ui->categoryComboBox->setCurrentIndex(0);
 }
 
 void MainWindow::applyTextSearch(const QString& text){
@@ -324,11 +340,10 @@ void MainWindow::applyTextSearch(const QString& text){
     customFilterModel->setTextSearch(text);
 }
 
-void MainWindow::applyStadeFilter()
-{
+void MainWindow::applyStadeFilter(){
+
     QString stade = ui->sComboBox->currentText();
     basicFilterModel->setStadeFilter(stade);
-
 }
 
 void MainWindow::applyDeviceFilter() {
@@ -393,6 +408,7 @@ void MainWindow::applyRoleFilter(){
     } else {
         ui->sComboBox->setCurrentIndex(0);
     }
+
 }
 
 void MainWindow::applyCategoryFilter() {
@@ -400,211 +416,15 @@ void MainWindow::applyCategoryFilter() {
     customFilterModel->setCategoryFilter(category);
 }
 
-void MainWindow::buildLayouts()
-{
-    const int outerMargin = 20;
-    const int sideSpacing = 8;
-    const int sideWidth = 54;
-    const int reserveRight = outerMargin + sideSpacing + sideWidth;
-
-    QVBoxLayout *centralLayout = new QVBoxLayout(ui->centralWidget);
-    centralLayout->setContentsMargins(0, 0, 0, 0);
-    centralLayout->setSpacing(0);
-    centralLayout->addWidget(ui->modeWidget);
-
-
-    QVBoxLayout *modeLayout = new QVBoxLayout(ui->modeWidget);
-    modeLayout->setContentsMargins(0, 0, 0, 0);
-    modeLayout->setSpacing(4);
-
-    QHBoxLayout *modeBarLayout = new QHBoxLayout(ui->modeBarWidget);
-    modeBarLayout->setContentsMargins(0, 0, 0, 0);
-    modeBarLayout->setSpacing(12);
-    modeBarLayout->addStretch();
-    modeBarLayout->addWidget(ui->radioBasic);
-    modeBarLayout->addWidget(ui->radioCustom);
-    modeBarLayout->addStretch();
-
-    modeLayout->addWidget(ui->modeBarWidget, 0);
-    modeLayout->addWidget(ui->stackedWidget, 1);
-
-    QVBoxLayout *basicLayout = new QVBoxLayout(ui->pageBasic);
-    basicLayout->setContentsMargins(0, 0, 0, 0);
-    basicLayout->setSpacing(6);
-
-    basicLayout->addWidget(ui->topFrameRandD, 0);
-    basicLayout->addWidget(ui->searchWidget, 0);
-    basicLayout->addWidget(ui->contentWidgetBasic, 1);
-    basicLayout->addWidget(ui->bottomWidgetBasic, 0);
-
-    // topFrameRandD
-    QHBoxLayout *topLayout = new QHBoxLayout(ui->topFrameRandD);
-    topLayout->setContentsMargins(outerMargin, 0, reserveRight, 0);
-    topLayout->setSpacing(8);
-
-    topLayout->addWidget(ui->dLabel);
-    topLayout->addWidget(ui->dComboBox, 1);
-
-    // searchWidget
-    QHBoxLayout *searchLayout = new QHBoxLayout(ui->searchWidget);
-    searchLayout->setContentsMargins(outerMargin, 0, reserveRight, 0);
-    searchLayout->setSpacing(10);
-
-    searchLayout->addWidget(ui->rLabel);
-    searchLayout->addWidget(ui->rComboBox, 1);
-
-    searchLayout->addSpacing(30);
-
-    searchLayout->addWidget(ui->sLabel);
-    searchLayout->addWidget(ui->sComboBox, 1);
-
-    // contentWidgetBasic
-    QHBoxLayout *contentLayout = new QHBoxLayout(ui->contentWidgetBasic);
-    contentLayout->setContentsMargins(outerMargin, 0, outerMargin, 0);
-    contentLayout->setSpacing(sideSpacing);
-
-    contentLayout->addWidget(ui->listViewBasic, 1);
-    contentLayout->addWidget(ui->sideWidgetBasic, 0);
-
-    // sideWidgetBasic
-    QVBoxLayout *sideLayout = new QVBoxLayout(ui->sideWidgetBasic);
-    sideLayout->setContentsMargins(4, 0, 0, 0);
-    sideLayout->setSpacing(8);
-    sideLayout->addWidget(ui->editButton, 0, Qt::AlignTop | Qt::AlignHCenter);
-    sideLayout->addStretch();
-
-    // bottomWidgetBasic
-    QHBoxLayout *bottomLayout = new QHBoxLayout(ui->bottomWidgetBasic);
-    bottomLayout->setContentsMargins(outerMargin, 8, reserveRight, 8);
-    bottomLayout->setSpacing(0);
-    bottomLayout->addStretch();
-    bottomLayout->addWidget(ui->pushButton, 0, Qt::AlignCenter);
-    bottomLayout->addStretch();
-
-    QVBoxLayout *customLayout = new QVBoxLayout(ui->pageCustom);
-    customLayout->setContentsMargins(0, 0, 0, 0);
-    customLayout->setSpacing(6);
-
-    customLayout->addWidget(ui->topFrameCategory, 0);
-    customLayout->addWidget(ui->searchWidget_2, 0);
-    customLayout->addWidget(ui->contentWidgetCustom, 1);
-    customLayout->addWidget(ui->bottomWidgetCustom, 0);
-
-    // topFrameCategory
-    QHBoxLayout *topLayoutCat = new QHBoxLayout(ui->topFrameCategory);
-    topLayoutCat->setContentsMargins(20, 0, 100, 0);
-    topLayoutCat->setSpacing(5);
-
-    topLayoutCat->addWidget(ui->cLabel);
-    topLayoutCat->addWidget(ui->categoryComboBox, 1);
-
-    // searchWidget_2
-    QHBoxLayout *searchLayout_2 = new QHBoxLayout(ui->searchWidget_2);
-    searchLayout_2->setContentsMargins(outerMargin, 0, reserveRight, 0);
-    searchLayout_2->setSpacing(0);
-    searchLayout_2->addWidget(ui->lineEdit, 1);
-
-    // contentWidgetCustom
-    QHBoxLayout *contentLayoutCustom = new QHBoxLayout(ui->contentWidgetCustom);
-    contentLayoutCustom->setContentsMargins(outerMargin, 0, outerMargin, 0);
-    contentLayoutCustom->setSpacing(sideSpacing);
-
-    contentLayoutCustom->addWidget(ui->listViewCustom, 1);
-    contentLayoutCustom->addWidget(ui->sideWidgetCustom, 0);
-
-    // sideWidgetCustom
-    QVBoxLayout *sideLayoutCustom = new QVBoxLayout(ui->sideWidgetCustom);
-    sideLayoutCustom->setContentsMargins(4, 0, 0, 0);
-    sideLayoutCustom->setSpacing(8);
-    sideLayoutCustom->addWidget(ui->editButton_2, 0, Qt::AlignTop | Qt::AlignHCenter);
-    sideLayoutCustom->addWidget(ui->presetButton, 0, Qt::AlignTop | Qt::AlignHCenter);
-    sideLayoutCustom->addStretch();
-
-    // bottomWidgetCustom
-    QHBoxLayout *bottomLayoutCustom = new QHBoxLayout(ui->bottomWidgetCustom);
-    bottomLayoutCustom->setContentsMargins(outerMargin, 8, reserveRight, 8);
-    bottomLayoutCustom->setSpacing(0);
-    bottomLayoutCustom->addStretch();
-    bottomLayoutCustom->addWidget(ui->pushButton_2, 0, Qt::AlignCenter);
-    bottomLayoutCustom->addStretch();
-
-    ui->modeWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    ui->stackedWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    ui->pageBasic->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    ui->pageCustom->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-    ui->topFrameRandD->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    ui->topFrameCategory->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-
-    ui->searchWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    ui->searchWidget_2->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-
-    ui->contentWidgetBasic->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    ui->contentWidgetCustom->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-    ui->bottomWidgetBasic->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    ui->bottomWidgetCustom->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-
-    ui->listViewBasic->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    ui->listViewCustom->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-    ui->sideWidgetBasic->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
-    ui->sideWidgetCustom->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
-
-    ui->editButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    ui->editButton_2->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    ui->presetButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    ui->pushButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    ui->pushButton_2->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-
-    ui->dComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    ui->rComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    ui->sComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-
-    ui->modeBarWidget->setMinimumHeight(51);
-    ui->topFrameRandD->setMinimumHeight(50);
-    ui->topFrameCategory->setMinimumHeight(50);
-    ui->searchWidget->setMinimumHeight(41);
-    ui->searchWidget_2->setMinimumHeight(24);
-    ui->bottomWidgetBasic->setMinimumHeight(61);
-    ui->bottomWidgetCustom->setMinimumHeight(61);
-
-    ui->categoryComboBox->setMinimumWidth(200);
-
-    ui->dComboBox->setMinimumWidth(220);
-    ui->rComboBox->setMinimumWidth(110);
-    ui->sComboBox->setMinimumWidth(90);
-
-    ui->sideWidgetBasic->setFixedWidth(sideWidth);
-    ui->sideWidgetCustom->setFixedWidth(sideWidth);
-
-    ui->editButton->setFixedSize(50, 50);
-    ui->editButton_2->setFixedSize(50, 50);
-    ui->presetButton->setFixedSize(50, 50);
-
-    ui->pushButton->setFixedSize(121, 31);
-    ui->pushButton_2->setFixedSize(121, 31);
-
-}
-
 //переключение режимов
 void MainWindow::showBasicPage()
 {
     ui->stackedWidget->setCurrentWidget(ui->pageBasic);
-
-//    scriptsModel->setViewMode(ViewModel::basicMode);
-//    filterModel->setMode(ViewModel::basicMode);
-//    resetFilterState();
-
 }
 
 void MainWindow::showCustomPage()
 {
     ui->stackedWidget->setCurrentWidget(ui->pageCustom);
-//    scriptsModel->setViewMode(ViewModel::customMode);
-//    filterModel->setMode(ViewModel::customMode);
-//    resetFilterState();
-
 }
 
 void MainWindow::showCustomContextMenu(const QPoint& pos)
@@ -662,44 +482,8 @@ void MainWindow::showBasicContextMenu(const QPoint& pos)
     }
 }
 
-void MainWindow::openHistoryForIndex(const QModelIndex &index)
+QVector<GuiCommitInfo> convertCommitInfoToGuiCommitInfo(const QList<CommitInfo>& backendList)
 {
-    QString scriptPath = index.data(ViewModel::FilePathRole).toString();
-    if (scriptPath.isEmpty())
-        return;
-
-    if (!m_repo)
-    {
-        QMessageBox::warning(this, tr("Repository error"),
-                             tr("Repository is not initialized."));
-        return;
-    }
-
-    if (m_repoRoot.isEmpty())
-    {
-        QMessageBox::warning(this, tr("Repository error"),
-                             tr("Repository root path is empty."));
-        return;
-    }
-
-    QString relPath = QDir(m_repoRoot).relativeFilePath(scriptPath);
-    relPath.replace('\\', '/');
-
-    if (relPath.startsWith(".."))
-    {
-        QMessageBox::warning(this, tr("Repository error"),
-                             tr("Selected file is outside the repository:\n%1").arg(scriptPath));
-        return;
-    }
-
-    QList<CommitInfo> backendList;
-    Gerror err = m_repo->log(backendList, relPath);
-    if (!err.succses)
-    {
-        QMessageBox::warning(this, tr("Git log error"), err.msg);
-        return;
-    }
-
     QVector<GuiCommitInfo> guiHistory;
     guiHistory.reserve(backendList.size());
 
@@ -716,39 +500,71 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
 
         guiHistory.append(g);
     }
+    return guiHistory;
+}
+
+void MainWindow::openHistoryForIndex(const QModelIndex &index)
+{
+    QString scriptPath = index.data(ViewModel::FilePathRole).toString();
+    if (scriptPath.isEmpty())
+        return;
+
+    if (!m_repo || m_repoRoot.isEmpty())
+    {
+        QMessageBox::warning(this, tr("Repository error"),
+                             tr("Repository is not initialized."));
+        return;
+    }
+
+    QString relPath = QDir(m_repoRoot).relativeFilePath(scriptPath);
+    relPath.replace('\\', '/');
+
+    if (relPath.startsWith(".."))
+    {
+        QMessageBox::warning(this, tr("Repository error"),
+            tr("Selected file is outside the repository:\n%1").arg(scriptPath));
+        return;
+    }
+
+    QList<CommitInfo> backendList;
+    Gerror err = m_repo->log(backendList, relPath);
+    if (!err.succses)
+    {
+        QMessageBox::warning(this, tr("Git log error"), err.msg);
+        return;
+    }
+
+    QVector<GuiCommitInfo> guiHistory =
+            convertCommitInfoToGuiCommitInfo(backendList);
 
     QString key = QFileInfo(scriptPath).absoluteFilePath();
-
-    qDebug() << "[history] repo ptr =" << m_repo << "repoRoot =" << m_repoRoot;
-    qDebug() << "[history] scriptPath =" << scriptPath;
 
     if (m_historyWindows.contains(key))
     {
         HistoryWindow* w = m_historyWindows.value(key);
-        w->setHistory(guiHistory);
+        w->updateData(scriptPath, guiHistory);
         w->show();
         w->raise();
         w->activateWindow();
         return;
     }
 
-    HistoryWindow* w = new HistoryWindow();
+    HistoryWindow* w = new HistoryWindow(scriptPath, guiHistory);
     w->setAttribute(Qt::WA_DeleteOnClose);
-    w->setFilePath(scriptPath);
-
-    w->setHistory(guiHistory);
-
-    w->show();
-    m_historyWindows.insert(key, w);
 
     w->setProperty("historyKey", key);
-
     connect(w, SIGNAL(destroyed(QObject*)),
             this, SLOT(onHistoryWindowDestroyed(QObject*)));
+
+    m_historyWindows.insert(key, w);
+    w->show();
+
+
 }
 
 void MainWindow::onHistoryWindowDestroyed(QObject* obj)
 {
     QString key = obj->property("historyKey").toString();
-    m_historyWindows.remove(key); // needs further testing
+    m_historyWindows.remove(key);
 }
+
