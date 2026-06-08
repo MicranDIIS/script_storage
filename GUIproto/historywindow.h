@@ -19,10 +19,16 @@ class HistoryWindow : public QWidget
     Q_OBJECT
 
 public:
-    explicit HistoryWindow(QWidget *parent = 0);
+    explicit HistoryWindow(
+        const QString& filePath,
+        const QVector<GuiCommitInfo>& history,
+        QWidget *parent = 0);
     ~HistoryWindow();
     void setFilePath(const QString& scriptPath);
     void setHistory(const QVector<GuiCommitInfo>& history);
+    void updateData(
+        const QString& filePath,
+        const QVector<GuiCommitInfo>& history);
 
 private:
     Ui::HistoryWindow *ui;
@@ -34,7 +40,6 @@ private:
     QVector<GuiCommitInfo> makeMockHistory() const;
     QSettings settings;
     QSortFilterProxyModel* m_proxy;
-    void onCommitRowClicked(const QModelIndex& index);
     void updateCommitMessagePanel(const QModelIndex &indexInRow);
     void clearCommitMessagePanel();
     QString getSummaryString(const QString& fullMessage) const;
@@ -47,6 +52,11 @@ private:
         CommitColumn = 2,
         ColumnCount = 3
     };
+
+    void setupModels();
+    void setupView();
+    void restoreUiGeometry();
+    void saveUiState();
 
 
 private slots:

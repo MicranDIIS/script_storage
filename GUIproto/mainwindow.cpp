@@ -38,7 +38,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    setupModels();
+    m_setupModels();
     setWindowTitle("SE2");
 
     setupPageConnect();
@@ -99,7 +99,7 @@ void MainWindow::setupPageConnect(){
     connect(ui->categoryComboBox, SIGNAL(currentIndexChanged(QString)),this, SLOT(applyCategoryFilter()));
 }
 
-void MainWindow::setupModels(){
+void MainWindow::m_setupModels(){
 
     basicScriptsModel->setViewMode(ViewModel::basicMode);
     customScriptsModel->setViewMode(ViewModel::customMode);
@@ -180,7 +180,6 @@ void MainWindow::loadState(){
     settings.endGroup();
 }
 
-
 // синхронизация или клонирование репозитория в локальную папку(все пути в конфиге repo.ini указываем)
  bool MainWindow::syncRepo(){
 
@@ -239,16 +238,17 @@ void MainWindow::loadState(){
 
      if (!gitDir.exists()) {
          err = m_repo->clone();
-         if (!err.succses) {
+         if (err.hasError()) {
              return false;
          }
+         err = m_repo->open();
      } else {
          err = m_repo->open();
          err = m_repo->sync();
          }
-     if (!err.succses)
+     if (err.hasError())
      {
-         QMessageBox::warning(this, "Repository error","Repository synchronization failed:\n" + err.msg);
+         QMessageBox::warning(this, "Repository error","Repository synchronization failed:\n" + err.getMsg());
 
          deleteRepository(m_repo);
          m_repo = 0;
@@ -517,11 +517,11 @@ QVector<GuiCommitInfo> convertCommitInfoToGuiCommitInfo(const QList<CommitInfo>&
         const CommitInfo &c = backendList.at(i);
 
         GuiCommitInfo g;
-        g.dateTime = c.authorDateTime;
-        g.author = c.authorName;
-        g.authorEmail = c.authorEmail;
-        g.commitMessage = c.commitMsg;
-        g.commitHash = c.commitHash;
+        g.dateTime = c.getAuthorDateTime();
+        g.author = c.getAuthorName();
+        g.authorEmail = c.getAuthorEmail();
+        g.commitMessage = c.getCommitMsg();
+        g.commitHash = c.getCommitHash();
 
         guiHistory.append(g);
     }
@@ -553,9 +553,9 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
 
     QList<CommitInfo> backendList;
     Gerror err = m_repo->log(backendList, relPath);
-    if (!err.succses)
+    if (err.hasError())
     {
-        QMessageBox::warning(this, tr("Git log error"), err.msg);
+        QMessageBox::warning(this, tr("Git log error"), err.getMsg());
         return;
     }
 
@@ -567,23 +567,24 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
     if (m_historyWindows.contains(key))
     {
         HistoryWindow* w = m_historyWindows.value(key);
-        w->setHistory(guiHistory);
+        w->updateData(scriptPath, guiHistory);
         w->show();
         w->raise();
         w->activateWindow();
         return;
     }
 
-    HistoryWindow* w = new HistoryWindow();
+    HistoryWindow* w = new HistoryWindow(scriptPath, guiHistory);
     w->setAttribute(Qt::WA_DeleteOnClose);
-    w->setFilePath(scriptPath);
-    w->setHistory(guiHistory);
-    m_historyWindows.insert(key, w);
-    w->show();
 
     w->setProperty("historyKey", key);
     connect(w, SIGNAL(destroyed(QObject*)),
             this, SLOT(onHistoryWindowDestroyed(QObject*)));
+
+    m_historyWindows.insert(key, w);
+    w->show();
+
+
 }
 
 void MainWindow::onHistoryWindowDestroyed(QObject* obj)

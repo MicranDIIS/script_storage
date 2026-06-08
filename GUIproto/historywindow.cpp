@@ -5,42 +5,63 @@
 #include <QFileInfo>
 #include <QClipboard>
 #include <QApplication>
+#include <QTimer>
 
-HistoryWindow::HistoryWindow(QWidget *parent) :
+
+HistoryWindow::HistoryWindow(const QString& filePath,
+                             const QVector<GuiCommitInfo>& history,
+                             QWidget *parent) :
     QWidget(parent),
     ui(new Ui::HistoryWindow),
-    m_historyModel(new QStandardItemModel(this))
+    m_historyModel(new QStandardItemModel(this)),
+    m_proxy(new QSortFilterProxyModel(this))
 {
     ui->setupUi(this);
 
-    restoreGeometry(settings.value("HistoryWindow/Geometry").toByteArray());
-
-    m_proxy = new QSortFilterProxyModel(this);
-
-    m_proxy->setSourceModel(m_historyModel);
-    m_proxy->setSortRole(RoleDateTime);
-    m_proxy->setDynamicSortFilter(true);
-
-    ui->HistoryTableView->setModel(m_proxy);
-    ui->HistoryTableView->setSortingEnabled(true);
-    m_proxy->sort(DateColumn, Qt::DescendingOrder);
-
-    m_historyModel->setColumnCount(ColumnCount);
-    m_headers << trUtf8("Дата")
-              << trUtf8("Автор")
-              << trUtf8("Сообщение коммита");
-    m_historyModel->setHorizontalHeaderLabels(m_headers);
-
-    QByteArray state = settings.value("HistoryTableView/State").toByteArray();
-    ui->HistoryTableView->horizontalHeader()->restoreState(state);
-
-    ui->HistoryTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-    ui->HistoryTableView->setSelectionMode(QAbstractItemView::SingleSelection);
+    setupModels();
+    setupView();
+    restoreUiGeometry();
 
     connect(ui->HistoryTableView->selectionModel(), SIGNAL(currentRowChanged(QModelIndex, QModelIndex)),
             this,SLOT(onCurrentRowChanged(QModelIndex)));
     connect(ui->HistoryTableView, SIGNAL(doubleClicked(QModelIndex)),
             this, SLOT(copyHashToClipboard(QModelIndex)));
+
+    updateData(filePath, history);
+}
+
+void HistoryWindow::setupModels()
+{
+    m_historyModel->setColumnCount(ColumnCount);
+    m_headers.clear();
+    m_headers << trUtf8("Дата")
+              << trUtf8("Автор")
+              << trUtf8("Сообщение коммита");
+    m_historyModel->setHorizontalHeaderLabels(m_headers);
+
+    m_proxy->setSourceModel(m_historyModel);
+    m_proxy->setSortRole(RoleDateTime);
+    m_proxy->setDynamicSortFilter(true);
+}
+
+void HistoryWindow::setupView()
+{
+    ui->HistoryTableView->setModel(m_proxy);
+
+    ui->HistoryTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->HistoryTableView->setSelectionMode(QAbstractItemView::SingleSelection);
+
+    ui->HistoryTableView->setSortingEnabled(true);
+//    ui->HistoryTableView->sortByColumn(DateColumn, Qt::DescendingOrder);
+}
+
+
+void HistoryWindow::restoreUiGeometry()
+{
+    restoreGeometry(settings.value("HistoryWindow/Geometry").toByteArray());
+    const   QByteArray state = settings.value("HistoryTableView/State").toByteArray();
+    if (!state.isEmpty())
+           ui->HistoryTableView->horizontalHeader()->restoreState(state);
 }
 
 HistoryWindow::~HistoryWindow()
@@ -59,6 +80,13 @@ void HistoryWindow::setHistory(const QVector<GuiCommitInfo>& history)
 {
     m_commitInfo = history;
     loadHistory();
+}
+
+void HistoryWindow::updateData(const QString& filePath,
+                               const QVector<GuiCommitInfo>& history)
+{
+    setFilePath(filePath);
+    setHistory(history);
 }
 
 void HistoryWindow::loadHistory()
@@ -92,13 +120,19 @@ void HistoryWindow::loadHistory()
     m_proxy->sort(DateColumn, m_proxy->sortOrder());
 }
 
-void HistoryWindow::closeEvent(QCloseEvent *event)
+
+void HistoryWindow::saveUiState()
 {
     settings.setValue("HistoryWindow/Geometry", saveGeometry());
 
     QByteArray tableState = ui->HistoryTableView->horizontalHeader()->saveState();
     settings.setValue("HistoryTableView/State", tableState);
+}
 
+
+void HistoryWindow::closeEvent(QCloseEvent *event)
+{
+    saveUiState();
     QWidget::closeEvent(event);
 }
 
@@ -230,4 +264,8 @@ void HistoryWindow::copyHashToClipboard(const QModelIndex& index)
 
     QClipboard *clipboard = QApplication::clipboard();
     clipboard->setText(hash);
+//    QToolTip::showText(QCursor::pos(), trUtf8("Хэш скопирован"));
+    ui->hashLabel->setText(trUtf8("Хэш скопирован!"));
+    ui->hashLabel->show();
+    QTimer::singleShot(2000, ui->hashLabel, SLOT(hide()));
 }

@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setOrganizationName("MicranDIIS");
     QCoreApplication::setApplicationName("SE2");
 
-    mgit_init();
+//    mgit_init();
 
     int rc = 0;
     {
@@ -18,6 +18,6 @@ int main(int argc, char *argv[])
         rc = a.exec();
     }
 
-    mgit_shutdown();
+//    mgit_shutdown();
     return rc;
 }

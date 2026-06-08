@@ -43,7 +43,8 @@ private:
     ComboFilterModel *stadeComboModel;
     ComboFilterModel *categoryComboModel;
 
-    void setupModels();
+
+    void m_setupModels();
     void setupPageConnect();
     void setupFilterConnect();
     void setupActionConnect();
@@ -53,6 +54,7 @@ private:
     bool syncRepo();
     void loadState();
     void saveSettings();
+
     void openHistoryForIndex(const QModelIndex &index);
     QHash<QString, QPointer<HistoryWindow> > m_historyWindows;
 
