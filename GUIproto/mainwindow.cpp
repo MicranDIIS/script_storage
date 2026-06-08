@@ -542,23 +542,24 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
     if (m_historyWindows.contains(key))
     {
         HistoryWindow* w = m_historyWindows.value(key);
-        w->setHistory(guiHistory);
+        w->updateData(scriptPath, guiHistory);
         w->show();
         w->raise();
         w->activateWindow();
         return;
     }
 
-    HistoryWindow* w = new HistoryWindow();
+    HistoryWindow* w = new HistoryWindow(scriptPath, guiHistory);
     w->setAttribute(Qt::WA_DeleteOnClose);
-    w->setFilePath(scriptPath);
-    w->setHistory(guiHistory);
-    m_historyWindows.insert(key, w);
-    w->show();
 
     w->setProperty("historyKey", key);
     connect(w, SIGNAL(destroyed(QObject*)),
             this, SLOT(onHistoryWindowDestroyed(QObject*)));
+
+    m_historyWindows.insert(key, w);
+    w->show();
+
+
 }
 
 void MainWindow::onHistoryWindowDestroyed(QObject* obj)

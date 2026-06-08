@@ -7,7 +7,9 @@
 #include <QApplication>
 #include <QTimer>
 
-HistoryWindow::HistoryWindow(QWidget *parent) :
+HistoryWindow::HistoryWindow(const QString& filePath,
+                             const QVector<GuiCommitInfo>& history,
+                             QWidget *parent) :
     QWidget(parent),
     ui(new Ui::HistoryWindow),
     m_historyModel(new QStandardItemModel(this)),
@@ -19,12 +21,12 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
     setupView();
     restoreUiGeometry();
 
-//    ui->hashLabel->hide();
-
     connect(ui->HistoryTableView->selectionModel(), SIGNAL(currentRowChanged(QModelIndex, QModelIndex)),
             this,SLOT(onCurrentRowChanged(QModelIndex)));
     connect(ui->HistoryTableView, SIGNAL(doubleClicked(QModelIndex)),
             this, SLOT(copyHashToClipboard(QModelIndex)));
+
+    updateData(filePath, history);
 }
 
 void HistoryWindow::setupModels()
@@ -77,6 +79,13 @@ void HistoryWindow::setHistory(const QVector<GuiCommitInfo>& history)
 {
     m_commitInfo = history;
     loadHistory();
+}
+
+void HistoryWindow::updateData(const QString& filePath,
+                               const QVector<GuiCommitInfo>& history)
+{
+    setFilePath(filePath);
+    setHistory(history);
 }
 
 void HistoryWindow::loadHistory()

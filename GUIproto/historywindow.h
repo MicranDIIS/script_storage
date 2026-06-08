@@ -19,10 +19,16 @@ class HistoryWindow : public QWidget
     Q_OBJECT
 
 public:
-    explicit HistoryWindow(QWidget *parent = 0);
+    explicit HistoryWindow(
+        const QString& filePath,
+        const QVector<GuiCommitInfo>& history,
+        QWidget *parent = 0);
     ~HistoryWindow();
     void setFilePath(const QString& scriptPath);
     void setHistory(const QVector<GuiCommitInfo>& history);
+    void updateData(
+        const QString& filePath,
+        const QVector<GuiCommitInfo>& history);
 
 private:
     Ui::HistoryWindow *ui;
