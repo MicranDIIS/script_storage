@@ -10,7 +10,7 @@
 ScriptLoader::ScriptLoader(SettingReader *reader) : settingReader(reader){
 }
 
-bool ScriptLoader::configLoad(QString& path) {
+bool ScriptLoader::loadConfig(QString& path) {
 
     configPath = QDir::cleanPath(path);
     if (!settingReader){
@@ -18,10 +18,10 @@ bool ScriptLoader::configLoad(QString& path) {
     }
 
     QString loadPath = configPath;
-    return settingReader->configLoad(loadPath, ex_config);
+    return settingReader->loadConfig(loadPath, ex_config);
 }
 
-bool ScriptLoader::headerLoad(QString& path) {
+bool ScriptLoader::loadHeader(QString& path) {
 
     headerPath = QDir::cleanPath(path);
     if (!settingReader){
@@ -29,7 +29,7 @@ bool ScriptLoader::headerLoad(QString& path) {
     }
 
     QString loadPath = headerPath;
-    return settingReader->headerLoad(loadPath, ref);
+    return settingReader->loadHeader(loadPath, ref);
 }
 
 // сканирование всех директорий
@@ -93,7 +93,7 @@ QList<FindFileInfo> ScriptLoader::scanSourcesOne(QString& sourceFile, QString& r
         info.extension = fi.suffix();
         info.displayName.clear();
 
-        headerParser.fullParse(info, ex_config, ref);
+        headerParser.parseFull(info, ex_config, ref);
 
         result.append(info);
     }

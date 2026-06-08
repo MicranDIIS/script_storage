@@ -20,7 +20,7 @@ public:
         DisplayColumn = 0,
         DeviceColumn,
         RoleColumn,
-        StadeColumn,
+        StageColumn,
         CategoryColumn,
         ColumnCount
     };

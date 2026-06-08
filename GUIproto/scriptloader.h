@@ -19,7 +19,7 @@ struct FindFileInfo { // структура с информацией о скр�
     QMap<QString, QStringList> headerField; // поля шапки
     QStringList roles;
     QStringList devices;
-    QStringList stades;
+    QStringList stages;
     QString specific;
     QString categories;
 
@@ -38,8 +38,8 @@ public:
     QList<FindFileInfo> scanSourcesAll(); // сканирование dвсей директории скриптов
     QList<FindFileInfo> scanSourcesOne(QString& sourceFile, QString& rootPath); // сканирование одной директории
 
-    bool configLoad(QString& path);
-    bool headerLoad(QString& path);
+    bool loadConfig(QString& path);
+    bool loadHeader(QString& path);
     QString makeHeaderKey(const FindFileInfo& info);
     void compareHeaderKey (QList<FindFileInfo>& files);
 

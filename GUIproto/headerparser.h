@@ -11,7 +11,7 @@ struct FindFileInfo;
 class HeaderParser { // отдельный класс для работы с шапкой
 public:
     HeaderParser();
-    void fullParse(FindFileInfo& info, AppConfig& ex_config, HeaderRef& ref);
+    void parseFull(FindFileInfo& info, AppConfig& ex_config, HeaderRef& ref);
 
 private:
     void readHeader(FindFileInfo& info, AppConfig& ex_config);//чтение шапки из файла построчно

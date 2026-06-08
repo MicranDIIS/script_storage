@@ -40,11 +40,11 @@ private:
 
     ComboFilterModel *deviceComboModel;
     ComboFilterModel *roleComboModel;
-    ComboFilterModel *stadeComboModel;
+    ComboFilterModel *stageComboModel;
     ComboFilterModel *categoryComboModel;
 
 
-    void m_setupModels();
+    void setupModels();
     void setupPageConnect();
     void setupFilterConnect();
     void setupActionConnect();
@@ -67,8 +67,7 @@ private slots:
     void showCustomPage();
     void handleScriptDoubleClick(const QModelIndex &index);
     void openSelectedScript();
-//    void showContextMenu(const QPoint& pos);
-    void applyStadeFilter();
+    void applyStageFilter();
     void applyDeviceFilter();
     void applyRoleFilter();
     void applyCategoryFilter();

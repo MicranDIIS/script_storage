@@ -8,7 +8,7 @@ ScriptFilterModel::ScriptFilterModel(QObject *parent): QSortFilterProxyModel(par
 void ScriptFilterModel::resetScriptFilters(){ // сбросить все фильтры
     roleFilter.clear();
     deviceFilter.clear();
-    stadeFilter.clear();
+    stageFilter.clear();
     categoryFilter.clear();
     invalidateFilter();
 }
@@ -46,11 +46,11 @@ void ScriptFilterModel::setCategoryFilter(const QString& category){
     invalidateFilter();
 }
 
-void ScriptFilterModel::setStadeFilter(const QString& stade){
-    if(stadeFilter == stade){
+void ScriptFilterModel::setStageFilter(const QString& stage){
+    if(stageFilter == stage){
         return;
     }
-    stadeFilter = stade;
+    stageFilter = stage;
     invalidateFilter();
 }
 
@@ -109,7 +109,7 @@ bool ScriptFilterModel::filterAcceptsRow(int source_row, const QModelIndex& sour
             return false;
         }
 
-        if (!containsText(source_row, ViewModel::StadeColumn, source_parent, stadeFilter)){
+        if (!containsText(source_row, ViewModel::StageColumn, source_parent, stageFilter)){
             return false;
         }
     } else {

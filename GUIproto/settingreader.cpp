@@ -4,7 +4,7 @@
 #include <QFileInfo>
 #include<QDebug>
 
-bool IniSettingReader::configLoad(QString& path, AppConfig& ex_config){ //загрузка конфига из .ini, логика та же что и в прошлой версии
+bool IniSettingReader::loadConfig(QString& path, AppConfig& ex_config){ //загрузка конфига из .ini, логика та же что и в прошлой версии
     ex_config = AppConfig();
 
     QFileInfo cfgFile(path);
@@ -46,7 +46,7 @@ bool IniSettingReader::configLoad(QString& path, AppConfig& ex_config){ //заг
     return !ex_config.scriptSource.isEmpty();
 }
 
-bool IniSettingReader::headerLoad(QString& path, HeaderRef& ref) { // загрузка справочника из .ini
+bool IniSettingReader::loadHeader(QString& path, HeaderRef& ref) { // загрузка справочника из .ini
 
     ref = HeaderRef();
 
@@ -106,7 +106,7 @@ bool IniSettingReader::headerLoad(QString& path, HeaderRef& ref) { // загру
     return true;
 }
 
-bool IniSettingReader::repoLoad(QString& path, RepoConfig& repo_config){ // конфиг репозитория
+bool IniSettingReader::loadRepo(QString& path, RepoConfig& repo_config){ // конфиг репозитория
     repo_config = RepoConfig();
 
     QFileInfo rcfgFile(path);

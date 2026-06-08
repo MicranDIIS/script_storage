@@ -24,6 +24,9 @@ INCLUDEPATH += $$PWD/../backend/bin
 HEADERS += $$PWD/../backend/include/MGit/mgit.h
 #           $$PWD/../backend/src/Repository/repository.h
 
+CONFIG_DIR = $$PWD/config
+DEFINES += CONFIG_DIR=\\\"$$CONFIG_DIR\\\"
+
 # Путь к libgit2.dll и линковка
 win32: LIBS += -L$$PWD/../backend/bin -lgit2 \
                 -L$$PWD/../backend/bin -lmgit

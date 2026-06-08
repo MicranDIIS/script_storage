@@ -56,8 +56,8 @@ void ViewModel::rebuildModel() {
         QStandardItem *roleItem = new QStandardItem();
         roleItem->setData(info.roles, Qt::UserRole);
 
-        QStandardItem *stadeItem = new QStandardItem();
-        stadeItem->setData(info.stades, Qt::UserRole);
+        QStandardItem *stageItem = new QStandardItem();
+        stageItem->setData(info.stages, Qt::UserRole);
 
         QStandardItem *categoryItem = new QStandardItem(info.categories);
         categoryItem->setData(QStringList() << info.categories, Qt::UserRole);
@@ -65,7 +65,7 @@ void ViewModel::rebuildModel() {
         row.append(displayItem);
         row.append(deviceItem);
         row.append(roleItem);
-        row.append(stadeItem);
+        row.append(stageItem);
         row.append(categoryItem);
         appendRow(row);
 

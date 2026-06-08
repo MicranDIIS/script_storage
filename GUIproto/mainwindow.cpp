@@ -20,6 +20,7 @@
 #include <QMessageBox>
 #include <QCloseEvent>
 
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -31,21 +32,21 @@ MainWindow::MainWindow(QWidget *parent) :
 
     deviceComboModel(new ComboFilterModel(this)),
     roleComboModel(new ComboFilterModel(this)),
-    stadeComboModel(new ComboFilterModel(this)),
+    stageComboModel(new ComboFilterModel(this)),
     categoryComboModel(new ComboFilterModel(this)),
 
     m_repo(0)
 {
     ui->setupUi(this);
 
-    m_setupModels();
+    setupModels();
     setWindowTitle("SE2");
 
     setupPageConnect();
 
 //    qDebug() << QCoreApplication::applicationDirPath();
     if(!syncRepo()){
-        QMessageBox::warning(this, "Repository error","Repository synchronization failed.");
+        QMessageBox::critical(this, tr("Repository error"), tr("Repository synchronization failed."));
     };
 
     loadScripts();
@@ -86,7 +87,7 @@ void MainWindow::setupFilterConnect(){
     connect(ui->lineEdit, SIGNAL(textChanged(QString)), this, SLOT(applyTextSearch(QString)));
     connect(ui->dComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(applyDeviceFilter()));
     connect(ui->rComboBox, SIGNAL(currentIndexChanged(QString)),this, SLOT(applyRoleFilter()));
-    connect(ui->sComboBox, SIGNAL(currentIndexChanged(QString)),this, SLOT(applyStadeFilter()));
+    connect(ui->sComboBox, SIGNAL(currentIndexChanged(QString)),this, SLOT(applyStageFilter()));
 }
 
 void MainWindow::setupPageConnect(){
@@ -99,7 +100,7 @@ void MainWindow::setupPageConnect(){
     connect(ui->categoryComboBox, SIGNAL(currentIndexChanged(QString)),this, SLOT(applyCategoryFilter()));
 }
 
-void MainWindow::m_setupModels(){
+void MainWindow::setupModels(){
 
     basicScriptsModel->setViewMode(ViewModel::basicMode);
     customScriptsModel->setViewMode(ViewModel::customMode);
@@ -124,9 +125,9 @@ void MainWindow::m_setupModels(){
     roleComboModel->setTargetColumn(ViewModel::RoleColumn);
     ui->rComboBox->setModel(roleComboModel);
 
-    stadeComboModel->setSourceModel(basicScriptsModel);
-    stadeComboModel->setTargetColumn(ViewModel::StadeColumn);
-    ui->sComboBox->setModel(stadeComboModel);
+    stageComboModel->setSourceModel(basicScriptsModel);
+    stageComboModel->setTargetColumn(ViewModel::StageColumn);
+    ui->sComboBox->setModel(stageComboModel);
 
     categoryComboModel->setSourceModel(customScriptsModel);
     categoryComboModel->setTargetColumn(ViewModel::CategoryColumn);
@@ -138,7 +139,7 @@ void MainWindow::saveSettings(){
     settings.beginGroup("mainwindow");
     settings.setValue("filters/device", ui->dComboBox->currentText());
     settings.setValue("filters/role",ui->rComboBox->itemData(ui->rComboBox->currentIndex(),Qt::UserRole).toString());
-    settings.setValue("filters/stade",ui->sComboBox->currentText());
+    settings.setValue("filters/stage",ui->sComboBox->currentText());
     settings.setValue("filters/category",ui->categoryComboBox->currentText());
     settings.setValue("win/geometry", saveGeometry());
     settings.setValue("win/state", saveState());
@@ -162,12 +163,12 @@ void MainWindow::loadState(){
     }
     applyRoleFilter();
 
-    QString resStade = settings.value("filters/stade").toString();
-    int stadeIndex = ui->sComboBox->findText(resStade);
-    if (stadeIndex >= 0) {
-        ui->sComboBox->setCurrentIndex(stadeIndex);
+    QString resStage = settings.value("filters/stage").toString();
+    int stageIndex = ui->sComboBox->findText(resStage);
+    if (stageIndex >= 0) {
+        ui->sComboBox->setCurrentIndex(stageIndex);
     }
-    applyStadeFilter();
+    applyStageFilter();
 
     QString resCategory = settings.value("filters/category").toString();
     int categoryIndex = ui->categoryComboBox->findText(resCategory);
@@ -189,20 +190,18 @@ void MainWindow::loadState(){
          m_repo = 0;
      }
 
-     QString appDir = QCoreApplication::applicationDirPath();
-     QString repoConfigPath = QDir(appDir).absoluteFilePath("../../GUIproto/config/repo.ini");
-
-//     qDebug() << "repo.ini path:" << repoConfigPath;
+     QString repoConfigPath = QDir(QString(CONFIG_DIR)).absoluteFilePath("repo.ini");
+//     QString repoConfigPath = QDir(QApplication::applicationDirPath()).absoluteFilePath("repo.ini");
 
      IniSettingReader reader;
      RepoConfig repoConfig;
 
-     if (!reader.repoLoad(repoConfigPath, repoConfig)) {
+     if (!reader.loadRepo(repoConfigPath, repoConfig)) {
          if((repoConfig.path.isEmpty()||repoConfig.username.isEmpty()||repoConfig.token.isEmpty())&& !repoConfig.url.isEmpty()){
-             QMessageBox::warning(this,"Remote config error", "Check the config settings for correct field filling:\n"+ repoConfigPath);
+             QMessageBox::warning(this,tr("Remote config error"), tr("Check the config settings for correct field filling:\n")+ repoConfigPath);
              return false;
          } else{
-             QMessageBox::warning(this,"Remote config error", "Configuration file for remote could not be loaded:\n" + repoConfigPath);
+             QMessageBox::critical(this,tr("Remote config error"), tr("Configuration file for remote could not be loaded:\n") + repoConfigPath);
              return false;
          }
      }
@@ -221,7 +220,7 @@ void MainWindow::loadState(){
      if (repoDir.exists() && !gitDir.exists()) {
          QStringList entries = repoDir.entryList(QDir::NoDotAndDotDot | QDir::AllEntries);
          if (!entries.isEmpty()) {
-             QMessageBox::warning(this,"Repository error", "Folder for remote repositiry is not empty.");
+             QMessageBox::critical(this, tr("Repository error"),tr("Folder for remote repositiry is not empty."));
              return false;
          }
      }
@@ -229,8 +228,8 @@ void MainWindow::loadState(){
      m_repo = createRepository(repoConfig);
      if (!m_repo)
      {
-         QMessageBox::warning(this, "Repository error",
-                              "Repository object could not be created.");
+         QMessageBox::critical(this, tr("Repository error"),
+                              tr("Repository object could not be created."));
          return false;
      }
 
@@ -248,7 +247,7 @@ void MainWindow::loadState(){
          }
      if (err.hasError())
      {
-         QMessageBox::warning(this, "Repository error","Repository synchronization failed:\n" + err.getMsg());
+         QMessageBox::critical(this, tr("Repository error"),tr("Repository synchronization failed:\n") + err.getMsg());
 
          deleteRepository(m_repo);
          m_repo = 0;
@@ -269,19 +268,21 @@ void MainWindow::loadScripts()
     IniSettingReader *reader = new IniSettingReader();
     ScriptLoader loader(reader);
 
-    QString appDir = QCoreApplication::applicationDirPath();
+    QString configPath = QDir(QString(CONFIG_DIR)).absoluteFilePath("app_config.ini");
+    QString headerPath = QDir(QString(CONFIG_DIR)).absoluteFilePath("header_ref.ini");
 
-    QString configPath = QDir(appDir).absoluteFilePath("../../GUIproto/config/app_config.ini");
-    QString headerPath = QDir(appDir).absoluteFilePath("../../GUIproto/config/header_ref.ini");
+    // ����� �������� � .exe
+//    QString headerPath = QDir(QApplication::applicationDirPath()).absoluteFilePath("header_ref.ini");
+//    QString configPath = QDir(QApplication::applicationDirPath()).absoluteFilePath("header_ref.ini");
 
-    if (!loader.configLoad(configPath)) {
-       QMessageBox::warning(this,"Config error", "Configuration file could not be loaded:\n" + configPath);
+    if (!loader.loadConfig(configPath)) {
+       QMessageBox::critical(this, tr("Config error"), tr("Configuration file could not be loaded:\n") + configPath);
             delete reader;
             return;
         }
 
-    if (!loader.headerLoad(headerPath)) {
-       QMessageBox::warning(this,"Header ref error","Header reference file could not be loaded:\n" + headerPath);
+    if (!loader.loadHeader(headerPath)) {
+       QMessageBox::critical(this,tr("Header ref error"),tr("Header reference file could not be loaded:\n") + headerPath);
             delete reader;
             return;
         }
@@ -307,7 +308,7 @@ void MainWindow::loadScripts()
     loadState();
 
     if(validFiles.size()!= files.size()){ //файлы с шапкой, не прошедшей валидацию не отображаются
-        QMessageBox::warning(this,"Invalid script headers", "This files contain incorrect headers and could not be displayed:\n" +  invalidHeader.join("\n"));
+        QMessageBox::warning(this,tr("Invalid script headers"), tr("This files contain incorrect headers and could not be displayed:\n") +  invalidHeader.join("\n"));
     }
     delete reader;
 }
@@ -346,7 +347,7 @@ void MainWindow::resetFilterState() {
 
     deviceComboModel->clearFilters();
     roleComboModel->clearFilters();
-    stadeComboModel->clearFilters();
+    stageComboModel->clearFilters();
     categoryComboModel->clearFilters();
 
     ui->dComboBox->setCurrentIndex(0);
@@ -365,10 +366,10 @@ void MainWindow::applyTextSearch(const QString& text){
     customFilterModel->setTextSearch(text);
 }
 
-void MainWindow::applyStadeFilter(){
+void MainWindow::applyStageFilter(){
 
-    QString stade = ui->sComboBox->currentText();
-    basicFilterModel->setStadeFilter(stade);
+    QString stage = ui->sComboBox->currentText();
+    basicFilterModel->setStageFilter(stage);
 }
 
 void MainWindow::applyDeviceFilter() {
@@ -379,7 +380,7 @@ void MainWindow::applyDeviceFilter() {
         oldRole = ui->rComboBox->itemData(ui->rComboBox->currentIndex(), Qt::UserRole).toString();
     }
 
-    QString oldStade = ui->sComboBox->currentText();
+    QString oldStage = ui->sComboBox->currentText();
     basicFilterModel->setDeviceFilter(device);
     roleComboModel->setFilter(ViewModel::DeviceColumn, device);
 
@@ -391,16 +392,16 @@ void MainWindow::applyDeviceFilter() {
         oldRole.clear();
     }
 
-    stadeComboModel->clearFilters();
-    stadeComboModel->setFilter(ViewModel::DeviceColumn, device);
+    stageComboModel->clearFilters();
+    stageComboModel->setFilter(ViewModel::DeviceColumn, device);
 
     if (!oldRole.isEmpty() && oldRole != QString::fromUtf8("Все")) {
-        stadeComboModel->setFilter(ViewModel::RoleColumn, oldRole);
+        stageComboModel->setFilter(ViewModel::RoleColumn, oldRole);
     }
 
-    int stadeIndex = ui->sComboBox->findText(oldStade);
-    if (stadeIndex >= 0) {
-        ui->sComboBox->setCurrentIndex(stadeIndex);
+    int stageIndex = ui->sComboBox->findText(oldStage);
+    if (stageIndex >= 0) {
+        ui->sComboBox->setCurrentIndex(stageIndex);
     } else {
         ui->sComboBox->setCurrentIndex(0);
     }
@@ -413,27 +414,26 @@ void MainWindow::applyRoleFilter(){
     if (ui->rComboBox->currentIndex() >= 0) {
         role = ui->rComboBox->itemData(ui->rComboBox->currentIndex(), Qt::UserRole).toString();
     }
-    QString oldStade = ui->sComboBox->currentText();
+    QString oldStage = ui->sComboBox->currentText();
     basicFilterModel->setRoleFilter(role);
 
     QString device = ui->dComboBox->currentText();
-    stadeComboModel->clearFilters();
+    stageComboModel->clearFilters();
 
     if (!device.isEmpty()) {
-        stadeComboModel->setFilter(ViewModel::DeviceColumn, device);
+        stageComboModel->setFilter(ViewModel::DeviceColumn, device);
     }
 
     if (!role.isEmpty()) {
-        stadeComboModel->setFilter(ViewModel::RoleColumn, role);
+        stageComboModel->setFilter(ViewModel::RoleColumn, role);
     }
 
-    int stadeIndex = ui->sComboBox->findText(oldStade);
-    if (stadeIndex >= 0) {
-        ui->sComboBox->setCurrentIndex(stadeIndex);
+    int stageIndex = ui->sComboBox->findText(oldStage);
+    if (stageIndex >= 0) {
+        ui->sComboBox->setCurrentIndex(stageIndex);
     } else {
         ui->sComboBox->setCurrentIndex(0);
     }
-
 }
 
 void MainWindow::applyCategoryFilter() {

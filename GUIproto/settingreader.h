@@ -30,16 +30,16 @@ class SettingReader { // интерфейсный класс для загруз
 public:
     virtual ~SettingReader(){}
 
-    virtual bool configLoad(QString& path, AppConfig& ex_config)=0;
-    virtual bool headerLoad(QString& path, HeaderRef& ref)=0;
-    virtual bool repoLoad(QString& path, RepoConfig& repo_config)=0;
+    virtual bool loadConfig(QString& path, AppConfig& ex_config)=0;
+    virtual bool loadHeader(QString& path, HeaderRef& ref)=0;
+    virtual bool loadRepo(QString& path, RepoConfig& repo_config)=0;
 };
 
 class IniSettingReader: public SettingReader { // реализация интерфейса для ini файлов
 public:
-    virtual bool configLoad(QString& path, AppConfig& ex_config);
-    virtual bool headerLoad(QString& path, HeaderRef& ref);
-    virtual bool repoLoad(QString& path, RepoConfig& repo_config);
+    virtual bool loadConfig(QString& path, AppConfig& ex_config);
+    virtual bool loadHeader(QString& path, HeaderRef& ref);
+    virtual bool loadRepo(QString& path, RepoConfig& repo_config);
 };
 
 

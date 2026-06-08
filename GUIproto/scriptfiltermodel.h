@@ -15,7 +15,7 @@ public:
 
      void setTextSearch(const QString& text);
      void setDeviceFilter(const QString& device);
-     void setStadeFilter(const QString& stade);
+     void setStageFilter(const QString& stage);
      void setCategoryFilter(const QString& category);
      void setRoleFilter(const QString& role);
      void resetScriptFilters();
@@ -27,7 +27,7 @@ private:
 
      QString textSearch;
      QString deviceFilter;
-     QString stadeFilter;
+     QString stageFilter;
      QString categoryFilter;
      QString roleFilter;
      bool containsText(int row, int column, const QModelIndex& parent, const QString& value) const;

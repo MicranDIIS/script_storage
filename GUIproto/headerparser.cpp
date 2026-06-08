@@ -9,7 +9,7 @@ HeaderParser::HeaderParser(){
 
 }
 
-void HeaderParser::fullParse(FindFileInfo& info, AppConfig& ex_config, HeaderRef& ref){
+void HeaderParser::parseFull(FindFileInfo& info, AppConfig& ex_config, HeaderRef& ref){
 
     info.headerExist = false;
     info.headerCorrect = false;
@@ -213,7 +213,7 @@ void HeaderParser::validateHeader(FindFileInfo& info, HeaderRef& ref) {
     }
 
     if (info.headerField.contains("stades")) {
-        info.stades = info.headerField.value("stades");
+        info.stages = info.headerField.value("stades");
     }
 
     if (info.headerField.contains("specific") && !info.headerField.value("specific").isEmpty()) {
