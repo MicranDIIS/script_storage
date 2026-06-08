@@ -16,19 +16,8 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
     ui->setupUi(this);
 
     setupModels();
-
     setupView();
-
-    restoreGeometry(settings.value("HistoryWindow/Geometry").toByteArray());
-
-
-
-//    m_proxy->sort(DateColumn, Qt::DescendingOrder);
-
-    QByteArray state = settings.value("HistoryTableView/State").toByteArray();
-    ui->HistoryTableView->horizontalHeader()->restoreState(state);
-
-
+    restoreUiGeometry();
 
     ui->hashLabel->hide();
 
@@ -61,6 +50,15 @@ void HistoryWindow::setupView()
 
     ui->HistoryTableView->setSortingEnabled(true);
 //    ui->HistoryTableView->sortByColumn(DateColumn, Qt::DescendingOrder);
+}
+
+
+void HistoryWindow::restoreUiGeometry()
+{
+    restoreGeometry(settings.value("HistoryWindow/Geometry").toByteArray());
+    const   QByteArray state = settings.value("HistoryTableView/State").toByteArray();
+    if (!state.isEmpty())
+           ui->HistoryTableView->horizontalHeader()->restoreState(state);
 }
 
 HistoryWindow::~HistoryWindow()

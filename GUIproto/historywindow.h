@@ -48,6 +48,7 @@ private:
     };
     void setupModels();
     void setupView();
+    void restoreUiGeometry();
 
 
 private slots:
