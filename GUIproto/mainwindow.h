@@ -10,7 +10,9 @@
 #include <QHash>
 #include <QPointer>
 #include <QPoint>
-//#include "historywindow.h"
+#include <QSettings>
+#include <commitinfo.h>
+
 class HistoryWindow;
 
 namespace Ui {
@@ -25,6 +27,9 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+protected:
+    void closeEvent(QCloseEvent *event);
+
 private:
     Ui::MainWindow *ui;
     ViewModel *basicScriptsModel;
@@ -38,18 +43,22 @@ private:
     ComboFilterModel *stadeComboModel;
     ComboFilterModel *categoryComboModel;
 
-    void buildLayouts();
+    void setupModels();
+    void setupPageConnect();
+    void setupFilterConnect();
+    void setupActionConnect();
     void loadScripts();
     void openDiffForIndex(const QModelIndex &index);
-    void resetComboBoxes();
     void resetFilterState();
     bool syncRepo();
+    void loadState();
+    void saveSettings();
     void openHistoryForIndex(const QModelIndex &index);
     QHash<QString, QPointer<HistoryWindow> > m_historyWindows;
 
     IRepository* m_repo;
     QString m_repoRoot;
-
+    QSettings settings;
 
 private slots:
     void showBasicPage();
@@ -65,6 +74,7 @@ private slots:
     void showCustomContextMenu(const QPoint& pos);
     void showBasicContextMenu(const QPoint &pos);
     void onHistoryWindowDestroyed(QObject* obj);
+
 };
 
 #endif // MAINWINDOW_H

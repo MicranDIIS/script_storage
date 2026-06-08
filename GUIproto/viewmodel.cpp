@@ -6,7 +6,6 @@ ViewModel::ViewModel (QObject *parent): QStandardItemModel(parent), viewMode(bas
     setColumnCount(ColumnCount);
 }
 
-
 //загружаем полный список файлов в модель
 void ViewModel::setFiles(QList<FindFileInfo>& files){
 

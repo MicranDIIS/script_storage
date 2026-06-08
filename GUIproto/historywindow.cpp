@@ -3,6 +3,8 @@
 
 #include <QDebug>
 #include <QFileInfo>
+#include <QClipboard>
+#include <QApplication>
 
 HistoryWindow::HistoryWindow(QWidget *parent) :
     QWidget(parent),
@@ -10,8 +12,6 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
     m_historyModel(new QStandardItemModel(this))
 {
     ui->setupUi(this);
-
-//    qDebug("layout ptr = %p", this->layout());
 
     restoreGeometry(settings.value("HistoryWindow/Geometry").toByteArray());
 
@@ -23,9 +23,9 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
 
     ui->HistoryTableView->setModel(m_proxy);
     ui->HistoryTableView->setSortingEnabled(true);
-    m_proxy->sort(0, Qt::DescendingOrder);
+    m_proxy->sort(DateColumn, Qt::DescendingOrder);
 
-    m_historyModel->setColumnCount(3);
+    m_historyModel->setColumnCount(ColumnCount);
     m_headers << trUtf8("Дата")
               << trUtf8("Автор")
               << trUtf8("Сообщение коммита");
@@ -34,15 +34,13 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
     QByteArray state = settings.value("HistoryTableView/State").toByteArray();
     ui->HistoryTableView->horizontalHeader()->restoreState(state);
 
-//    connect(ui->FilterComboBox, SIGNAL(currentIndexChanged(int)),
-//            this, SLOT(onSortChanged(int)));
-
     ui->HistoryTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->HistoryTableView->setSelectionMode(QAbstractItemView::SingleSelection);
 
     connect(ui->HistoryTableView->selectionModel(), SIGNAL(currentRowChanged(QModelIndex, QModelIndex)),
             this,SLOT(onCurrentRowChanged(QModelIndex)));
-
+    connect(ui->HistoryTableView, SIGNAL(doubleClicked(QModelIndex)),
+            this, SLOT(copyHashToClipboard(QModelIndex)));
 }
 
 HistoryWindow::~HistoryWindow()
@@ -55,9 +53,6 @@ void HistoryWindow::setFilePath(const QString& filePath)
     m_scriptPath = filePath;
     ui->ScriptNameLabel->setText(QFileInfo(filePath).fileName());
     ui->ScriptNameLabel->setToolTip(m_scriptPath);
-
-//    setHistory(makeMockHistory());
-
 }
 
 void HistoryWindow::setHistory(const QVector<GuiCommitInfo>& history)
@@ -77,9 +72,10 @@ void HistoryWindow::loadHistory()
         QStandardItem *dateItem = new QStandardItem(dateStr);
         QStandardItem *authorItem = new QStandardItem(c.author);
 
-        QStandardItem *msgItem = new QStandardItem(getSummaryString(c.commitMessage));
+        QString summary = getSummaryString(c.commitMessage);
+        QStandardItem *msgItem = new QStandardItem(summary);
 
-        if (c.commitMessage.trimmed().isEmpty())
+        if (summary.isEmpty())
         {
             msgItem->setForeground(QBrush(Qt::gray));
         }
@@ -93,50 +89,7 @@ void HistoryWindow::loadHistory()
 
         m_historyModel->appendRow(row);
     }
-    m_proxy->sort(0, m_proxy->sortOrder());
-}
-
-QVector<GuiCommitInfo> HistoryWindow::makeMockHistory() const
-{
-    QVector<GuiCommitInfo> mockHistory;
-
-    GuiCommitInfo a;
-    a.dateTime = QDateTime::currentDateTime().addDays(-1);
-    a.author = "Sonya";
-    a.authorEmail = "sofasennikovablablabla@gmail.com";
-    a.commitMessage = "blablablablablablablabla";
-    a.commitHash = "a1b2c3d";
-    mockHistory.append(a);
-
-    GuiCommitInfo b;
-    b.dateTime = QDateTime::currentDateTime().addDays(-7);
-    b.author = "Vanya";
-    b.authorEmail = "kjhghkd@gmail.com";
-    b.commitMessage = "Refactor header parsing (long message to test table resizing)";
-    b.commitHash = "d4e5f6a";
-    mockHistory.append(b);
-
-    GuiCommitInfo c;
-    c.dateTime = QDateTime::currentDateTime().addDays(-3);
-    c.author = "Vasya";
-    c.authorEmail = "kd@gmail.com";
-    c.commitMessage = "";
-    c.commitHash = "d4e7y6a";
-    mockHistory.append(c);
-
-    GuiCommitInfo d;
-    d.dateTime = QDateTime::currentDateTime().addDays(-3);
-    d.author = "Anton";
-    d.authorEmail = "khrenkov@gmail.com";
-    d.commitMessage = QString::fromUtf8("Добавил первичную прибавку к мощности генератора\n"
-            "Определение и прибавка к мощности генератора осуществляется с\n"
-            "целью более быстрого поиска необходимого уровня мощности.\n"
-            "modified: scripts/sk4m/sk4m-50/PSI/50__9_9.lua");
-    d.commitHash = "d7h7y6a";
-    mockHistory.append(d);
-
-
-    return mockHistory;
+    m_proxy->sort(DateColumn, m_proxy->sortOrder());
 }
 
 void HistoryWindow::closeEvent(QCloseEvent *event)
@@ -147,17 +100,6 @@ void HistoryWindow::closeEvent(QCloseEvent *event)
     settings.setValue("HistoryTableView/State", tableState);
 
     QWidget::closeEvent(event);
-}
-
-void HistoryWindow::onSortChanged(int index)
-{
-    Qt::SortOrder order = Qt::DescendingOrder;
-    if (index == 1)
-    {
-        order = Qt::AscendingOrder;
-    }
-    m_proxy->sort(0, order);
-
 }
 
 void HistoryWindow::onCurrentRowChanged(const QModelIndex& current)
@@ -179,7 +121,7 @@ void HistoryWindow::updateCommitMessagePanel(const QModelIndex &indexInRow)
         return;
     }
 
-    QModelIndex messageIndex = indexInRow.sibling(indexInRow.row(), 2);
+    QModelIndex messageIndex = indexInRow.sibling(indexInRow.row(), CommitColumn);
 
     if (!messageIndex.isValid())
     {
@@ -187,7 +129,13 @@ void HistoryWindow::updateCommitMessagePanel(const QModelIndex &indexInRow)
         return;
     }
 
-    QString summary = getSummaryString(messageIndex.data(RoleCommitMessage).toString());
+//    QString summary = getSummaryString(messageIndex.data(RoleCommitMessage).toString());
+    QString summary = messageIndex.data(Qt::DisplayRole).toString();
+    if (summary.isEmpty())
+    {
+        summary = trUtf8("Сообщение коммита было пустым(");
+    }
+
     QString body = getBodyString(messageIndex.data(RoleCommitMessage).toString());
 
     ui->CommitMessageTextEdit->clear();
@@ -215,14 +163,17 @@ void HistoryWindow::clearCommitMessagePanel()
     ui->CommitMessageTextEdit->clear();
 }
 
-QString HistoryWindow::getSummaryString(const QString& fullMessage) const
+QStringList HistoryWindow::splitString(const QString& fullMessage)  const
 {
     QString string = fullMessage;
-
     string.replace("\r\n", "\n");
     string.replace("\r", "\n");
+    return string.split("\n");
+}
 
-    QStringList lines = string.split("\n");
+QString HistoryWindow::getSummaryString(const QString& fullMessage) const
+{
+    QStringList lines = splitString(fullMessage);
 
     for (int i = 0; i < lines.size(); i++)
     {
@@ -233,17 +184,12 @@ QString HistoryWindow::getSummaryString(const QString& fullMessage) const
             return line;
         }
     }
-    return trUtf8("Сообщение коммита было пустым(");
+    return "";
 }
 
 QString HistoryWindow::getBodyString(const QString& fullMessage) const
 {
-    QString string = fullMessage;
-
-    string.replace("\r\n", "\n");
-    string.replace("\r", "\n");
-
-    QStringList lines = string.split("\n");
+    QStringList lines = splitString(fullMessage);
 
     int summaryIndex = -1;
     for (int i = 0; i < lines.size(); ++i)
@@ -266,4 +212,22 @@ QString HistoryWindow::getBodyString(const QString& fullMessage) const
         bodyLines.removeAt(0);
 
     return bodyLines.join("\n");
+}
+
+void HistoryWindow::copyHashToClipboard(const QModelIndex& index)
+{
+    if (!index.isValid())
+    {
+        return;
+    }
+
+    QString hash = index.sibling(index.row(), DateColumn).data(RoleCommitHash).toString();
+
+    if (hash.isEmpty())
+    {
+        return;
+    }
+
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setText(hash);
 }
