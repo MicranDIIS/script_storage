@@ -1,26 +1,25 @@
 #ifndef REPOSITORY_H
 #define REPOSITORY_H
 
-#include "../../include/MGit/mgit.h"
+#include "../mgit/mgit.h"
 #include <git2.h>
 
 
 class Repository : public IRepository{
 private:
-    git_repository *repo;
-    RepoConfig cfg;
+    git_repository *repo_;
+    RepoConfig cfg_;
     
-    //ф-ии которые не нужны фронту, но нужны для логики бэкэнда
     Gerror fetch();
 public:
-    Repository(const RepoConfig& cfg_) : repo(NULL), cfg(cfg_) {}
-    ~Repository(){if(repo != NULL){git_repository_free(repo);repo = NULL;}}
+    Repository(const RepoConfig& cfg) : repo_(NULL), cfg_(cfg) {}
+    ~Repository(){if(repo_ != NULL){git_repository_free(repo_);repo_ = NULL;}}
 
-    const QString& getUrl() const {return cfg.url;}
-    const QString& getBranch() const {return cfg.branch;}
-    const QString& getPath() const {return cfg.path;}
-    const QString& getUsername() const {return cfg.username;}
-    const QString& getToken() const {return cfg.token;}
+    const QString& getUrl() const {return cfg_.url;}
+    const QString& getBranch() const {return cfg_.branch;}
+    const QString& getPath() const {return cfg_.path;}
+    const QString& getUsername() const {return cfg_.username;}
+    const QString& getToken() const {return cfg_.token;}
 
     Gerror open();
 
@@ -32,11 +31,11 @@ public:
     Gerror log(QList<CommitInfo>& list) const;
     Gerror log(QList<CommitInfo>& list, const QString& filePath) const;
 
-    bool hasRepo() const {return repo != NULL;}
+    bool hasRepo() const {return repo_ != NULL;}
 };
 
-//удобные оберкти для работы с ветками
-int repo_remote_branch_create_to_local(git_repository* repo, const QString& branch);
-int repo_checkout_local_branch(git_repository* repo, const QString& branch);
+//ф-ия получения ошибки из libgit2
+Gerror libgitError();
 
 #endif 
+

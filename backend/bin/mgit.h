@@ -4,6 +4,7 @@
 #include <QString>
 #include <QDateTime>
 #include <QList>
+#include "mgit_global.h"
 
 //коды ошибок связанных с пользователем 
 enum Errors{
@@ -12,8 +13,8 @@ enum Errors{
     REPO_IS_NULL = 2
 };
 
-//класс ошибки
-class Gerror{
+//структура ошибки
+class MGITSHARED_EXPORT Gerror{
 private:
     bool success_;
     QString msg_;
@@ -30,7 +31,7 @@ public:
 };
 
 //конфиг нашего репозитория
-struct RepoConfig{
+struct MGITSHARED_EXPORT RepoConfig{
     QString url;
     QString branch;
     QString path;
@@ -50,7 +51,7 @@ enum STATUS_FLAG{
     STATUS_NEW_TO_DIR      = 1 << 7  //новый в директории
 };
 
-class FileStatus{
+class MGITSHARED_EXPORT FileStatus{
 private:
     QString pathNew_;
     QString pathOld_;
@@ -76,7 +77,7 @@ public:
 };
 
 //для git log
-class CommitInfo{
+class MGITSHARED_EXPORT CommitInfo{
 private:
     QDateTime authorDateTime_;
     QString authorName_;
@@ -112,7 +113,7 @@ public:
 
 };
 
-class IRepository{
+class MGITSHARED_EXPORT IRepository{
 public:
     virtual ~IRepository() {}
 
@@ -163,8 +164,9 @@ public:
 };
 
 //фабричные ф-ии
-IRepository* createRepository(const RepoConfig& cfg);
-void deleteRepository(IRepository* repo);
+extern "C"{
+MGITSHARED_EXPORT IRepository* createRepository(const RepoConfig& cfg);
+MGITSHARED_EXPORT void deleteRepository(IRepository* repo);
+}
 
-
-#endif
+#endif 

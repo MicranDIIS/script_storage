@@ -1,51 +1,19 @@
 #include "../Repository/repository.h"
 
-static QString git_get_error() { 
-    const git_error* err = git_error_last();
-    if (err && err->message) {
-        return QString::fromUtf8(err->message);
-    }
-    return "Unknown";
-}
-
-static int repo_has_local_branch(git_repository* repo, const QString& branch){
-    git_reference* ref = NULL;
-    QByteArray branch_ = QString("refs/heads/%1").arg(branch).toUtf8();
-
-    if(git_reference_lookup(&ref, repo, branch_.constData()) != 0){
-        return -1;
-    }
-
-    git_reference_free(ref);
-    return 0;
-}
 
 Gerror Repository::open(){
-    git_repository *repo_ = NULL;
+    QByteArray path = cfg_.path.toUtf8();
 
-    QByteArray path_ = cfg.path.toUtf8();
-    if(git_repository_open(&repo_,path_.constData()) != 0){
-        QString error = git_get_error();
-        return Gerror(error);
+    if(git_repository_open(&repo_, path.constData()) != GIT_OK){
+        return libgitError();
     }
 
-    repo = repo_;
-
-    if(repo_has_local_branch(repo, cfg.branch) != 0){
-        QString error = git_get_error();
-        return Gerror(error);
-    }
-
-    if(repo_checkout_local_branch(repo, cfg.branch) != 0){
-        QString error = git_get_error();
-        return Gerror(error);
-    }
     return Gerror();
 }
 
 Gerror Repository::status(QList<FileStatus>& list) const {
-    if (repo == NULL) {
-        return Gerror("repo is NULL");
+    if (repo_ == NULL) {
+        return Gerror("repo is NULL",REPO_IS_NULL);
     }
 
     git_status_list* status = NULL;
@@ -54,8 +22,8 @@ Gerror Repository::status(QList<FileStatus>& list) const {
     statopt.flags = GIT_STATUS_OPT_RECURSE_UNTRACKED_DIRS |
                     GIT_STATUS_OPT_INCLUDE_UNTRACKED;
 
-    if (git_status_list_new(&status, repo, &statopt) != 0) {
-        return Gerror(git_get_error());
+    if (git_status_list_new(&status, repo_, &statopt) != GIT_OK) {
+        return libgitError();
     }
 
     size_t len = git_status_list_entrycount(status);
@@ -78,7 +46,6 @@ Gerror Repository::status(QList<FileStatus>& list) const {
             continue;
         }
 
-        // В HEAD (индекс)
         if (entry->head_to_index) {
             if (entry->status & GIT_STATUS_INDEX_NEW) {
                 file_path_new = QString::fromUtf8(entry->head_to_index->new_file.path);
@@ -102,7 +69,6 @@ Gerror Repository::status(QList<FileStatus>& list) const {
             }
         }
 
-        // В рабочей директории
         if (entry->index_to_workdir) {
             if (entry->status & GIT_STATUS_WT_NEW) {
                 file_path_new = QString::fromUtf8(entry->index_to_workdir->new_file.path);
@@ -136,31 +102,28 @@ Gerror Repository::status(QList<FileStatus>& list) const {
 }
 
 Gerror Repository::reset() {
-    if (repo == NULL) {
-        return Gerror("repo is NULL");
+    if (repo_ == NULL) {
+        return Gerror("repo is NULL", REPO_IS_NULL);
     }
     
     git_object* obj = NULL;
     
-    if (git_revparse_single(&obj, repo, "HEAD") != 0) {
-        QString error = git_get_error();
-        return Gerror(error);
+    if (git_revparse_single(&obj, repo_, "HEAD") != GIT_OK) {
+        return libgitError();
     }
     
     git_checkout_options checopt = GIT_CHECKOUT_OPTIONS_INIT;
     checopt.checkout_strategy = GIT_CHECKOUT_FORCE | 
                                 GIT_CHECKOUT_REMOVE_UNTRACKED | 
                                 GIT_CHECKOUT_REMOVE_IGNORED;
-    if (git_checkout_tree(repo, obj, &checopt) != 0) {
-        QString error = git_get_error();
+    if (git_checkout_tree(repo_, obj, &checopt) != GIT_OK) {
         git_object_free(obj);
-        return Gerror(error);
+        return libgitError();
     }
 
-    if (git_reset(repo, obj, GIT_RESET_HARD, NULL) != 0) {
-        QString error = git_get_error();
+    if (git_reset(repo_, obj, GIT_RESET_HARD, NULL) != GIT_OK) {
         git_object_free(obj);
-        return Gerror(error);
+        return libgitError();
     }
     
     git_object_free(obj);
@@ -168,39 +131,36 @@ Gerror Repository::reset() {
 }
 
 Gerror Repository::log(QList<CommitInfo>& list) const {
-    if (repo == NULL) {
-        return Gerror("repo is NULL");
+    if (repo_ == NULL) {
+        return Gerror("repo is NULL",REPO_IS_NULL);
     }
     
     list.clear();
-    list.reserve(100);
+    list.reserve(10);
     
     git_revwalk* walker = NULL;
     
-    if (git_revwalk_new(&walker, repo) != 0) {
-        QString error = git_get_error();
-        return Gerror(error);
+    if (git_revwalk_new(&walker, repo_) != GIT_OK) {
+        return libgitError();
     }
     
     git_revwalk_sorting(walker, GIT_SORT_TIME);
     
     git_oid oid_head;
-    if (git_reference_name_to_id(&oid_head, repo, "HEAD") != 0) {
-        QString error = git_get_error();
+    if (git_reference_name_to_id(&oid_head, repo_, "HEAD") != GIT_OK) {
         git_revwalk_free(walker);
-        return Gerror(error);
+        return libgitError();
     }
     
-    if (git_revwalk_push(walker, &oid_head) != 0) {
-        QString error = git_get_error();
+    if (git_revwalk_push(walker, &oid_head) != GIT_OK) {
         git_revwalk_free(walker);
-        return Gerror(error);
+        return libgitError();
     }
     
     git_oid oid;
-    while (git_revwalk_next(&oid, walker) == 0) {
+    while (git_revwalk_next(&oid, walker) == GIT_OK) {
         git_commit* commit = NULL;
-        if (git_commit_lookup(&commit, repo, &oid) != 0) {
+        if (git_commit_lookup(&commit, repo_, &oid) != 0) {
             continue; 
         }
         
@@ -265,57 +225,54 @@ static int diff_file_callback(const git_diff_delta* delta, float progress,
 }
 
 Gerror Repository::log(QList<CommitInfo>& list, const QString& filePath) const{
-    if (repo == NULL) {
-        return Gerror("repo is NULL");
+    if (repo_ == NULL) {
+        return Gerror("repo is NULL", REPO_IS_NULL);
     }
 
     list.clear();
-    list.reserve(100);
+    list.reserve(10);
 
     git_revwalk* walker = NULL;
     
-    if (git_revwalk_new(&walker, repo) != 0) {
-        QString error = git_get_error();
-        return Gerror(error);
+    if (git_revwalk_new(&walker, repo_) != GIT_OK) {
+        return libgitError();
     }
     
     git_revwalk_sorting(walker, GIT_SORT_TIME);
     
     git_oid oid_head;
-    if (git_reference_name_to_id(&oid_head, repo, "HEAD") != 0) {
-        QString error = git_get_error();
+    if (git_reference_name_to_id(&oid_head, repo_, "HEAD") != GIT_OK) {
         git_revwalk_free(walker);
-        return Gerror(error);
+        return libgitError();
     }
     
-    if (git_revwalk_push(walker, &oid_head) != 0) {
-        QString error = git_get_error();
+    if (git_revwalk_push(walker, &oid_head) != GIT_OK) {
         git_revwalk_free(walker);
-        return Gerror(error);
+        return libgitError();
     }
     
     git_oid oid;
-    while (git_revwalk_next(&oid, walker) == 0) {
+    while (git_revwalk_next(&oid, walker) == GIT_OK) {
         git_commit* commit = NULL;
-        if (git_commit_lookup(&commit, repo, &oid) != 0) {
+        if (git_commit_lookup(&commit, repo_, &oid) != GIT_OK) {
             continue;
         }
 
         git_tree* tree = NULL;
-        if (git_commit_tree(&tree, commit) != 0) {
+        if (git_commit_tree(&tree, commit) != GIT_OK) {
             git_commit_free(commit);
             continue;
         }
 
         git_tree* tree_parent = NULL;
-        if (git_commit_parentcount(commit) != 0) {
+        if (git_commit_parentcount(commit) > 0) {
             git_commit* parent = NULL;
-            if (git_commit_parent(&parent, commit, 0) != 0) {
+            if (git_commit_parent(&parent, commit, 0) != GIT_OK) {
                 git_tree_free(tree);
                 git_commit_free(commit);
                 continue;
             }
-            if (git_commit_tree(&tree_parent, parent) != 0) {
+            if (git_commit_tree(&tree_parent, parent) != GIT_OK) {
                 git_commit_free(parent);
                 git_tree_free(tree);
                 git_commit_free(commit);
@@ -332,8 +289,7 @@ Gerror Repository::log(QList<CommitInfo>& list, const QString& filePath) const{
         opts.pathspec.count = 1;
 
         git_diff* diff = NULL;
-        if (git_diff_tree_to_tree(&diff, repo, tree_parent, tree, &opts) != 0) {
-            git_diff_free(diff);
+        if (git_diff_tree_to_tree(&diff, repo_, tree_parent, tree, &opts) != GIT_OK) {
             git_tree_free(tree_parent);
             git_tree_free(tree);
             git_commit_free(commit);
