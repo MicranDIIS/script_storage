@@ -47,6 +47,7 @@ private:
         ColumnCount = 3
     };
     void setupModels();
+    void setupView();
 
 
 private slots:

@@ -17,17 +17,18 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
 
     setupModels();
 
+    setupView();
+
     restoreGeometry(settings.value("HistoryWindow/Geometry").toByteArray());
 
-    ui->HistoryTableView->setModel(m_proxy);
-    ui->HistoryTableView->setSortingEnabled(true);
-    m_proxy->sort(DateColumn, Qt::DescendingOrder);
+
+
+//    m_proxy->sort(DateColumn, Qt::DescendingOrder);
 
     QByteArray state = settings.value("HistoryTableView/State").toByteArray();
     ui->HistoryTableView->horizontalHeader()->restoreState(state);
 
-    ui->HistoryTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-    ui->HistoryTableView->setSelectionMode(QAbstractItemView::SingleSelection);
+
 
     ui->hashLabel->hide();
 
@@ -49,6 +50,17 @@ void HistoryWindow::setupModels()
     m_proxy->setSourceModel(m_historyModel);
     m_proxy->setSortRole(RoleDateTime);
     m_proxy->setDynamicSortFilter(true);
+}
+
+void HistoryWindow::setupView()
+{
+    ui->HistoryTableView->setModel(m_proxy);
+
+    ui->HistoryTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->HistoryTableView->setSelectionMode(QAbstractItemView::SingleSelection);
+
+    ui->HistoryTableView->setSortingEnabled(true);
+//    ui->HistoryTableView->sortByColumn(DateColumn, Qt::DescendingOrder);
 }
 
 HistoryWindow::~HistoryWindow()
