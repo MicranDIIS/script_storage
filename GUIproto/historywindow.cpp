@@ -19,7 +19,7 @@ HistoryWindow::HistoryWindow(QWidget *parent) :
     setupView();
     restoreUiGeometry();
 
-    ui->hashLabel->hide();
+//    ui->hashLabel->hide();
 
     connect(ui->HistoryTableView->selectionModel(), SIGNAL(currentRowChanged(QModelIndex, QModelIndex)),
             this,SLOT(onCurrentRowChanged(QModelIndex)));
@@ -110,13 +110,17 @@ void HistoryWindow::loadHistory()
     m_proxy->sort(DateColumn, m_proxy->sortOrder());
 }
 
-void HistoryWindow::closeEvent(QCloseEvent *event)
+void HistoryWindow::saveUiState()
 {
     settings.setValue("HistoryWindow/Geometry", saveGeometry());
 
     QByteArray tableState = ui->HistoryTableView->horizontalHeader()->saveState();
     settings.setValue("HistoryTableView/State", tableState);
+}
 
+void HistoryWindow::closeEvent(QCloseEvent *event)
+{
+    saveUiState();
     QWidget::closeEvent(event);
 }
 
