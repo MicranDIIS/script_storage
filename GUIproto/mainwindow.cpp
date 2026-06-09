@@ -271,7 +271,7 @@ void MainWindow::loadScripts()
     QString configPath = QDir(QString(CONFIG_DIR)).absoluteFilePath("app_config.ini");
     QString headerPath = QDir(QString(CONFIG_DIR)).absoluteFilePath("header_ref.ini");
 
-    // после переноса к .exe
+    // ?????? .exe
 //    QString headerPath = QDir(QApplication::applicationDirPath()).absoluteFilePath("header_ref.ini");
 //    QString configPath = QDir(QApplication::applicationDirPath()).absoluteFilePath("header_ref.ini");
 
