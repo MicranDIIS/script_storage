@@ -45,7 +45,7 @@ QList<FindFileInfo> ScriptLoader::scanSourcesAll() {
         QString absPath = convertPath(rawPath);
 
         if (absPath.isEmpty()) {
-            qWarning() << "[ScriptLoader] path not resolve:" << sourceKey << "->" << rawPath;
+            qWarning() << "[ScriptLoader] path not resolved:" << sourceKey << "->" << rawPath;
             continue;
         }
 
@@ -62,7 +62,7 @@ QList<FindFileInfo> ScriptLoader::scanSourcesOne(QString& sourceFile, QString& r
 
     QDir dir(rootPath);
     if (!dir.exists()) {
-        qWarning() << "[ScriptLoader] directory dont exist:" << rootPath;
+        qWarning() << "[ScriptLoader] directory doesn't exist:" << rootPath;
         return result;
     }
 

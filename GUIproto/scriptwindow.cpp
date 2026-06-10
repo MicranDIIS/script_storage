@@ -38,7 +38,7 @@ void ScriptWindow::openScriptUI(const QString &path, const QString &baseWinPath)
     PluginInterface *pluginInterface = qobject_cast<PluginInterface *>(pluginObject);
 
     if (!pluginInterface){
-      QMessageBox::critical(this,tr("Error BasePlugin.dll"),loader.errorString());
+      QMessageBox::critical(this, tr("Error BasePlugin.dll"),loader.errorString());
       return;
     }
 

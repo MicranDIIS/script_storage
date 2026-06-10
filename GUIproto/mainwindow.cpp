@@ -308,7 +308,7 @@ void MainWindow::loadScripts()
     loadState();
 
     if(validFiles.size()!= files.size()){ //файлы с шапкой, не прошедшей валидацию не отображаются
-        QMessageBox::warning(this,tr("Invalid script headers"), tr("This files contain incorrect headers and could not be displayed:\n") +  invalidHeader.join("\n"));
+        QMessageBox::warning(this,tr("Invalid script headers"), tr("These files contain incorrect headers and could not be displayed:\n") +  invalidHeader.join("\n"));
     }
     delete reader;
 }
@@ -366,28 +366,48 @@ void MainWindow::applyTextSearch(const QString& text){
     customFilterModel->setTextSearch(text);
 }
 
-void MainWindow::applyStageFilter(){
-
-    QString stage = ui->sComboBox->currentText();
+void MainWindow::applyStageFilter()
+{
+    QString stage;
+    if (ui->sComboBox->currentIndex() >= 0)
+    {
+        stage = ui->sComboBox->itemData(ui->sComboBox->currentIndex(), Qt::UserRole).toString();
+    }
+    if (stage == "__ALL__")
+    {
+        stage.clear();
+    }
     basicFilterModel->setStageFilter(stage);
 }
 
-void MainWindow::applyDeviceFilter() {
+void MainWindow::applyDeviceFilter()
+{
+    QString device;
+    if (ui->dComboBox->currentIndex() >= 0)
+        device = ui->dComboBox->itemData(ui->dComboBox->currentIndex(), Qt::UserRole).toString();
 
-    QString device = ui->dComboBox->currentText();
+    if (device == "__ALL__")
+        device.clear();
+
     QString oldRole;
-    if (ui->rComboBox->currentIndex() >= 0) {
-        oldRole = ui->rComboBox->itemData(ui->rComboBox->currentIndex(), Qt::UserRole).toString();
-    }
 
-    QString oldStage = ui->sComboBox->currentText();
+    if (ui->rComboBox->currentIndex() >= 0)
+        oldRole = ui->rComboBox->itemData(ui->rComboBox->currentIndex(), Qt::UserRole).toString();
+
+    if (oldRole == "__ALL__")
+        oldRole.clear();
+
+    QString oldStage;
+    if (ui->sComboBox->currentIndex() >= 0)
+        oldStage = ui->sComboBox->itemData(ui->sComboBox->currentIndex(), Qt::UserRole).toString();
+
     basicFilterModel->setDeviceFilter(device);
     roleComboModel->setFilter(ViewModel::DeviceColumn, device);
 
     int roleIndex = ui->rComboBox->findData(oldRole, Qt::UserRole);
-    if (roleIndex >= 0) {
+    if (roleIndex >= 0)
         ui->rComboBox->setCurrentIndex(roleIndex);
-    } else {
+    else {
         ui->rComboBox->setCurrentIndex(0);
         oldRole.clear();
     }
@@ -395,50 +415,56 @@ void MainWindow::applyDeviceFilter() {
     stageComboModel->clearFilters();
     stageComboModel->setFilter(ViewModel::DeviceColumn, device);
 
-    if (!oldRole.isEmpty() && oldRole != QString::fromUtf8("Все")) {
+    if (!oldRole.isEmpty())
         stageComboModel->setFilter(ViewModel::RoleColumn, oldRole);
-    }
 
-    int stageIndex = ui->sComboBox->findText(oldStage);
-    if (stageIndex >= 0) {
+    int stageIndex = ui->sComboBox->findData(oldStage, Qt::UserRole);
+    if (stageIndex >= 0)
         ui->sComboBox->setCurrentIndex(stageIndex);
-    } else {
-        ui->sComboBox->setCurrentIndex(0);
-    }
+    else ui->sComboBox->setCurrentIndex(0);
 }
 
-void MainWindow::applyRoleFilter(){
-
+void MainWindow::applyRoleFilter()
+{
     QString role;
-
-    if (ui->rComboBox->currentIndex() >= 0) {
+    if (ui->rComboBox->currentIndex() >= 0)
         role = ui->rComboBox->itemData(ui->rComboBox->currentIndex(), Qt::UserRole).toString();
-    }
-    QString oldStage = ui->sComboBox->currentText();
+
+    if (role == "__ALL__") role.clear();
+
+    QString oldStage;
+    if (ui->sComboBox->currentIndex() >= 0)
+        oldStage = ui->sComboBox->itemData(ui->sComboBox->currentIndex(), Qt::UserRole).toString();
+
     basicFilterModel->setRoleFilter(role);
 
-    QString device = ui->dComboBox->currentText();
+    QString device;
+    if (ui->dComboBox->currentIndex() >= 0)
+        device = ui->dComboBox->itemData(ui->dComboBox->currentIndex(), Qt::UserRole).toString();
+
+    if (device == "__ALL__") device.clear();
+
     stageComboModel->clearFilters();
 
-    if (!device.isEmpty()) {
+    if (!device.isEmpty())
         stageComboModel->setFilter(ViewModel::DeviceColumn, device);
-    }
 
-    if (!role.isEmpty()) {
+    if (!role.isEmpty())
         stageComboModel->setFilter(ViewModel::RoleColumn, role);
-    }
 
-    int stageIndex = ui->sComboBox->findText(oldStage);
-    if (stageIndex >= 0) {
-        ui->sComboBox->setCurrentIndex(stageIndex);
-    } else {
-        ui->sComboBox->setCurrentIndex(0);
-    }
+    int stageIndex = ui->sComboBox->findData(oldStage, Qt::UserRole);
+    if (stageIndex >= 0) ui->sComboBox->setCurrentIndex(stageIndex);
+    else ui->sComboBox->setCurrentIndex(0);
 }
 
-void MainWindow::applyCategoryFilter() {
-    QString category = ui->categoryComboBox->currentText();
-    customFilterModel->setCategoryFilter(category);
+void MainWindow::applyCategoryFilter()
+{
+   QString category;
+   if (ui->categoryComboBox->currentIndex() >= 0)
+       category = ui->categoryComboBox->itemData(ui->categoryComboBox->currentIndex(), Qt::UserRole).toString();
+
+   if (category == "__ALL__") category.clear();
+   customFilterModel->setCategoryFilter(category);
 }
 
 //переключение режимов

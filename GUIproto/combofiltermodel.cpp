@@ -1,7 +1,10 @@
 #include "combofiltermodel.h"
 
+static const char* const kAllValue = "__ALL__";
+
 ComboFilterModel::ComboFilterModel(QObject *parent)
     : QSortFilterProxyModel(parent), targetColumn(ViewModel::DisplayColumn) {
+
 }
 
 //запомнить столбец (поле фильтра)
@@ -12,16 +15,26 @@ void ComboFilterModel::setTargetColumn(ViewModel::Columns column) {
 
 
 //собираем уникальные значения для комбобоксов
-void ComboFilterModel::rebuildUniqueValues() {
+void ComboFilterModel::rebuildUniqueValues()
+{
     beginResetModel();
     uniqueValues.clear();
-    uniqueValues << QString::fromUtf8("Все");
+//    uniqueValues << QString::fromUtf8("Все");
+
+//    uniqueValues << QString::fromLatin1(kAllValue);
+    uniqueValues.sort();
+    uniqueValues.removeAll(QString::fromLatin1(kAllValue));
+    uniqueValues.prepend(QString::fromLatin1(kAllValue));
 
     QAbstractItemModel *model = sourceModel();
-    if (!model) {
+
+    if (!model)
+    {
+
         endResetModel();
         return;
     }
+
     for (int row = 0; row < model->rowCount(); ++row) {
 
         bool passFilters = true;
@@ -65,8 +78,8 @@ void ComboFilterModel::rebuildUniqueValues() {
         }
     }
     uniqueValues.sort();
-    uniqueValues.removeAll(QString::fromUtf8("Все"));
-    uniqueValues.prepend(QString::fromUtf8("Все"));
+    uniqueValues.removeAll(QString());
+//    uniqueValues.prepend(QString());
     endResetModel();
 }
 
@@ -94,28 +107,42 @@ QVariant ComboFilterModel::data(const QModelIndex& index, int role) const {
 }
 
 //зависимость фильтров
-void ComboFilterModel::setFilter(ViewModel::Columns column, const QString& value) {
-    if (value.isEmpty() || value == QString::fromUtf8("Все")) {
+void ComboFilterModel::setFilter(ViewModel::Columns column, const QString& value)
+{
+    if (value.isEmpty()|| value == QString::fromLatin1(kAllValue))
+    {
         activeFilters.remove(column);
-    } else {
+    }
+    else
+    {
         activeFilters.insert(column, value);
     }
     rebuildUniqueValues();
 }
 
 //для русского отображения ролей, так как они валидируются ref_header
-QString ComboFilterModel::displayText(const QString& value) const{
-    if (targetColumn == ViewModel::RoleColumn) {
-            if (value == "developer") {
-                return QString::fromUtf8("Разработчик");
-            }
+QString ComboFilterModel::displayText(const QString& value) const
+{
+    if (value == QString::fromLatin1(kAllValue))
+    {
+        return tr("All");
+    }
 
-            if (value == "production") {
-                return QString::fromUtf8("Производство");
-            }
+    if (targetColumn == ViewModel::RoleColumn)
+    {
+        if (value == "developer")
+        {
+            return tr("Developer");
+        }
 
-            if (value == "metrolog") {
-                return QString::fromUtf8("Метролог");
+        if (value == "production")
+        {
+            return tr("Production");
+        }
+
+        if (value == "metrolog")
+        {
+            return tr("Metrolog");
         }
     }
     return value;

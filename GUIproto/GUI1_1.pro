@@ -62,3 +62,6 @@ FORMS    += mainwindow.ui \
     scriptwindow.ui \
     diffviewerwindow.ui \
     historywindow.ui
+
+TRANSLATIONS += app_en.ts \
+                app_ru.ts
