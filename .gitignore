@@ -56,3 +56,13 @@ ui_*.h
 moc_*.cpp
 qrc_*.cpp
 qrc_*.cpp
+
+.svn/
+**/build/*
+**/bin/*
+*.user*
+*.stash
+*.a
+lib/lib/*.dll
+lib/plugins/*.dll
+tools/LuaBindManager/Profiles
