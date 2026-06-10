@@ -2,6 +2,8 @@
 #include "mainwindow.h"
 #include <mgit.h>
 #include <QTranslator>
+#include <QDebug>
+#include <QDir>
 
 int main(int argc, char *argv[])
 {
@@ -13,8 +15,14 @@ int main(int argc, char *argv[])
 //    mgit_init();
 
     QTranslator translator;
-    translator.load("C:/SE2orig/script_storage/GUIproto/app_en.qm"); // maybe need to move it to release folder
-    a.installTranslator(&translator);
+
+    const QString qmPath =  QDir(QApplication::applicationDirPath()).filePath("translations");
+    qDebug() << qmPath;
+
+    if (!translator.load("app_en", qmPath))
+        qDebug() << "Failed to load .qm" << qmPath;
+    else
+        a.installTranslator(&translator);
 
     int rc = 0;
     {
