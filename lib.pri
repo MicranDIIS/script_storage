@@ -1,5 +1,8 @@
 TEMPLATE = lib
 
+QT -= gui
+
+
 DESTDIR = $${LIB_PATH}
 
 win32: DLLDESTDIR = $${BIN_PATH}

@@ -1,7 +1,7 @@
 #ifndef REPOSITORY_H
 #define REPOSITORY_H
 
-#include "../../import/mgit.h"
+#include "../../include/mgit.h"
 #include <git2.h>
 
 

@@ -4,7 +4,13 @@
 #include <QString>
 #include <QDateTime>
 #include <QList>
-#include "mgit_global.h"
+#include <QtCore/qglobal.h>
+
+#if defined(MGIT_LIBRARY)
+#  define MGITSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define MGITSHARED_EXPORT Q_DECL_IMPORT
+#endif
 
 //коды ошибок связанных с пользователем 
 enum Errors{

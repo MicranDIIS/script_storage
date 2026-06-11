@@ -1,26 +1,21 @@
-QT =- gui
-
 QT += core
 
-CONFIG += debug
-CONFIG -= release
+CONFIG -= debug_and_release
 
 ROOT_PATH = $${PWD}
 
-CONFIG(debug, debug|release){
-     BUILD_FLAG = debug
-     DEFINES += DEBUG
-}else{
-     BUILD_FLAG = release
+CONFIG(debug, debug|release) {
+    BUILD_FLAG = debug
+    DEFINES   += DEBUG
+} else {
+    BUILD_FLAG = release
 }
 
 #include
 HEADERS_PATH = $${ROOT_PATH}/include
-IMPORT_PATH = $${ROOT_PATH}/import
 
 INCLUDEPATH += \
-            $${HEADERS_PATH}/ \
-            $${IMPORT_PATH}/ 
+            $${HEADERS_PATH}
 
 #dll
 LIB_PATH = $${ROOT_PATH}/lib
