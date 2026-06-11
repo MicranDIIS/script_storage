@@ -22,8 +22,7 @@ LIB_PATH = $${ROOT_PATH}/lib
 
 LIBS += -L$${LIB_PATH}
 LIBS += \
-     -lgit2 \
-     -lmgit
+     -lgit2 
 
 #build
 BUILD_PATH = $${ROOT_PATH}/build/$${BUILD_FLAG}/$${TARGET}
