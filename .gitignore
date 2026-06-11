@@ -66,3 +66,7 @@ qrc_*.cpp
 lib/lib/*.dll
 lib/plugins/*.dll
 tools/LuaBindManager/Profiles
+
+#translations
+*.qm
+

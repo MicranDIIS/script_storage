@@ -90,7 +90,7 @@ bool ScriptFilterModel::filterAcceptsRow(int source_row, const QModelIndex& sour
 
     QAbstractItemModel *scriptsModel = sourceModel(); // загружаем модель
     if (!scriptsModel){
-        qWarning() << "Model did not loaded correctly";
+        qWarning() << tr("Model did not load correctly");
         return false;
     }
 
