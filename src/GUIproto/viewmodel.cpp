@@ -1,4 +1,4 @@
-#include <viewmodel.h>
+#include "viewmodel.h"
 #include <QBrush>
 #include <QColor>
 

@@ -4,7 +4,7 @@
 #include <QStringList>
 #include <QString>
 #include <QMap>
-#include "mgit.h"
+#include <mgit.h>
 
 struct AppConfig { // структура для конфига
     QMap<QString, QString> scriptSource; // sourceFile -> путь, ключ значение

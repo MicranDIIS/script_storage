@@ -11,7 +11,7 @@
 #include <QPointer>
 #include <QPoint>
 #include <QSettings>
-#include <commitinfo.h>
+#include "commitinfo.h"
 
 class HistoryWindow;
 
