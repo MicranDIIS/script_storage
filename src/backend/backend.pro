@@ -7,7 +7,6 @@ DEFINES += MGIT_LIBRARY
 
 HEADERS += \
         mgit.h \
-        mgit_global.h \
         repository.h 
 
 SOURCES += \
