@@ -11,13 +11,13 @@ void deleteRepository(IRepository *repo){
     git_libgit2_shutdown();
 }
 
-Gerror libgitError(){
+GitError libgitError(){
     const git_error* err = git_error_last();
     if(err && err -> message){
         QString error = QString::fromUtf8(err -> message);
         
-        return Gerror(error, err->klass);
+        return GitError(error, err->klass);
     }
 
-    return Gerror("unknow", UNKNOW);
+    return GitError("unknow", UNKNOW);
 }

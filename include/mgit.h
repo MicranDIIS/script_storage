@@ -12,28 +12,19 @@
 #  define MGITSHARED_EXPORT Q_DECL_IMPORT
 #endif
 
-//коды ошибок связанных с пользователем 
-enum Errors{
-    OK = 0,
-    UNKNOW = 1,
-    REPO_IS_NULL = 2
-};
-
-//структура ошибки
-class MGITSHARED_EXPORT Gerror{
+class MGITSHARED_EXPORT GitError{
 private:
     bool success_;
     QString msg_;
     int code_;
 public:
-    Gerror() : success_(true), msg_(""), code_(OK) {}
-    Gerror(const QString& msg, int code) : success_(false), msg_(msg), code_(code) {}
+    GitError();
+    GitError(const QString& msg, int code);
 
-    bool hasError() const {return !success_;}
-    bool matchesCode(int code) {return code_ == code;}
+    bool isError() const;
 
-    const QString& getMsg() const {return msg_;}
-    int getCode() const {return code_;}
+    const QString& getMsg() const;
+    int getCode() const;
 };
 
 //конфиг нашего репозитория
@@ -45,17 +36,6 @@ struct RepoConfig{
     QString token;
 };
 
-//для git status
-enum STATUS_FLAG{
-    STATUS_NEW_TO_HEAD     = 1 << 0, //новый
-    STATUS_MODFILE_TO_HEAD = 1 << 1, //изменен
-    STATUS_DELETE_TO_HEAD  = 1 << 2, //удален
-    STATUS_RENAME_TO_HEAD  = 1 << 3, //переименован
-    STATUS_MODFILE_TO_DIR  = 1 << 4, //изменен в директории
-    STATUS_DELETE_TO_DIR   = 1 << 5, //удален в директории
-    STATUS_RENAME_TO_DIR   = 1 << 6, //переименован в директории
-    STATUS_NEW_TO_DIR      = 1 << 7  //новый в директории
-};
 
 class MGITSHARED_EXPORT FileStatus{
 private:
@@ -64,22 +44,20 @@ private:
     int flags_;
 
 public:
-    FileStatus(const QString& pathNew, const QString& pathOld, int flags) : pathNew_(pathNew), pathOld_(pathOld), flags_(flags) {}
+    FileStatus(const QString& pathNew, const QString& pathOld, int flags);
 
-    const QString& getPathNew() const {return pathNew_;}
-    const QString& getPathOld() const {return pathOld_;}
+    const QString& getPathNew() const;
+    const QString& getPathOld() const;
 
-    bool statusNewToHead() const {return flags_ & STATUS_NEW_TO_HEAD;}
-    bool statusModfileToHead() const {return flags_ & STATUS_MODFILE_TO_HEAD;}
-    bool statusDeleteToHead() const {return flags_ & STATUS_DELETE_TO_HEAD;}
-    bool statusRenameToHead() const {return flags_ & STATUS_RENAME_TO_HEAD;}
+    bool isNewToHead() const;
+    bool isModfileToHead() const;
+    bool isDeleteToHead() const;
+    bool isRenameToHead() const;
 
-    bool statusNewToDir() const {return flags_ & STATUS_NEW_TO_DIR;}
-    bool statusModfileToDir() const {return flags_ & STATUS_MODFILE_TO_DIR;}
-    bool statusDeleteToDir() const {return flags_ & STATUS_DELETE_TO_DIR;}
-    bool statusRenameToDir() const {return flags_ & STATUS_RENAME_TO_DIR;}
-
-    bool flagCheck(STATUS_FLAG flag) const {return flags_ & flag;}
+    bool isNewToDir() const;
+    bool isModfileToDir() const;
+    bool isDeleteToDir() const;
+    bool isRenameToDir() const;
 };
 
 //для git log
@@ -100,22 +78,18 @@ public:
     CommitInfo(const QDateTime& authorDateTime, const QString& authorName,
                const QString& authorEmail, const QString& commitMsg,
                const QString& commitHash, const QDateTime& committerDateTime,
-               const QString& committerName, const QString& committerEmail) :
-               authorDateTime_(authorDateTime), authorName_(authorName),
-               authorEmail_(authorEmail), commitMsg_(commitMsg),
-               commitHash_(commitHash), committerDateTime_(committerDateTime),
-               committerName_(committerName), committerEmail_(committerEmail) {}
+               const QString& committerName, const QString& committerEmail);
 
-    const QDateTime& getAuthorDateTime() const {return authorDateTime_;}
-    const QString& getAuthorName() const {return authorName_;}
-    const QString& getAuthorEmail() const {return authorEmail_;}
+    const QDateTime& getAuthorDateTime() const;
+    const QString& getAuthorName() const;
+    const QString& getAuthorEmail() const;
 
-    const QString& getCommitMsg() const {return commitMsg_;}
-    const QString& getCommitHash() const {return commitHash_;}
+    const QString& getCommitMsg() const;
+    const QString& getCommitHash() const;
 
-    const QDateTime& getCommitterDateTime() const {return committerDateTime_;}
-    const QString& getCommitterName() const {return committerName_;}
-    const QString& getCommitterEmail() const {return committerEmail_;}
+    const QDateTime& getCommitterDateTime() const;
+    const QString& getCommitterName() const;
+    const QString& getCommitterEmail() const;
 
 };
 
@@ -133,39 +107,39 @@ public:
     /*
     * Открывает репозиторий
     */
-    virtual Gerror open() = 0;
+    virtual GitError open() = 0;
 
     /*
     * Клонирует только ветку заданную в конфиге
     */
-    virtual Gerror clone() = 0;
+    virtual GitError clone() = 0;
     /*
     * Фетчит ветку из конфига и применяет ресетит до актуального фетча
     * Не трогает локальные файле
     */
-    virtual Gerror sync() = 0;
+    virtual GitError sync() = 0;
 
     /*
     * Ресетит все к ласт коммиту. Локальные файлы удаляются
     */
-    virtual Gerror reset() = 0;
+    virtual GitError reset() = 0;
     /*
     * Статус файлов в индексе и локальные
     */
-    virtual Gerror status(QList<FileStatus>& list) const = 0;
+    virtual GitError fillStatus(QList<FileStatus>& list) const = 0;
     /*
     * Логи всех коммитов
     */
-    virtual Gerror log(QList<CommitInfo>& list) const = 0;
+    virtual GitError fillLog(QList<CommitInfo>& list) const = 0;
     /*
     * Логи с коммитами в которых был изменен файл
     */
-    virtual Gerror log(QList<CommitInfo>& list, const QString& filePath) const = 0;
+    virtual GitError fillLog(QList<CommitInfo>& list, const QString& filePath) const = 0;
 
     /*
     * Проверка валидности репозитория
     */
-    virtual bool hasRepo() const = 0;
+    virtual bool isValid() const = 0;
 
 };
 

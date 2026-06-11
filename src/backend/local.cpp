@@ -1,19 +1,19 @@
 #include "repository.h"
 
 
-Gerror Repository::open(){
+GitError Repository::open(){
     QByteArray path = cfg_.path.toUtf8();
 
     if(git_repository_open(&repo_, path.constData()) != GIT_OK){
         return libgitError();
     }
 
-    return Gerror();
+    return GitError();
 }
 
-Gerror Repository::status(QList<FileStatus>& list) const {
+GitError Repository::fillStatus(QList<FileStatus>& list) const {
     if (repo_ == NULL) {
-        return Gerror("repo is NULL",REPO_IS_NULL);
+        return GitError("repo is NULL",REPO_IS_NULL);
     }
 
     git_status_list* status = NULL;
@@ -98,12 +98,12 @@ Gerror Repository::status(QList<FileStatus>& list) const {
     }
 
     git_status_list_free(status);
-    return Gerror();
+    return GitError();
 }
 
-Gerror Repository::reset() {
+GitError Repository::reset() {
     if (repo_ == NULL) {
-        return Gerror("repo is NULL", REPO_IS_NULL);
+        return GitError("repo is NULL", REPO_IS_NULL);
     }
     
     git_object* obj = NULL;
@@ -127,12 +127,12 @@ Gerror Repository::reset() {
     }
     
     git_object_free(obj);
-    return Gerror();
+    return GitError();
 }
 
-Gerror Repository::log(QList<CommitInfo>& list) const {
+GitError Repository::fillLog(QList<CommitInfo>& list) const {
     if (repo_ == NULL) {
-        return Gerror("repo is NULL",REPO_IS_NULL);
+        return GitError("repo is NULL",REPO_IS_NULL);
     }
     
     list.clear();
@@ -199,7 +199,7 @@ Gerror Repository::log(QList<CommitInfo>& list) const {
     }
     
     git_revwalk_free(walker);
-    return Gerror();
+    return GitError();
 }
 
 struct LogFile {
@@ -224,9 +224,9 @@ static int diff_file_callback(const git_diff_delta* delta, float progress,
     return 0;
 }
 
-Gerror Repository::log(QList<CommitInfo>& list, const QString& filePath) const{
+GitError Repository::fillLog(QList<CommitInfo>& list, const QString& filePath) const{
     if (repo_ == NULL) {
-        return Gerror("repo is NULL", REPO_IS_NULL);
+        return GitError("repo is NULL", REPO_IS_NULL);
     }
 
     list.clear();
@@ -346,5 +346,5 @@ Gerror Repository::log(QList<CommitInfo>& list, const QString& filePath) const{
     }
 
     git_revwalk_free(walker);
-    return Gerror();
+    return GitError();
 }

@@ -28,7 +28,8 @@ static int callback(git_credential **out,const char *url,
 }
 
 
-Gerror Repository::clone(){
+GitError Repository::clone(){
+    
     git_repository* repo = NULL;
     git_clone_options clone_opts = GIT_CLONE_OPTIONS_INIT;
     QByteArray branch = cfg_.branch.toUtf8();
@@ -51,12 +52,12 @@ Gerror Repository::clone(){
     }
 
     git_repository_free(repo);
-    return Gerror();
+    return GitError();
 }
 
-Gerror Repository::fetch(){
+GitError Repository::fetch(){
     if(repo_ == NULL){
-        return Gerror("repo is NULL", REPO_IS_NULL);
+        return GitError("repo is NULL", REPO_IS_NULL);
     }
     
     git_remote* remote = NULL;
@@ -92,12 +93,12 @@ Gerror Repository::fetch(){
     }
     
     git_remote_free(remote);
-    return Gerror();
+    return GitError();
 }
 
-Gerror Repository::sync(){
-    Gerror err = fetch();
-    if(err.hasError()){
+GitError Repository::sync(){
+    GitError err = fetch();
+    if(err.isError()){
         return err;
     }
 
@@ -115,5 +116,5 @@ Gerror Repository::sync(){
     }
 
     git_object_free(obj);
-    return Gerror();
+    return GitError();
 }
