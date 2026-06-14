@@ -44,7 +44,6 @@ SOURCES += main.cpp\
     combofiltermodel.cpp \
     historywindow.cpp
 
-
 HEADERS  += mainwindow.h \
     scriptwindow.h \
     diffviewerwindow.h \
@@ -65,14 +64,7 @@ FORMS    += mainwindow.ui \
 
 TRANSLATIONS += $$PWD/translations/app_ru.ts
 
-win32 {
-    CONFIG(debug, debug|release) {
-    DESTDIR = $$OUT_PWD/debug
-    } else {
-        DESTDIR = $$OUT_PWD/release
-    }
+RESOURCES += \
+    resources.qrc
 
-    QM_OUTDIR = $$DESTDIR/translations
-    QMAKE_POST_LINK += if not exist \"$$QM_OUTDIR\" mkdir \"$$QM_OUTDIR\" $$escape_expand(\\n\\t)
-    QMAKE_POST_LINK += \"$$[QT_INSTALL_BINS]\\lrelease.exe\" \"$$PWD\\translations\\app_en.ts\" -qm \"$$QM_OUTDIR\\app_en.qm\" $$escape_expand(\\n\\t)
-}
+OTHER_FILES +=

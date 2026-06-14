@@ -16,11 +16,8 @@ int main(int argc, char *argv[])
 
     QTranslator translator;
 
-    const QString qmPath =  QDir(QApplication::applicationDirPath()).filePath("translations");
-    qDebug() << qmPath;
-
-    if (!translator.load("app_en", qmPath))
-        qDebug() << "Failed to load .qm" << qmPath;
+    if (!translator.load(":/translations/app_en.qm"))
+        qDebug() << "Failed to load translation from resources";
     else
         a.installTranslator(&translator);
 
