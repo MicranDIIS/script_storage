@@ -19,6 +19,7 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QCloseEvent>
+#include <QDir>
 
 
 MainWindow::MainWindow(QWidget *parent) :

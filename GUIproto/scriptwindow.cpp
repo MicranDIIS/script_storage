@@ -6,7 +6,7 @@
 #include <QTextStream>
 #include <QPluginLoader>
 #include <QMessageBox>
-#include <interfaces.h>
+//#include <interfaces.h>
 
 ScriptWindow::ScriptWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -22,30 +22,30 @@ ScriptWindow::~ScriptWindow()
 
 void ScriptWindow::openScriptUI(const QString &path, const QString &baseWinPath)
 {
-    QFile file(path);
+//    QFile file(path);
 
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return;
+//    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+//        return;
 
-    if (!QFileInfo(baseWinPath).exists())
+//    if (!QFileInfo(baseWinPath).exists())
 
-        return;
-//    qDebug("it exists");
+//        return;
+////    qDebug("it exists");
 
 
-    QPluginLoader loader(baseWinPath);
-    pluginObject = loader.instance();
-    PluginInterface *pluginInterface = qobject_cast<PluginInterface *>(pluginObject);
+//    QPluginLoader loader(baseWinPath);
+//    pluginObject = loader.instance();
+//    PluginInterface *pluginInterface = qobject_cast<PluginInterface *>(pluginObject);
 
-    if (!pluginInterface){
-      QMessageBox::critical(this, tr("Error BasePlugin.dll"),loader.errorString());
-      return;
-    }
+//    if (!pluginInterface){
+//      QMessageBox::critical(this, tr("Error BasePlugin.dll"),loader.errorString());
+//      return;
+//    }
 
-    QTextStream in(&file);
-    ui->plainTextEdit->setPlainText(in.readAll());
+//    QTextStream in(&file);
+//    ui->plainTextEdit->setPlainText(in.readAll());
 
-    setWindowTitle(QFileInfo(path).fileName());
+//    setWindowTitle(QFileInfo(path).fileName());
 
 //    bool result = true;
 //    QDir dir(qApp->applicationDirPath());
