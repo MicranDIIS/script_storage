@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 
     QTranslator translator;
 
-    if (!translator.load(":/translations/app_en.qm"))
+    if (!translator.load(":/translations/app_ru.qm"))
         qDebug() << "Failed to load translation from resources";
     else
         a.installTranslator(&translator);

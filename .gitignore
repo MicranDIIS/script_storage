@@ -56,6 +56,3 @@ ui_*.h
 moc_*.cpp
 qrc_*.cpp
 qrc_*.cpp
-
-#translations
-*.qm

@@ -62,9 +62,7 @@ FORMS    += mainwindow.ui \
     diffviewerwindow.ui \
     historywindow.ui
 
-TRANSLATIONS += $$PWD/translations/app_ru.ts
+TRANSLATIONS += $$PWD/app_ru.ts
 
 RESOURCES += \
     resources.qrc
-
-OTHER_FILES +=
