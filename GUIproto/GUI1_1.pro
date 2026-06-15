@@ -44,7 +44,6 @@ SOURCES += main.cpp\
     combofiltermodel.cpp \
     historywindow.cpp
 
-
 HEADERS  += mainwindow.h \
     scriptwindow.h \
     diffviewerwindow.h \
@@ -62,3 +61,8 @@ FORMS    += mainwindow.ui \
     scriptwindow.ui \
     diffviewerwindow.ui \
     historywindow.ui
+
+TRANSLATIONS += $$PWD/app_ru.ts
+
+RESOURCES += \
+    resources.qrc
