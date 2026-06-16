@@ -4,7 +4,6 @@
 #include <QString>
 #include <QDateTime>
 #include <QList>
-#include <QtCore/qglobal.h>
 
 #if defined(MGIT_LIBRARY)
 #  define MGITSHARED_EXPORT Q_DECL_EXPORT
@@ -15,15 +14,15 @@
 class MGITSHARED_EXPORT GitError{
 private:
     bool success_;
-    QString msg_;
+    QString message_;
     int code_;
 public:
     GitError();
-    GitError(const QString& msg, int code);
+    GitError(const QString& message, int code);
 
     bool isError() const;
 
-    const QString& getMsg() const;
+    const QString& getMessage() const;
     int getCode() const;
 };
 
@@ -50,12 +49,12 @@ public:
     const QString& getPathOld() const;
 
     bool isNewToHead() const;
-    bool isModfileToHead() const;
+    bool isModFileToHead() const;
     bool isDeleteToHead() const;
     bool isRenameToHead() const;
 
     bool isNewToDir() const;
-    bool isModfileToDir() const;
+    bool isModFileToDir() const;
     bool isDeleteToDir() const;
     bool isRenameToDir() const;
 };
@@ -63,31 +62,31 @@ public:
 //для git log
 class MGITSHARED_EXPORT CommitInfo{
 private:
-    QDateTime authorDateTime_;
+    QDateTime authorDate_;
     QString authorName_;
     QString authorEmail_;
 
-    QString commitMsg_;
+    QString commitMessage_;
     QString commitHash_;
 
-    QDateTime committerDateTime_;
+    QDateTime committerDate_;
     QString committerName_;
     QString committerEmail_;
 
 public:
-    CommitInfo(const QDateTime& authorDateTime, const QString& authorName,
-               const QString& authorEmail, const QString& commitMsg,
-               const QString& commitHash, const QDateTime& committerDateTime,
+    CommitInfo(const QDateTime& authorDate, const QString& authorName,
+               const QString& authorEmail, const QString& commitMessage,
+               const QString& commitHash, const QDateTime& committerDate,
                const QString& committerName, const QString& committerEmail);
 
-    const QDateTime& getAuthorDateTime() const;
+    const QDateTime& getAuthorDate() const;
     const QString& getAuthorName() const;
     const QString& getAuthorEmail() const;
 
-    const QString& getCommitMsg() const;
+    const QString& getCommitMessage() const;
     const QString& getCommitHash() const;
 
-    const QDateTime& getCommitterDateTime() const;
+    const QDateTime& getCommitterDate() const;
     const QString& getCommitterName() const;
     const QString& getCommitterEmail() const;
 
@@ -114,13 +113,13 @@ public:
     */
     virtual GitError clone() = 0;
     /*
-    * Фетчит ветку из конфига и применяет ресетит до актуального фетча
-    * Не трогает локальные файле
+    * Фетчит ветку из конфига и ресетит до актуального состояния после фетча
+    * Не трогает локальные файлы
     */
     virtual GitError sync() = 0;
 
     /*
-    * Ресетит все к ласт коммиту. Локальные файлы удаляются
+    * Ресетит все к последнему коммиту. Локальные файлы удаляются
     */
     virtual GitError reset() = 0;
     /*
