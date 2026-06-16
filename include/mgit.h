@@ -33,17 +33,17 @@ struct RepoConfig{
 struct FileStatus{
     QString pathNew;
     QString pathOld;
-    int flags;
 
-    bool isNewToHead() const;
-    bool isModFileToHead() const;
-    bool isDeleteToHead() const;
-    bool isRenameToHead() const;
+    bool newToHead; 
+    bool modFileToHead;
+    bool deleteToHead;
+    bool renameToHead;
 
-    bool isNewToDir() const;
-    bool isModFileToDir() const;
-    bool isDeleteToDir() const;
-    bool isRenameToDir() const;
+    bool newToDir;
+    bool modFileToDir;
+    bool deleteToDir;
+    bool renameToDir;
+
 };
 
 struct CommitInfo{

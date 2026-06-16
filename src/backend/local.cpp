@@ -31,9 +31,18 @@ GitError Repository::fillStatus(QList<FileStatus>& list) const {
     list.reserve(len);
     
     for (size_t i = 0; i < len; i++) {
+        FileStatus stat;
+        stat.deleteToDir = false;
+        stat.deleteToHead = false;
+        stat.modFileToDir = false;
+        stat.modFileToHead = false;
+        stat.newToDir = false;
+        stat.newToHead = false;
+        stat.renameToDir = false;
+        stat.renameToHead = false;
         QString file_path_new;
         QString file_path_old;
-        int file_status = 0;
+        bool check = false;
         const git_status_entry* entry = git_status_byindex(status, i);
         
         if (entry == NULL || (entry->status & GIT_STATUS_CURRENT)) {
@@ -50,22 +59,38 @@ GitError Repository::fillStatus(QList<FileStatus>& list) const {
             if (entry->status & GIT_STATUS_INDEX_NEW) {
                 file_path_new = QString::fromUtf8(entry->head_to_index->new_file.path);
                 file_path_old = "";
-                file_status |= STATUS_NEW_TO_HEAD;
+
+                stat.pathNew = file_path_new;
+                stat.pathOld = file_path_old;
+                stat.newToHead = true;
+                check = true;
             }
             if (entry->status & GIT_STATUS_INDEX_RENAMED) {
                 file_path_new = QString::fromUtf8(entry->head_to_index->new_file.path);
                 file_path_old = QString::fromUtf8(entry->head_to_index->old_file.path);
-                file_status |= STATUS_RENAME_TO_HEAD;
+
+                stat.pathNew = file_path_new;
+                stat.pathOld = file_path_old;
+                stat.renameToHead = true;
+                check = true;
             }
             if (entry->status & GIT_STATUS_INDEX_DELETED) {
                 file_path_new = "";
                 file_path_old = QString::fromUtf8(entry->head_to_index->old_file.path);
-                file_status |= STATUS_DELETE_TO_HEAD;
+
+                stat.pathNew = file_path_new;
+                stat.pathOld = file_path_old;
+                stat.deleteToHead = true;
+                check = true;
             }
             if (entry->status & GIT_STATUS_INDEX_MODIFIED) {
                 file_path_new = QString::fromUtf8(entry->head_to_index->new_file.path);
                 file_path_old = file_path_new;
-                file_status |= STATUS_MODFILE_TO_HEAD;
+
+                stat.pathNew = file_path_new;
+                stat.pathOld = file_path_old;
+                stat.modFileToHead = true;
+                check = true;
             }
         }
 
@@ -73,30 +98,43 @@ GitError Repository::fillStatus(QList<FileStatus>& list) const {
             if (entry->status & GIT_STATUS_WT_NEW) {
                 file_path_new = QString::fromUtf8(entry->index_to_workdir->new_file.path);
                 file_path_old = "";
-                file_status |= STATUS_NEW_TO_DIR;
+
+                
+                stat.pathNew = file_path_new;
+                stat.pathOld = file_path_old;
+                stat.newToDir = true;
+                check = true;
             }
             if (entry->status & GIT_STATUS_WT_RENAMED) {
                 file_path_new = QString::fromUtf8(entry->index_to_workdir->new_file.path);
                 file_path_old = QString::fromUtf8(entry->index_to_workdir->old_file.path);
-                file_status |= STATUS_RENAME_TO_DIR;
+                
+                stat.pathNew = file_path_new;
+                stat.pathOld = file_path_old;
+                stat.renameToDir = true;
+                check = true;
             }
             if (entry->status & GIT_STATUS_WT_DELETED) {
                 file_path_new = "";
                 file_path_old = QString::fromUtf8(entry->index_to_workdir->old_file.path);
-                file_status |= STATUS_DELETE_TO_DIR;
+                
+                stat.pathNew = file_path_new;
+                stat.pathOld = file_path_old;
+                stat.deleteToDir = true;
+                check = true;
             }
             if (entry->status & GIT_STATUS_WT_MODIFIED) {
                 file_path_new = QString::fromUtf8(entry->index_to_workdir->new_file.path);
                 file_path_old = file_path_new;
-                file_status |= STATUS_MODFILE_TO_DIR;
+                
+                stat.pathNew = file_path_new;
+                stat.pathOld = file_path_old;
+                stat.modFileToDir = true;
+                check = true;
             }
         }
 
-        if (file_status != 0) {
-            FileStatus stat;
-            stat.pathNew = file_path_new;
-            stat.pathOld = file_path_old;
-            stat.flags = file_status;
+        if (check) {
             list.append(stat);
         }
     }
