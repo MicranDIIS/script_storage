@@ -93,7 +93,11 @@ GitError Repository::fillStatus(QList<FileStatus>& list) const {
         }
 
         if (file_status != 0) {
-            list.append(FileStatus(file_path_new, file_path_old, file_status));
+            FileStatus stat;
+            stat.pathNew = file_path_new;
+            stat.pathOld = file_path_old;
+            stat.flags = file_status;
+            list.append(stat);
         }
     }
 
@@ -178,22 +182,16 @@ GitError Repository::fillLog(QList<CommitInfo>& list) const {
             author_time = QDateTime::fromMSecsSinceEpoch(time_ms);
         }
         
-        const git_signature* committer = git_commit_committer(commit);
-        QString committer_name, committer_email;
-        QDateTime committer_time;
-        if (committer != NULL) {
-            committer_name = QString::fromUtf8(committer->name);
-            committer_email = QString::fromUtf8(committer->email);
-            qint64 time_ms = static_cast<qint64>(committer->when.time) * 1000;
-            committer_time = QDateTime::fromMSecsSinceEpoch(time_ms);
-        }
-        
         const char* msg_raw = git_commit_message(commit);
         QString msg = msg_raw ? QString::fromUtf8(msg_raw) : "";
         
-        list.append(CommitInfo(author_time, author_name, author_email,
-                               msg, commit_hash,
-                               committer_time, committer_name, committer_email));
+        CommitInfo info;
+        info.authorName = author_name;
+        info.authorEmail = author_email;
+        info.commitMessage = msg;
+        info.commitHash = commit_hash;
+        info.commitCreateTime = author_time;
+        list.append(info);
         
         git_commit_free(commit);
     }
@@ -320,23 +318,17 @@ GitError Repository::fillLog(QList<CommitInfo>& list, const QString& filePath) c
                 qint64 time_ms = static_cast<qint64>(author->when.time) * 1000;
                 author_time = QDateTime::fromMSecsSinceEpoch(time_ms);
             }
-            
-            const git_signature* committer = git_commit_committer(commit);
-            QString committer_name, committer_email;
-            QDateTime committer_time;
-            if (committer != NULL) {
-                committer_name = QString::fromUtf8(committer->name);
-                committer_email = QString::fromUtf8(committer->email);
-                qint64 time_ms = static_cast<qint64>(committer->when.time) * 1000;
-                committer_time = QDateTime::fromMSecsSinceEpoch(time_ms);
-            }
-            
+                        
             const char* msg_raw = git_commit_message(commit);
             QString msg = msg_raw ? QString::fromUtf8(msg_raw) : "";
-            
-            list.append(CommitInfo(author_time, author_name, author_email,
-                                   msg, commit_hash,
-                                   committer_time, committer_name, committer_email));
+
+            CommitInfo info;
+            info.authorName = author_name;
+            info.authorEmail = author_email;
+            info.commitMessage = msg;
+            info.commitHash = commit_hash;
+            info.commitCreateTime = author_time;
+            list.append(info);
         }
 
         git_diff_free(diff);

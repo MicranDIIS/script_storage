@@ -13,7 +13,8 @@ SOURCES += \
         repository.cpp \
         network.cpp \
         local.cpp \
-        data.cpp
+        gitError.cpp \
+        fileStatus.cpp 
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN

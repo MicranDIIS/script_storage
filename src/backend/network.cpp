@@ -98,7 +98,7 @@ GitError Repository::fetch(){
 
 GitError Repository::sync(){
     GitError err = fetch();
-    if(err.isError()){
+    if(!err.success){
         return err;
     }
 

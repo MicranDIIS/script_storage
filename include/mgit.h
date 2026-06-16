@@ -11,19 +11,13 @@
 #  define MGITSHARED_EXPORT Q_DECL_IMPORT
 #endif
 
-class MGITSHARED_EXPORT GitError{
-private:
-    bool success_;
-    QString message_;
-    int code_;
-public:
+struct GitError{
+    bool success;
+    QString message;
+    int code;
+
     GitError();
-    GitError(const QString& message, int code);
-
-    bool isError() const;
-
-    const QString& getMessage() const;
-    int getCode() const;
+    GitError(const QString& message_, int code_);
 };
 
 //конфиг нашего репозитория
@@ -36,17 +30,10 @@ struct RepoConfig{
 };
 
 
-class MGITSHARED_EXPORT FileStatus{
-private:
-    QString pathNew_;
-    QString pathOld_;
-    int flags_;
-
-public:
-    FileStatus(const QString& pathNew, const QString& pathOld, int flags);
-
-    const QString& getPathNew() const;
-    const QString& getPathOld() const;
+struct FileStatus{
+    QString pathNew;
+    QString pathOld;
+    int flags;
 
     bool isNewToHead() const;
     bool isModFileToHead() const;
@@ -59,37 +46,13 @@ public:
     bool isRenameToDir() const;
 };
 
-//для git log
-class MGITSHARED_EXPORT CommitInfo{
-private:
-    QDateTime authorDate_;
-    QString authorName_;
-    QString authorEmail_;
+struct CommitInfo{
+    QString authorName;
+    QString authorEmail;
 
-    QString commitMessage_;
-    QString commitHash_;
-
-    QDateTime committerDate_;
-    QString committerName_;
-    QString committerEmail_;
-
-public:
-    CommitInfo(const QDateTime& authorDate, const QString& authorName,
-               const QString& authorEmail, const QString& commitMessage,
-               const QString& commitHash, const QDateTime& committerDate,
-               const QString& committerName, const QString& committerEmail);
-
-    const QDateTime& getAuthorDate() const;
-    const QString& getAuthorName() const;
-    const QString& getAuthorEmail() const;
-
-    const QString& getCommitMessage() const;
-    const QString& getCommitHash() const;
-
-    const QDateTime& getCommitterDate() const;
-    const QString& getCommitterName() const;
-    const QString& getCommitterEmail() const;
-
+    QString commitMessage;
+    QString commitHash;
+    QDateTime commitCreateTime;
 };
 
 class MGITSHARED_EXPORT IRepository{
