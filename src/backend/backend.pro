@@ -1,7 +1,7 @@
 TARGET = mgit
 
-include(../../common.pri)
-include(../../lib.pri)
+include(../../commoncore.pri)
+include(../../libcore.pri)
 
 DEFINES += MGIT_LIBRARY
 
