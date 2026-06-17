@@ -34,9 +34,9 @@ void HistoryWindow::setupModels()
 {
     m_historyModel->setColumnCount(ColumnCount);
     m_headers.clear();
-    m_headers << trUtf8("Дата")
-              << trUtf8("Автор")
-              << trUtf8("Сообщение коммита");
+    m_headers << tr("Date")
+              << tr("Author")
+              << tr("Commit message");
     m_historyModel->setHorizontalHeaderLabels(m_headers);
 
     m_proxy->setSourceModel(m_historyModel);
@@ -167,7 +167,7 @@ void HistoryWindow::updateCommitMessagePanel(const QModelIndex &indexInRow)
     QString summary = messageIndex.data(Qt::DisplayRole).toString();
     if (summary.isEmpty())
     {
-        summary = trUtf8("Сообщение коммита было пустым(");
+        summary = tr("Commit message was empty(");
     }
 
     QString body = getBodyString(messageIndex.data(RoleCommitMessage).toString());
@@ -265,7 +265,7 @@ void HistoryWindow::copyHashToClipboard(const QModelIndex& index)
     QClipboard *clipboard = QApplication::clipboard();
     clipboard->setText(hash);
 //    QToolTip::showText(QCursor::pos(), trUtf8("Хэш скопирован"));
-    ui->hashLabel->setText(trUtf8("Хэш скопирован!"));
+    ui->hashLabel->setText(tr("Hash copied!"));
     ui->hashLabel->show();
     QTimer::singleShot(2000, ui->hashLabel, SLOT(hide()));
 }

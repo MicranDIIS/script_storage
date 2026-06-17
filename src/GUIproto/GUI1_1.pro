@@ -4,35 +4,26 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
-
 TARGET = GUI
 TEMPLATE = app
 
-INCLUDEPATH += ../SE2/include
+include(../../commoncore.pri)
+
+QT       += core gui
+DESTDIR = $${BIN_PATH}
 
 # Пути к заголовкам
-INCLUDEPATH += $$PWD/../backend/bin
-#INCLUDEPATH += $$PWD/../backend/libgit2/include
-
-# Исходники
-#SOURCES += $$PWD/../backend/src/local/local.cpp \
-#           $$PWD/../backend/src/network/network.cpp \
-#           $$PWD/../backend/src/Repository/repository.cpp
-
-# Заголовки
-HEADERS += $$PWD/../backend/include/MGit/mgit.h
-#           $$PWD/../backend/src/Repository/repository.h
+INCLUDEPATH += $${HEADERS_PATH}/lua \
+               $${HEADERS_PATH}
 
 CONFIG_DIR = $$PWD/config
 DEFINES += CONFIG_DIR=\\\"$$CONFIG_DIR\\\"
 
-# Путь к libgit2.dll и линковка
-win32: LIBS += -L$$PWD/../backend/bin -lgit2 \
-                -L$$PWD/../backend/bin -lmgit
+LIBS += -L$${LIB_PATH}
+LIBS += -lmgit
 
 SOURCES += main.cpp\
-        mainwindow.cpp \
+    mainwindow.cpp \
     scriptwindow.cpp \
     diffviewerwindow.cpp \
     diffviewhighlighter.cpp \
@@ -43,7 +34,6 @@ SOURCES += main.cpp\
     scriptfiltermodel.cpp \
     combofiltermodel.cpp \
     historywindow.cpp
-
 
 HEADERS  += mainwindow.h \
     scriptwindow.h \
@@ -62,3 +52,17 @@ FORMS    += mainwindow.ui \
     scriptwindow.ui \
     diffviewerwindow.ui \
     historywindow.ui
+
+TRANSLATIONS += $$PWD/app_ru.ts
+
+#<<<<<<< HEAD:src/GUIproto/GUI1_1.pro
+#win32 {
+#    QM_OUTDIR = $${DESTDIR}/translations
+#    QMAKE_POST_LINK += if not exist \"$$QM_OUTDIR\" mkdir \"$$QM_OUTDIR\" $$escape_expand(\\n\\t)
+#    QMAKE_POST_LINK += \"$$[QT_INSTALL_BINS]\\lrelease.exe\" \"$$PWD\\translations\\app_en.ts\" -qm \"$$QM_OUTDIR\\app_en.qm\" $$escape_expand(\\n\\t)
+#}
+
+#=======
+RESOURCES += \
+    resources.qrc
+
