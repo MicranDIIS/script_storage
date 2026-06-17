@@ -1,7 +1,8 @@
+TARGET = SE2
+
 include( ../../common.pri )
 include( ../../app.pri )
 
-TARGET = SE2
 TRANSLATIONS = se2.ts
 RC_FILE = SE2.rc
 

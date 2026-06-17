@@ -1,4 +1,4 @@
-PROJECT_ROOT_PATH = $${PWD}
+PROJECT_ROOT_PATH = $$REPO_ROOT # from qmake arguments in "Projects"
 
 CONFIG(debug, debug|release) {
     BUILD_FLAG = debug
@@ -8,12 +8,13 @@ CONFIG(debug, debug|release) {
     BUILD_FLAG = release
 }
 
-LIBS_PATH = $${PROJECT_ROOT_PATH}/lib
 INC_PATH = $${PROJECT_ROOT_PATH}/include
 INT_INC_PATH = $${PROJECT_ROOT_PATH}/src/include
-IMPORT_PATH = $${PROJECT_ROOT_PATH}/import/
 BIN_PATH = $${PROJECT_ROOT_PATH}/bin/$${BUILD_FLAG}
 BUILD_PATH = $${PROJECT_ROOT_PATH}/build/$${BUILD_FLAG}/$${TARGET}
+
+SE2_IMPORT_PATH = $$PROJECT_ROOT_PATH/src/SE2/import
+SE2_LIBDATA_PATH = $$PROJECT_ROOT_PATH/src/SE2/lib
 
 RCC_DIR = $${BUILD_PATH}/rcc/
 UI_DIR = $${BUILD_PATH}/ui/
@@ -22,7 +23,7 @@ OBJECTS_DIR = $${BUILD_PATH}/obj/
 LIBS += -L$${LIBS_PATH}/
 INCLUDEPATH += $${INC_PATH}/
 INCLUDEPATH += $${INT_INC_PATH}/
-INCLUDEPATH += $${IMPORT_PATH}/
+INCLUDEPATH += $$SE2_IMPORT_PATH
 
 #VERSION = 0.0.0.9
 CONFIG -= debug_and_release
@@ -82,3 +83,9 @@ defineTest(copyDirToDestDir) {
 }
 
 #QMAKE_POST_LINK  = translate_subdirs.bat
+
+win32 {
+    QMAKE_UIC = $$[QT_INSTALL_BINS]/uic.exe
+    QMAKE_MOC = $$[QT_INSTALL_BINS]/moc.exe
+    QMAKE_RCC = $$[QT_INSTALL_BINS]/rcc.exe
+}
