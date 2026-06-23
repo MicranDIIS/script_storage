@@ -1,6 +1,6 @@
 include(../../commoncore.pri)
 
-PROJECT_ROOT_PATH = $${ROOT_PATH} # from qmake arguments in "Projects"
+PROJECT_ROOT_PATH = $${ROOT_PATH}
 
 CONFIG(debug, debug|release) {
     BUILD_FLAG = debug

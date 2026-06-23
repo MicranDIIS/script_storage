@@ -4,12 +4,13 @@
 #
 #-------------------------------------------------
 
-TARGET = GUI
-TEMPLATE = app
+#TARGET = GUI
+#TEMPLATE = app
 
 include(../../commoncore.pri)
+include(../../appcore.pri)
 
-QT       += core gui
+#QT       += core gui
 DESTDIR = $${BIN_PATH}
 
 # Пути к заголовкам

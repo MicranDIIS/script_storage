@@ -1,6 +1,6 @@
-QT          += core gui
-CONFIG      -= debug_and_release
-TEMPLATE     = app
+#QT          += core gui
+#CONFIG      -= debug_and_release
+#TEMPLATE     = app
 isEmpty(DESTDIR): DESTDIR = $${BIN_PATH}/
 
 greaterThan(QT_MAJOR_VERSION, 4) {

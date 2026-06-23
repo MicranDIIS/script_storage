@@ -51,4 +51,23 @@ defineTest(copyDirToDestDir) {
     export(QMAKE_POST_LINK)
 }
 
+defineTest(newCopyToDestDir) {
+    _SRC = $$1
+    _DST = $$2
 
+    win32 {
+    # Превращаем пути в формат Windows (с обратными слешами)
+    _SRC_WIN = $$replace(_SRC, /, \\)
+    _DST_WIN = $$replace(_DST, /, \\)
+
+    # /E - копирует все подпапки (включая пустые)
+    # /I - если папка назначения не существует, считает её папкой
+    # /Y - перезаписывать файлы без подтверждения
+    # /Q - "тихий" режим
+    QMAKE_POST_LINK += xcopy "$$_SRC_WIN" "$$_DST_WIN" /E /I /Y /Q $$escape_expand(\\n\\t)
+    } else {
+    # Для Linux/macOS
+    QMAKE_POST_LINK += cp -r $$quote($$_SRC) $$quote($$_DST) $$escape_expand(\\n\\t)
+    }
+    export(QMAKE_POST_LINK)
+}
