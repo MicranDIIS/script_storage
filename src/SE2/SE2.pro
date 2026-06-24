@@ -1,7 +1,7 @@
 TARGET = SE2
 
-include(common.pri )
-include(app.pri )
+include(se2_common.pri)
+include(se2_deploy.pri)
 include(../../appcore.pri)
 
 TRANSLATIONS = se2.ts
