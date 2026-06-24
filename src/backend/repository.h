@@ -3,6 +3,7 @@
 
 #include "../../include/mgit.h"
 #include <git2.h>
+#include <QThread>
 
 enum Errors{
     OK = 0,
@@ -21,15 +22,19 @@ enum STATUS_FLAG{
     STATUS_NEW_TO_DIR      = 1 << 7  
 };
 
-class Repository : public IRepository{
+
+class Repository : public QThread, public IRepository{
+    Q_OBJECT
 private:
     git_repository* repo_;
     RepoConfig cfg_;
-    
+    callback_t func_;
+
+    void checkUpdates();
     GitError fetch();
 public:
-    Repository(const RepoConfig& cfg) : repo_(NULL), cfg_(cfg) {}
-    ~Repository(){if(repo_ != NULL){git_repository_free(repo_);repo_ = NULL;}}
+    Repository(const RepoConfig& cfg);
+    ~Repository();
 
     const QString& getUrl() const {return cfg_.url;}
     const QString& getBranch() const {return cfg_.branch;}
@@ -37,10 +42,13 @@ public:
     const QString& getUsername() const {return cfg_.username;}
     const QString& getToken() const {return cfg_.token;}
 
+    void setCallbackNotification(callback_t func){func_ = func;}
+
     GitError open();
 
     GitError clone();
     GitError sync();
+    void startCheckUpdatesActiveFile(size_t time, const QString& filePath);
 
     GitError reset();
     GitError fillStatus(QList<FileStatus>& list) const;
@@ -48,6 +56,12 @@ public:
     GitError fillLog(QList<CommitInfo>& list, const QString& filePath) const;
 
     bool isValid() const {return repo_ != NULL;}
+protected:
+    void run();
+signals:
+    void signalCheckUpdatesActiveFile(size_t time, const QString& filePath);
+private slots:
+    void slotCheckUpdatesActiveFile(size_t time, const QString& filePath);
 };
 
 //ф-ия получения ошибки из libgit2

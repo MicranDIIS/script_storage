@@ -55,6 +55,8 @@ struct CommitInfo{
     QDateTime commitCreateTime;
 };
 
+typedef void (*callback_t)();
+
 class MGITSHARED_EXPORT IRepository{
 public:
     virtual ~IRepository() {}
@@ -66,6 +68,7 @@ public:
     virtual const QString& getUsername() const = 0;
     virtual const QString& getToken() const = 0;
 
+    virtual void setCallbackNotification(callback_t notificationFunc) = 0;
     /*
     * Открывает репозиторий
     */
@@ -80,7 +83,11 @@ public:
     * Не трогает локальные файлы
     */
     virtual GitError sync() = 0;
-
+    /*
+    * В определенном интервале времени проверяет наличие обновления на активный скрипт
+    * И при наличии вызывает callback функцию
+    */
+    virtual void startCheckUpdatesActiveFile(size_t time, const QString& filePath) = 0;
     /*
     * Ресетит все к последнему коммиту. Локальные файлы удаляются
     */
