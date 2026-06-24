@@ -11,7 +11,7 @@
 #  define MGITSHARED_EXPORT Q_DECL_IMPORT
 #endif
 
-struct GitError{
+struct MGITSHARED_EXPORT GitError{
     bool success;
     QString message;
     int code;
