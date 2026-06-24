@@ -1,19 +1,19 @@
 #include "repository.h"
 
 
-Gerror Repository::open(){
+GitError Repository::open(){
     QByteArray path = cfg_.path.toUtf8();
 
     if(git_repository_open(&repo_, path.constData()) != GIT_OK){
         return libgitError();
     }
 
-    return Gerror();
+    return GitError();
 }
 
-Gerror Repository::status(QList<FileStatus>& list) const {
+GitError Repository::fillStatus(QList<FileStatus>& list) const {
     if (repo_ == NULL) {
-        return Gerror("repo is NULL",REPO_IS_NULL);
+        return GitError("repo is NULL",REPO_IS_NULL);
     }
 
     git_status_list* status = NULL;
@@ -31,9 +31,18 @@ Gerror Repository::status(QList<FileStatus>& list) const {
     list.reserve(len);
     
     for (size_t i = 0; i < len; i++) {
+        FileStatus stat;
+        stat.deleteToDir = false;
+        stat.deleteToHead = false;
+        stat.modFileToDir = false;
+        stat.modFileToHead = false;
+        stat.newToDir = false;
+        stat.newToHead = false;
+        stat.renameToDir = false;
+        stat.renameToHead = false;
         QString file_path_new;
         QString file_path_old;
-        int file_status = 0;
+        bool check = false;
         const git_status_entry* entry = git_status_byindex(status, i);
         
         if (entry == NULL || (entry->status & GIT_STATUS_CURRENT)) {
@@ -50,22 +59,38 @@ Gerror Repository::status(QList<FileStatus>& list) const {
             if (entry->status & GIT_STATUS_INDEX_NEW) {
                 file_path_new = QString::fromUtf8(entry->head_to_index->new_file.path);
                 file_path_old = "";
-                file_status |= STATUS_NEW_TO_HEAD;
+
+                stat.pathNew = file_path_new;
+                stat.pathOld = file_path_old;
+                stat.newToHead = true;
+                check = true;
             }
             if (entry->status & GIT_STATUS_INDEX_RENAMED) {
                 file_path_new = QString::fromUtf8(entry->head_to_index->new_file.path);
                 file_path_old = QString::fromUtf8(entry->head_to_index->old_file.path);
-                file_status |= STATUS_RENAME_TO_HEAD;
+
+                stat.pathNew = file_path_new;
+                stat.pathOld = file_path_old;
+                stat.renameToHead = true;
+                check = true;
             }
             if (entry->status & GIT_STATUS_INDEX_DELETED) {
                 file_path_new = "";
                 file_path_old = QString::fromUtf8(entry->head_to_index->old_file.path);
-                file_status |= STATUS_DELETE_TO_HEAD;
+
+                stat.pathNew = file_path_new;
+                stat.pathOld = file_path_old;
+                stat.deleteToHead = true;
+                check = true;
             }
             if (entry->status & GIT_STATUS_INDEX_MODIFIED) {
                 file_path_new = QString::fromUtf8(entry->head_to_index->new_file.path);
                 file_path_old = file_path_new;
-                file_status |= STATUS_MODFILE_TO_HEAD;
+
+                stat.pathNew = file_path_new;
+                stat.pathOld = file_path_old;
+                stat.modFileToHead = true;
+                check = true;
             }
         }
 
@@ -73,37 +98,54 @@ Gerror Repository::status(QList<FileStatus>& list) const {
             if (entry->status & GIT_STATUS_WT_NEW) {
                 file_path_new = QString::fromUtf8(entry->index_to_workdir->new_file.path);
                 file_path_old = "";
-                file_status |= STATUS_NEW_TO_DIR;
+
+                
+                stat.pathNew = file_path_new;
+                stat.pathOld = file_path_old;
+                stat.newToDir = true;
+                check = true;
             }
             if (entry->status & GIT_STATUS_WT_RENAMED) {
                 file_path_new = QString::fromUtf8(entry->index_to_workdir->new_file.path);
                 file_path_old = QString::fromUtf8(entry->index_to_workdir->old_file.path);
-                file_status |= STATUS_RENAME_TO_DIR;
+                
+                stat.pathNew = file_path_new;
+                stat.pathOld = file_path_old;
+                stat.renameToDir = true;
+                check = true;
             }
             if (entry->status & GIT_STATUS_WT_DELETED) {
                 file_path_new = "";
                 file_path_old = QString::fromUtf8(entry->index_to_workdir->old_file.path);
-                file_status |= STATUS_DELETE_TO_DIR;
+                
+                stat.pathNew = file_path_new;
+                stat.pathOld = file_path_old;
+                stat.deleteToDir = true;
+                check = true;
             }
             if (entry->status & GIT_STATUS_WT_MODIFIED) {
                 file_path_new = QString::fromUtf8(entry->index_to_workdir->new_file.path);
                 file_path_old = file_path_new;
-                file_status |= STATUS_MODFILE_TO_DIR;
+                
+                stat.pathNew = file_path_new;
+                stat.pathOld = file_path_old;
+                stat.modFileToDir = true;
+                check = true;
             }
         }
 
-        if (file_status != 0) {
-            list.append(FileStatus(file_path_new, file_path_old, file_status));
+        if (check) {
+            list.append(stat);
         }
     }
 
     git_status_list_free(status);
-    return Gerror();
+    return GitError();
 }
 
-Gerror Repository::reset() {
+GitError Repository::reset() {
     if (repo_ == NULL) {
-        return Gerror("repo is NULL", REPO_IS_NULL);
+        return GitError("repo is NULL", REPO_IS_NULL);
     }
     
     git_object* obj = NULL;
@@ -127,12 +169,12 @@ Gerror Repository::reset() {
     }
     
     git_object_free(obj);
-    return Gerror();
+    return GitError();
 }
 
-Gerror Repository::log(QList<CommitInfo>& list) const {
+GitError Repository::fillLog(QList<CommitInfo>& list) const {
     if (repo_ == NULL) {
-        return Gerror("repo is NULL",REPO_IS_NULL);
+        return GitError("repo is NULL",REPO_IS_NULL);
     }
     
     list.clear();
@@ -178,28 +220,22 @@ Gerror Repository::log(QList<CommitInfo>& list) const {
             author_time = QDateTime::fromMSecsSinceEpoch(time_ms);
         }
         
-        const git_signature* committer = git_commit_committer(commit);
-        QString committer_name, committer_email;
-        QDateTime committer_time;
-        if (committer != NULL) {
-            committer_name = QString::fromUtf8(committer->name);
-            committer_email = QString::fromUtf8(committer->email);
-            qint64 time_ms = static_cast<qint64>(committer->when.time) * 1000;
-            committer_time = QDateTime::fromMSecsSinceEpoch(time_ms);
-        }
-        
         const char* msg_raw = git_commit_message(commit);
         QString msg = msg_raw ? QString::fromUtf8(msg_raw) : "";
         
-        list.append(CommitInfo(author_time, author_name, author_email,
-                               msg, commit_hash,
-                               committer_time, committer_name, committer_email));
+        CommitInfo info;
+        info.authorName = author_name;
+        info.authorEmail = author_email;
+        info.commitMessage = msg;
+        info.commitHash = commit_hash;
+        info.commitCreateTime = author_time;
+        list.append(info);
         
         git_commit_free(commit);
     }
     
     git_revwalk_free(walker);
-    return Gerror();
+    return GitError();
 }
 
 struct LogFile {
@@ -224,9 +260,9 @@ static int diff_file_callback(const git_diff_delta* delta, float progress,
     return 0;
 }
 
-Gerror Repository::log(QList<CommitInfo>& list, const QString& filePath) const{
+GitError Repository::fillLog(QList<CommitInfo>& list, const QString& filePath) const{
     if (repo_ == NULL) {
-        return Gerror("repo is NULL", REPO_IS_NULL);
+        return GitError("repo is NULL", REPO_IS_NULL);
     }
 
     list.clear();
@@ -320,23 +356,17 @@ Gerror Repository::log(QList<CommitInfo>& list, const QString& filePath) const{
                 qint64 time_ms = static_cast<qint64>(author->when.time) * 1000;
                 author_time = QDateTime::fromMSecsSinceEpoch(time_ms);
             }
-            
-            const git_signature* committer = git_commit_committer(commit);
-            QString committer_name, committer_email;
-            QDateTime committer_time;
-            if (committer != NULL) {
-                committer_name = QString::fromUtf8(committer->name);
-                committer_email = QString::fromUtf8(committer->email);
-                qint64 time_ms = static_cast<qint64>(committer->when.time) * 1000;
-                committer_time = QDateTime::fromMSecsSinceEpoch(time_ms);
-            }
-            
+                        
             const char* msg_raw = git_commit_message(commit);
             QString msg = msg_raw ? QString::fromUtf8(msg_raw) : "";
-            
-            list.append(CommitInfo(author_time, author_name, author_email,
-                                   msg, commit_hash,
-                                   committer_time, committer_name, committer_email));
+
+            CommitInfo info;
+            info.authorName = author_name;
+            info.authorEmail = author_email;
+            info.commitMessage = msg;
+            info.commitHash = commit_hash;
+            info.commitCreateTime = author_time;
+            list.append(info);
         }
 
         git_diff_free(diff);
@@ -346,5 +376,5 @@ Gerror Repository::log(QList<CommitInfo>& list, const QString& filePath) const{
     }
 
     git_revwalk_free(walker);
-    return Gerror();
+    return GitError();
 }

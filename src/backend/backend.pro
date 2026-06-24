@@ -12,7 +12,8 @@ HEADERS += \
 SOURCES += \
         repository.cpp \
         network.cpp \
-        local.cpp
+        local.cpp \
+        gitError.cpp 
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN

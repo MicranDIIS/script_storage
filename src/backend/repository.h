@@ -4,13 +4,29 @@
 #include "../../include/mgit.h"
 #include <git2.h>
 
+enum Errors{
+    OK = 0,
+    UNKNOW = 1,
+    REPO_IS_NULL = 2
+};
+
+enum STATUS_FLAG{
+    STATUS_NEW_TO_HEAD     = 1 << 0,
+    STATUS_MODFILE_TO_HEAD = 1 << 1,
+    STATUS_DELETE_TO_HEAD  = 1 << 2,
+    STATUS_RENAME_TO_HEAD  = 1 << 3, 
+    STATUS_MODFILE_TO_DIR  = 1 << 4,
+    STATUS_DELETE_TO_DIR   = 1 << 5,
+    STATUS_RENAME_TO_DIR   = 1 << 6,
+    STATUS_NEW_TO_DIR      = 1 << 7  
+};
 
 class Repository : public IRepository{
 private:
-    git_repository *repo_;
+    git_repository* repo_;
     RepoConfig cfg_;
     
-    Gerror fetch();
+    GitError fetch();
 public:
     Repository(const RepoConfig& cfg) : repo_(NULL), cfg_(cfg) {}
     ~Repository(){if(repo_ != NULL){git_repository_free(repo_);repo_ = NULL;}}
@@ -21,21 +37,21 @@ public:
     const QString& getUsername() const {return cfg_.username;}
     const QString& getToken() const {return cfg_.token;}
 
-    Gerror open();
+    GitError open();
 
-    Gerror clone();
-    Gerror sync();
+    GitError clone();
+    GitError sync();
 
-    Gerror reset();
-    Gerror status(QList<FileStatus>& list) const;
-    Gerror log(QList<CommitInfo>& list) const;
-    Gerror log(QList<CommitInfo>& list, const QString& filePath) const;
+    GitError reset();
+    GitError fillStatus(QList<FileStatus>& list) const;
+    GitError fillLog(QList<CommitInfo>& list) const;
+    GitError fillLog(QList<CommitInfo>& list, const QString& filePath) const;
 
-    bool hasRepo() const {return repo_ != NULL;}
+    bool isValid() const {return repo_ != NULL;}
 };
 
 //ф-ия получения ошибки из libgit2
-Gerror libgitError();
+GitError libgitError();
 
 #endif 
 
