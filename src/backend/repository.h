@@ -26,14 +26,11 @@ enum STATUS_FLAG{
 class ContextUpdate;
 
 class Repository : public IRepository{
-    friend class ContextUpdate;
 
 private:
     git_repository* repo_;
     RepoConfig cfg_;
     ContextUpdate* contextObj_;
-
-    GitError fetch();
 public:
     Repository(const RepoConfig& cfg);
     ~Repository();
@@ -48,6 +45,7 @@ public:
     GitError open();
 
     GitError clone();
+    GitError fetch();
     GitError sync();
 
     void startCheckUpdatesActiveFile(const FileEventHandler& handler, size_t time, GitError& err);
