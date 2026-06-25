@@ -119,20 +119,19 @@ GitError Repository::sync(){
     return GitError();
 }
 
-void Repository::startCheckUpdatesActiveFile(const FileEventHandler& handler,size_t time, GitError &err){
-    if (contextObj_) {
-        delete contextObj_;
-    }
-    contextObj_ = new ContextUpdate(this, handler, time, err);
-    contextObj_->startCheckUpdatesActiveFile();
+void Repository::startCheckUpdatesActiveFile(const FileEventHandler& fileHandler, size_t time){
+    handler_ = new UpdateHandler(repo_, cfg_.token, cfg_.url, cfg_.username, cfg_.branch, fileHandler, this);
+    connect(&timer_, SIGNAL(timeout()), this, SLOT(slotCallUpCheckUpdateActiveFile()));
+    connect(handler_, SIGNAL(handlerCallUpFetch()), this, SIGNAL(callUpFetch()));
+    timer_.start(time * 1000);
+}
+
+void Repository::slotCallUpCheckUpdateActiveFile(){
+    handler_->checkUpdatesActiveFile();
 }
 
 void Repository::stopCheckUpdatesActiveFile(){
-    if (contextObj_) {
-        contextObj_->stopCheckActriveFile();
-        delete contextObj_;
-        contextObj_ = NULL;
-    }
+    timer_.stop();
 }
 
 struct LogFile {
@@ -159,19 +158,18 @@ static int diff_file_callback(const git_diff_delta* delta, float progress,
 }
 
 
-void Repository::checkUpdatesActiveFile(const FileEventHandler& handler, size_t time, GitError &err){
+void UpdateHandler::checkUpdatesActiveFile(){
     git_remote* remote = NULL;
-    QByteArray url = cfg_.url.toUtf8();
+    QByteArray url = url_.toUtf8();
 
     if (git_remote_create_anonymous(&remote, repo_, url.constData()) != GIT_OK) {
         git_remote_free(remote);
-        err = libgitError();
         return;
     }
 
     git_direction direction = GIT_DIRECTION_FETCH;
-    QByteArray username = cfg_.username.toUtf8();
-    QByteArray token = cfg_.token.toUtf8();
+    QByteArray username = username_.toUtf8();
+    QByteArray token = token_.toUtf8();
     GitData creds(username, token);
     git_remote_callbacks callback_ = GIT_REMOTE_CALLBACKS_INIT;
     callback_.credentials = callback;
@@ -179,7 +177,6 @@ void Repository::checkUpdatesActiveFile(const FileEventHandler& handler, size_t 
 
     if (git_remote_connect(remote, direction, &callback_, NULL, NULL) != GIT_OK) {
         git_remote_free(remote);
-        err = libgitError();
         return;
     }
 
@@ -188,11 +185,10 @@ void Repository::checkUpdatesActiveFile(const FileEventHandler& handler, size_t 
     if (git_remote_ls(&heads, &count, remote) != GIT_OK) {
         git_remote_disconnect(remote);
         git_remote_free(remote);
-        err = libgitError();
         return;
     }
 
-    QString branch_local = QString("refs/heads/%1").arg(cfg_.branch);
+    QString branch_local = QString("refs/heads/%1").arg(branch_);
     QString branch_remote_str = "";
     bool branch_found = false;
     git_oid oid_remote;
@@ -211,29 +207,21 @@ void Repository::checkUpdatesActiveFile(const FileEventHandler& handler, size_t 
     git_remote_free(remote);
 
     if (!branch_found) {
-        err = GitError();
         return;
     }
 
     git_oid oid_local;
     if (git_reference_name_to_id(&oid_local, repo_, "HEAD") != GIT_OK) {
-        err = libgitError();
         return;
     }
 
     if (git_oid_cmp(&oid_local, &oid_remote) == 0) {
-        err = GitError();
         return;
     }
 
-    err = fetch();
-    if (!err.success) {
-        return;
-    }
-
-    QByteArray remoteBranch = QString("refs/remotes/origin/%1").arg(cfg_.branch).toUtf8();
+    callUpFetch();
+    QByteArray remoteBranch = QString("refs/remotes/origin/%1").arg(branch_).toUtf8();
     if (git_reference_name_to_id(&oid_remote, repo_, remoteBranch.constData()) != GIT_OK) {
-        err = libgitError();
         return;
     }
 
@@ -242,14 +230,12 @@ void Repository::checkUpdatesActiveFile(const FileEventHandler& handler, size_t 
 
     if (git_commit_lookup(&commit_local, repo_, &oid_local) != GIT_OK) {
         git_commit_free(commit_local);
-        err = libgitError();
         return;
     }
 
     if (git_commit_lookup(&commit_remote, repo_, &oid_remote) != GIT_OK) {
         git_commit_free(commit_local);
         git_commit_free(commit_remote);
-        err = libgitError();
         return;
     }
 
@@ -259,7 +245,6 @@ void Repository::checkUpdatesActiveFile(const FileEventHandler& handler, size_t 
     if (git_commit_tree(&tree_local, commit_local) != GIT_OK) {
         git_commit_free(commit_local);
         git_commit_free(commit_remote);
-        err = libgitError();
         return;
     }
 
@@ -267,11 +252,10 @@ void Repository::checkUpdatesActiveFile(const FileEventHandler& handler, size_t 
         git_commit_free(commit_local);
         git_commit_free(commit_remote);
         git_tree_free(tree_local);
-        err = libgitError();
         return;
     }
 
-    QByteArray filePath_ = handler.filePath.toUtf8();
+    QByteArray filePath_ = Filehandler_.filePath.toUtf8();
     char* path = filePath_.data();
     char* pathspec[1] = { path };
 
@@ -285,11 +269,10 @@ void Repository::checkUpdatesActiveFile(const FileEventHandler& handler, size_t 
         git_tree_free(tree_remote);
         git_commit_free(commit_local);
         git_commit_free(commit_remote);
-        err = libgitError();
         return;
     }
 
-    LogFile file = {handler.filePath, false};
+    LogFile file = {Filehandler_.filePath, false};
 
     if (git_diff_foreach(diff, diff_file_callback, NULL, NULL, NULL, &file) < 0) {
         git_diff_free(diff);
@@ -297,7 +280,6 @@ void Repository::checkUpdatesActiveFile(const FileEventHandler& handler, size_t 
         git_tree_free(tree_remote);
         git_commit_free(commit_local);
         git_commit_free(commit_remote);
-        err = libgitError();
         return;
     }
 
@@ -309,10 +291,9 @@ void Repository::checkUpdatesActiveFile(const FileEventHandler& handler, size_t 
     git_commit_free(commit_remote);
 
     if(file.found){
-        handler.callback();
+        Filehandler_.callback();
     }
 
-    err = GitError();
 }
 
 

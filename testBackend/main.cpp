@@ -9,6 +9,12 @@ void func(){
     qDebug() << "rabotaet";
 }
 
+static int N = 0;
+void func_two(){
+    N++;
+    qDebug() << "rabotaet" << N;
+}
+
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
@@ -22,7 +28,7 @@ int main(int argc, char *argv[])
     cfg.username = "";
 
     FileEventHandler handler;
-    handler.callback = func;
+    handler.callback = func_two;
     handler.filePath = filePath;
 
 
@@ -32,7 +38,7 @@ int main(int argc, char *argv[])
         qDebug() << err.message << err.code;
     }
 
-    repo->startCheckUpdatesActiveFile(handler, 0, err);
-    repo->stopCheckUpdatesActiveFile();
+    repo->startCheckUpdatesActiveFile(handler, 5);
+
     return a.exec();
 }

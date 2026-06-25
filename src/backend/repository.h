@@ -1,7 +1,7 @@
 #ifndef REPOSITORY_H
 #define REPOSITORY_H
 
-#include "../../include/mgit.h"
+#include <mgit.h>
 #include <git2.h>
 #include <QObject>
 #include <QTimer>
@@ -23,23 +23,26 @@ enum STATUS_FLAG{
     STATUS_NEW_TO_DIR      = 1 << 7
 };
 
-class ContextUpdate;
+class TimerHelper;
+class UpdateHandler;
 
-class Repository : public IRepository{
-
+class Repository : public QObject, public IRepository{
+    Q_OBJECT
 private:
     git_repository* repo_;
     RepoConfig cfg_;
-    ContextUpdate* contextObj_;
+    UpdateHandler* handler_;
+
+    QTimer timer_;
 public:
     Repository(const RepoConfig& cfg);
     ~Repository();
 
-    const QString& getUrl() const {return cfg_.url;}
-    const QString& getBranch() const {return cfg_.branch;}
-    const QString& getPath() const {return cfg_.path;}
-    const QString& getUsername() const {return cfg_.username;}
-    const QString& getToken() const {return cfg_.token;}
+    const QString& getUrl() const;
+    const QString& getBranch() const;
+    const QString& getPath() const;
+    const QString& getUsername() const;
+    const QString& getToken() const;
 
 
     GitError open();
@@ -48,8 +51,8 @@ public:
     GitError fetch();
     GitError sync();
 
-    void startCheckUpdatesActiveFile(const FileEventHandler& handler, size_t time, GitError& err);
-    void checkUpdatesActiveFile(const FileEventHandler& handler, size_t time, GitError &err);
+    void startCheckUpdatesActiveFile(const FileEventHandler& fileHandler,
+                                     size_t time);
     void stopCheckUpdatesActiveFile();
 
     GitError reset();
@@ -57,34 +60,36 @@ public:
     GitError fillLog(QList<CommitInfo>& list) const;
     GitError fillLog(QList<CommitInfo>& list, const QString& filePath) const;
 
-    bool isValid() const {return repo_ != NULL;}
+    bool isValid() const;
+signals:
+    void callUpFetch();
+private slots:
+    void slotCallUpFetch();
+    void slotCallUpCheckUpdateActiveFile();
 };
 
-
-class ContextUpdate : public QObject{
+class UpdateHandler : public QObject{
     Q_OBJECT
 private:
-    Repository* repo_;
-    FileEventHandler handler_;
-    size_t time_;
-    GitError& err_;
-
-    QTimer* timer_;
-signals:
-    void timeout();
-private slots:
-    void slotCheckUpdatesActiveFile(){repo_->checkUpdatesActiveFile(handler_, time_, err_);}
+    git_repository* repo_;
+    QString token_;
+    QString username_;
+    QString url_;
+    QString branch_;
+    FileEventHandler Filehandler_;
 
 public:
-    ContextUpdate(Repository* repo, const FileEventHandler& handler, size_t time, GitError& err):
-                  repo_(repo), handler_(handler), time_(time), err_(err){
-        timer_ = new QTimer();
-        connect(timer_, SIGNAL(timeout()), this, SLOT(slotCheckUpdatesActiveFile()));
-    }
-    ~ContextUpdate(){if(timer_ != NULL) delete timer_;}
-    void startCheckUpdatesActiveFile(){timer_->start(time_ * 1000);}
-    void stopCheckActriveFile() {timer_->stop();}
+    UpdateHandler(git_repository* repo, const QString& token,
+                  const QString& username, const QString& url,
+                  const QString& branch, const FileEventHandler& handler,
+                  QObject* parent = NULL);
+    void callUpFetch();
+    void checkUpdatesActiveFile();
+
+signals:
+    void handlerCallUpFetch();
 };
+
 
 //ф-ия получения ошибки из libgit2
 GitError libgitError();

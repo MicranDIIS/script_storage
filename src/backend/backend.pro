@@ -13,7 +13,8 @@ SOURCES += \
         repository.cpp \
         network.cpp \
         local.cpp \
-        gitError.cpp 
+        gitError.cpp \
+        updateHandler.cpp
 
 QMAKE_MOC = C:\QtSDK\Desktop\Qt\4.7.3\mingw\bin\moc.exe
 
