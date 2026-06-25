@@ -29,7 +29,7 @@ static int callback(git_credential **out,const char *url,
 
 
 GitError Repository::clone(){
-    
+
     git_repository* repo = NULL;
     git_clone_options clone_opts = GIT_CLONE_OPTIONS_INIT;
     QByteArray branch = cfg_.branch.toUtf8();
@@ -59,39 +59,39 @@ GitError Repository::fetch(){
     if(repo_ == NULL){
         return GitError("repo is NULL", REPO_IS_NULL);
     }
-    
+
     git_remote* remote = NULL;
     git_fetch_options fetchopt = GIT_FETCH_OPTIONS_INIT;
     git_remote_callbacks callbacks = GIT_REMOTE_CALLBACKS_INIT;
-    
+
     QByteArray username = cfg_.username.toUtf8();
     QByteArray token = cfg_.token.toUtf8();
     GitData creds(username, token);
-    
+
     callbacks.credentials = callback;
     callbacks.payload = &creds;
     fetchopt.callbacks = callbacks;
     fetchopt.update_fetchhead = 1;
-    
+
     if(git_remote_lookup(&remote, repo_, "origin") != GIT_OK){
         return libgitError();
     }
-    
+
     QString refspec = QString("+refs/heads/%1:refs/remotes/origin/%1")
                       .arg(cfg_.branch);
-                      
-    QByteArray refspecs_ = refspec.toUtf8();
-    char* refs[] = { refspecs_.data() }; 
 
-    git_strarray refspec_array; 
+    QByteArray refspecs_ = refspec.toUtf8();
+    char* refs[] = { refspecs_.data() };
+
+    git_strarray refspec_array;
     refspec_array.count = 1;
-    refspec_array.strings = refs; 
+    refspec_array.strings = refs;
 
     if(git_remote_fetch(remote, &refspec_array, &fetchopt, NULL) != GIT_OK){
         git_remote_free(remote);
         return libgitError();
     }
-    
+
     git_remote_free(remote);
     return GitError();
 }
@@ -106,7 +106,7 @@ GitError Repository::sync(){
     QString branch = QString("refs/remotes/origin/%1").arg(cfg_.branch);
     QByteArray branch_ = branch.toUtf8();
 
-    if(git_revparse_single(&obj, repo_, branch_.constData()) != GIT_OK){ 
+    if(git_revparse_single(&obj, repo_, branch_.constData()) != GIT_OK){
         return libgitError();
     }
 
@@ -119,9 +119,20 @@ GitError Repository::sync(){
     return GitError();
 }
 
-void Repository::startCheckUpdatesActiveFile(size_t time, const QString &filePath){
+void Repository::startCheckUpdatesActiveFile(const FileEventHandler& handler,size_t time, GitError &err){
+    if (contextObj_) {
+        delete contextObj_;
+    }
+    contextObj_ = new ContextUpdate(this, handler, time, err);
+    contextObj_->startCheckUpdatesActiveFile();
+}
 
-    emit signalCheckUpdatesActiveFile(time, filePath);
+void Repository::stopCheckUpdatesActiveFile(){
+    if (contextObj_) {
+        contextObj_->stopCheckActriveFile();
+        delete contextObj_;
+        contextObj_ = NULL;
+    }
 }
 
 struct LogFile {
@@ -148,161 +159,161 @@ static int diff_file_callback(const git_diff_delta* delta, float progress,
 }
 
 
-void Repository::slotCheckUpdatesActiveFile(size_t time, const QString &filePath){
-    while(true){
+void Repository::checkUpdatesActiveFile(const FileEventHandler& handler, size_t time, GitError &err){
+    git_remote* remote = NULL;
+    QByteArray url = cfg_.url.toUtf8();
 
-        git_remote* remote = NULL;
-        QByteArray url = cfg_.url.toUtf8();
-        if(git_remote_create_anonymous(&remote, repo_, url.constData()) != GIT_OK){
-            git_remote_free(remote);
-            QThread::sleep(time);
-            continue;
-        }
+    if (git_remote_create_anonymous(&remote, repo_, url.constData()) != GIT_OK) {
+        git_remote_free(remote);
+        err = libgitError();
+        return;
+    }
 
-        git_direction direction = GIT_DIRECTION_FETCH;
-        QByteArray username = cfg_.username.toUtf8();
-        QByteArray token = cfg_.token.toUtf8();
-        GitData creds(username, token);
-        git_remote_callbacks callback_ = GIT_REMOTE_CALLBACKS_INIT;
-        callback_.credentials = callback;
-        callback_.payload = &creds;
-        if(git_remote_connect(remote, direction, &callback_, NULL, NULL) != GIT_OK){
-            git_remote_free(remote);
-            QThread::sleep(time);
-            continue;
-        }
+    git_direction direction = GIT_DIRECTION_FETCH;
+    QByteArray username = cfg_.username.toUtf8();
+    QByteArray token = cfg_.token.toUtf8();
+    GitData creds(username, token);
+    git_remote_callbacks callback_ = GIT_REMOTE_CALLBACKS_INIT;
+    callback_.credentials = callback;
+    callback_.payload = &creds;
 
-        const git_remote_head **heads;
-        size_t count = 0;
-        if(git_remote_ls(&heads, &count, remote) != GIT_OK){
-            git_remote_disconnect(remote);
-            git_remote_free(remote);
-            QThread::sleep(time);
-            continue;
-        }
+    if (git_remote_connect(remote, direction, &callback_, NULL, NULL) != GIT_OK) {
+        git_remote_free(remote);
+        err = libgitError();
+        return;
+    }
 
-        QString branch_local = QString("refs/heads/%1").arg(cfg_.branch);
-        QString branch_remote_str = "";
-        bool branch_found = false;
-        git_oid oid_remote;
-        memset(&oid_remote, 0, sizeof(oid_remote));
-
-        for(size_t i = 0; i < count; i++){
-            branch_remote_str = QString::fromUtf8(heads[i]->name);
-            if(branch_local == branch_remote_str){
-                branch_found = true;
-                git_oid_cpy(&oid_remote, &heads[i]->oid);
-                break;
-            }
-        }
-
+    const git_remote_head **heads;
+    size_t count = 0;
+    if (git_remote_ls(&heads, &count, remote) != GIT_OK) {
         git_remote_disconnect(remote);
         git_remote_free(remote);
+        err = libgitError();
+        return;
+    }
 
-        if(!branch_found){
-            QThread::sleep(time);
-            continue;
+    QString branch_local = QString("refs/heads/%1").arg(cfg_.branch);
+    QString branch_remote_str = "";
+    bool branch_found = false;
+    git_oid oid_remote;
+    memset(&oid_remote, 0, sizeof(oid_remote));
+
+    for (size_t i = 0; i < count; i++) {
+        branch_remote_str = QString::fromUtf8(heads[i]->name);
+        if (branch_local == branch_remote_str) {
+            branch_found = true;
+            git_oid_cpy(&oid_remote, &heads[i]->oid);
+            break;
         }
+    }
 
-        git_oid oid_local;
-        if(git_reference_name_to_id(&oid_local, repo_, "HEAD") != GIT_OK){
-            QThread::sleep(time);
-            continue;
-        }
+    git_remote_disconnect(remote);
+    git_remote_free(remote);
 
-        if(git_oid_cmp(&oid_local, &oid_remote) == 0){
-            QThread::sleep(time);
-            continue;
-        }
+    if (!branch_found) {
+        err = GitError();
+        return;
+    }
 
-        GitError err = fetch();
-        if(!err.success){
-            QThread::sleep(time);
-            continue;
-        }
+    git_oid oid_local;
+    if (git_reference_name_to_id(&oid_local, repo_, "HEAD") != GIT_OK) {
+        err = libgitError();
+        return;
+    }
 
-        if(git_reference_name_to_id(&oid_remote, repo_,
-            QString("refs/remotes/origin/%1").arg(cfg_.branch).toUtf8().constData()) != GIT_OK){
-            QThread::sleep(time);
-            continue;
-        }
+    if (git_oid_cmp(&oid_local, &oid_remote) == 0) {
+        err = GitError();
+        return;
+    }
 
-        git_commit* commit_local = NULL;
-        git_commit* commit_remote = NULL;
+    err = fetch();
+    if (!err.success) {
+        return;
+    }
 
-        if(git_commit_lookup(&commit_local, repo_, &oid_local) != GIT_OK){
-            git_commit_free(commit_local);
-            QThread::sleep(time);
-            continue;
-        }
+    QByteArray remoteBranch = QString("refs/remotes/origin/%1").arg(cfg_.branch).toUtf8();
+    if (git_reference_name_to_id(&oid_remote, repo_, remoteBranch.constData()) != GIT_OK) {
+        err = libgitError();
+        return;
+    }
 
-        if(git_commit_lookup(&commit_remote, repo_, &oid_remote) != GIT_OK){
-            git_commit_free(commit_local);
-            QThread::sleep(time);
-            continue;
-        }
+    git_commit* commit_local = NULL;
+    git_commit* commit_remote = NULL;
 
-        git_tree* tree_local = NULL;
-        git_tree* tree_remote = NULL;
+    if (git_commit_lookup(&commit_local, repo_, &oid_local) != GIT_OK) {
+        git_commit_free(commit_local);
+        err = libgitError();
+        return;
+    }
 
-        if(git_commit_tree(&tree_local, commit_local) != GIT_OK){
-            git_commit_free(commit_local);
-            git_commit_free(commit_remote);
-            QThread::sleep(time);
-            continue;
-        }
+    if (git_commit_lookup(&commit_remote, repo_, &oid_remote) != GIT_OK) {
+        git_commit_free(commit_local);
+        git_commit_free(commit_remote);
+        err = libgitError();
+        return;
+    }
 
-        if(git_commit_tree(&tree_remote, commit_remote) != GIT_OK){
-            git_commit_free(commit_local);
-            git_commit_free(commit_remote);
-            git_tree_free(tree_local);
-            QThread::sleep(time);
-            continue;
-        }
+    git_tree* tree_local = NULL;
+    git_tree* tree_remote = NULL;
 
-        QByteArray filePath_ = filePath.toUtf8();
-        char* path = filePath_.data();
-        char* pathspec[1] = { path };
+    if (git_commit_tree(&tree_local, commit_local) != GIT_OK) {
+        git_commit_free(commit_local);
+        git_commit_free(commit_remote);
+        err = libgitError();
+        return;
+    }
 
-        git_diff_options opts = GIT_DIFF_OPTIONS_INIT;
-        opts.pathspec.strings = pathspec;
-        opts.pathspec.count = 1;
+    if (git_commit_tree(&tree_remote, commit_remote) != GIT_OK) {
+        git_commit_free(commit_local);
+        git_commit_free(commit_remote);
+        git_tree_free(tree_local);
+        err = libgitError();
+        return;
+    }
 
-        git_diff* diff = NULL;
-        if (git_diff_tree_to_tree(&diff, repo_, tree_local, tree_remote, &opts) != GIT_OK) {
-            git_tree_free(tree_local);
-            git_tree_free(tree_remote);
-            git_commit_free(commit_local);
-            git_commit_free(commit_remote);
-            QThread::sleep(time);
-            continue;
-        }
+    QByteArray filePath_ = handler.filePath.toUtf8();
+    char* path = filePath_.data();
+    char* pathspec[1] = { path };
 
-        LogFile file = {filePath, false};
+    git_diff_options opts = GIT_DIFF_OPTIONS_INIT;
+    opts.pathspec.strings = pathspec;
+    opts.pathspec.count = 1;
 
-        if(git_diff_foreach(diff, diff_file_callback, NULL, NULL, NULL, &file) < 0){
-            git_diff_free(diff);
-            git_tree_free(tree_local);
-            git_tree_free(tree_remote);
-            git_commit_free(commit_local);
-            git_commit_free(commit_remote);
-            QThread::sleep(time);
-            continue;
-        }
+    git_diff* diff = NULL;
+    if (git_diff_tree_to_tree(&diff, repo_, tree_local, tree_remote, &opts) != GIT_OK) {
+        git_tree_free(tree_local);
+        git_tree_free(tree_remote);
+        git_commit_free(commit_local);
+        git_commit_free(commit_remote);
+        err = libgitError();
+        return;
+    }
 
+    LogFile file = {handler.filePath, false};
+
+    if (git_diff_foreach(diff, diff_file_callback, NULL, NULL, NULL, &file) < 0) {
         git_diff_free(diff);
         git_tree_free(tree_local);
         git_tree_free(tree_remote);
         git_commit_free(commit_local);
         git_commit_free(commit_remote);
-
-        if(file.found){
-            if(func_){
-                func_();
-            }
-            break;
-        }
-
-        QThread::sleep(time);
+        err = libgitError();
+        return;
     }
+
+
+    git_diff_free(diff);
+    git_tree_free(tree_local);
+    git_tree_free(tree_remote);
+    git_commit_free(commit_local);
+    git_commit_free(commit_remote);
+
+    if(file.found){
+        handler.callback();
+    }
+
+    err = GitError();
 }
+
+
+

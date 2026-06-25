@@ -1,7 +1,6 @@
 #include <QtCore/QCoreApplication>
 #include <mgit.h>
 #include <QDebug>
-#include <QMetaType>
 //сначала собрать солюшен, а после это
 
 
@@ -10,33 +9,30 @@ void func(){
     qDebug() << "rabotaet";
 }
 
-
-
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-    qRegisterMetaType<size_t>("size_t");
 
     RepoConfig cfg;
+    QString filePath = "";
     cfg.url = "";
     cfg.token = "";
     cfg.path = "";
     cfg.branch = "";
     cfg.username = "";
 
+    FileEventHandler handler;
+    handler.callback = func;
+    handler.filePath = filePath;
+
+
     IRepository* repo = createRepository(cfg);
     GitError err = repo->open();
-    if(!err.success){
-        qDebug() << err.message;
-        return -1;
+    if(err.success){
+        qDebug() << err.message << err.code;
     }
 
-    qDebug() << "norm";
-
-
-    repo->setCallbackNotification(*func);
-    //время в секундах, а путь относительно .git к файлу
-    repo->startCheckUpdatesActiveFile(1, "");
-
+    repo->startCheckUpdatesActiveFile(handler, 0, err);
+    repo->stopCheckUpdatesActiveFile();
     return a.exec();
 }
