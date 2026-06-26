@@ -1,9 +1,7 @@
 #include "repository.h"
 #include <QMetaType>
 
-Repository::Repository(const RepoConfig& cfg) : repo_(NULL), cfg_(cfg), handler_(NULL){
-    connect(this, SIGNAL(callUpFetch()), this, SLOT(slotCallUpFetch()));
-}
+Repository::Repository(const RepoConfig& cfg) : repo_(NULL), cfg_(cfg), handler_(NULL){}
 
 Repository::~Repository(){
     git_repository_free(repo_);
@@ -16,8 +14,6 @@ const QString& Repository::getPath() const {return cfg_.path;}
 const QString& Repository::getUsername() const {return cfg_.username;}
 const QString& Repository::getToken() const {return cfg_.token;}
 bool Repository::isValid() const {return repo_ != NULL;}
-
-void Repository::slotCallUpFetch(){fetch();}
 
 IRepository* createRepository(const RepoConfig& cfg){
     git_libgit2_init();

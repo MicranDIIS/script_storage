@@ -7,7 +7,8 @@ DEFINES += MGIT_LIBRARY
 
 HEADERS += \
         mgit.h \
-        repository.h 
+        repository.h \
+        updateHandler.h
 
 SOURCES += \
         repository.cpp \
@@ -15,8 +16,6 @@ SOURCES += \
         local.cpp \
         gitError.cpp \
         updateHandler.cpp
-
-QMAKE_MOC = C:\QtSDK\Desktop\Qt\4.7.3\mingw\bin\moc.exe
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN

@@ -1,5 +1,4 @@
 #include "repository.h"
-#include <QDebug>
 
 struct GitData{
     QByteArray username;
@@ -119,19 +118,19 @@ GitError Repository::sync(){
     return GitError();
 }
 
-void Repository::startCheckUpdatesActiveFile(const FileEventHandler& fileHandler, size_t time){
-    handler_ = new UpdateHandler(repo_, cfg_.token, cfg_.url, cfg_.username, cfg_.branch, fileHandler, this);
-    connect(&timer_, SIGNAL(timeout()), this, SLOT(slotCallUpCheckUpdateActiveFile()));
-    connect(handler_, SIGNAL(handlerCallUpFetch()), this, SIGNAL(callUpFetch()));
-    timer_.start(time * 1000);
+void Repository::startCheckUpdatesActiveFile(const FileEventHandler& fileHandler, size_t timeSec){
+    handler_ = new UpdateHandler(repo_, fileHandler, cfg_.url,
+                                 cfg_.token, cfg_.username, cfg_.branch);
+    connect(&timer_, SIGNAL(timeout()), handler_, SLOT(checkUpdatesActiveFile()));
+    connect(handler_, SIGNAL(updateIsFound()), this, SLOT(fetch()));
+
+    timer_.start(1000 * timeSec);
 }
 
-void Repository::slotCallUpCheckUpdateActiveFile(){
-    handler_->checkUpdatesActiveFile();
-}
 
 void Repository::stopCheckUpdatesActiveFile(){
     timer_.stop();
+    delete handler_;
 }
 
 struct LogFile {
@@ -219,7 +218,7 @@ void UpdateHandler::checkUpdatesActiveFile(){
         return;
     }
 
-    callUpFetch();
+    emit updateIsFound();
     QByteArray remoteBranch = QString("refs/remotes/origin/%1").arg(branch_).toUtf8();
     if (git_reference_name_to_id(&oid_remote, repo_, remoteBranch.constData()) != GIT_OK) {
         return;
@@ -295,6 +294,5 @@ void UpdateHandler::checkUpdatesActiveFile(){
     }
 
 }
-
 
 

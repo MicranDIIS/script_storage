@@ -5,6 +5,7 @@
 #include <git2.h>
 #include <QObject>
 #include <QTimer>
+#include "updateHandler.h"
 
 enum Errors{
     OK = 0,
@@ -23,10 +24,7 @@ enum STATUS_FLAG{
     STATUS_NEW_TO_DIR      = 1 << 7
 };
 
-class TimerHelper;
-class UpdateHandler;
-
-class Repository : public QObject, public IRepository{
+class Repository : public QObject , public IRepository{
     Q_OBJECT
 private:
     git_repository* repo_;
@@ -48,11 +46,10 @@ public:
     GitError open();
 
     GitError clone();
-    GitError fetch();
     GitError sync();
 
     void startCheckUpdatesActiveFile(const FileEventHandler& fileHandler,
-                                     size_t time);
+                                     size_t timeSec);
     void stopCheckUpdatesActiveFile();
 
     GitError reset();
@@ -61,34 +58,10 @@ public:
     GitError fillLog(QList<CommitInfo>& list, const QString& filePath) const;
 
     bool isValid() const;
-signals:
-    void callUpFetch();
 private slots:
-    void slotCallUpFetch();
-    void slotCallUpCheckUpdateActiveFile();
+    GitError fetch();
 };
 
-class UpdateHandler : public QObject{
-    Q_OBJECT
-private:
-    git_repository* repo_;
-    QString token_;
-    QString username_;
-    QString url_;
-    QString branch_;
-    FileEventHandler Filehandler_;
-
-public:
-    UpdateHandler(git_repository* repo, const QString& token,
-                  const QString& username, const QString& url,
-                  const QString& branch, const FileEventHandler& handler,
-                  QObject* parent = NULL);
-    void callUpFetch();
-    void checkUpdatesActiveFile();
-
-signals:
-    void handlerCallUpFetch();
-};
 
 
 //ф-ия получения ошибки из libgit2
