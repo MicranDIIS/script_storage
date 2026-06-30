@@ -1,60 +1,10 @@
 #include "update_handler.h"
 
-struct GitData{
-    QByteArray username;
-    QByteArray token;
-
-    GitData(const QString &username_,const QString &token_) : username(username_.toUtf8()) , token(token_.toUtf8()) {}
-};
-
-static int callback(git_credential **out,const char *url,
-                         const char *username_from_url,
-                         unsigned int allowed_types,
-                         void *payload)
-{
-    GitData* data = static_cast<GitData*>(payload);
-
-    if(!data){
-        return -1;
-    }
-
-    if(!(allowed_types & GIT_CREDENTIAL_USERPASS_PLAINTEXT)){
-        return -1;
-    }
-    return git_credential_userpass_plaintext_new(out,
-                                                 data -> username.constData(),
-                                                 data -> token.constData());
-}
-
 UpdateHandler::UpdateHandler(git_repository* repo, const FileEventHandler& Filehandler,
                              const QString& url, const QString& token,
                              const QString& username, const QString& branch) :
     repo_(repo), Filehandler_(Filehandler), url_(url), token_(token),
     username_(username), branch_(branch) {}
-
-struct LogFile {
-    QString file_path;
-    bool found;
-};
-
-static int diff_file_callback(const git_diff_delta* delta, float progress,
-                              void* payload)
-{
-    (void)progress;
-    LogFile* file = static_cast<LogFile*>(payload);
-
-    const QString old_path = delta->old_file.path ? QString::fromUtf8(delta->old_file.path) : QString();
-    const QString new_path = delta->new_file.path ? QString::fromUtf8(delta->new_file.path) : QString();
-
-
-    if (old_path == file->file_path || new_path == file->file_path) {
-        file->found = true;
-        return 1;
-    }
-
-    return 0;
-}
-
 
 void UpdateHandler::checkUpdatesActiveFile(){
     git_remote* remote = NULL;

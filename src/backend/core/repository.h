@@ -7,6 +7,7 @@
 #include <QTimer>
 #include <update_handler.h>
 #include <git_raii.h>
+#include <git_utils.h>
 
 enum Errors{
     OK = 0,

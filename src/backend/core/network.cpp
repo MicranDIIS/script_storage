@@ -1,32 +1,5 @@
 #include "repository.h"
 
-struct GitData{
-    QByteArray username;
-    QByteArray token;
-
-    GitData(const QString &username_,const QString &token_) : username(username_.toUtf8()) , token(token_.toUtf8()) {}
-};
-
-static int callback(git_credential **out,const char *url,
-                         const char *username_from_url,
-                         unsigned int allowed_types,
-                         void *payload)
-{
-    GitData* data = static_cast<GitData*>(payload);
-
-    if(!data){
-        return -1;
-    }
-
-    if(!(allowed_types & GIT_CREDENTIAL_USERPASS_PLAINTEXT)){
-        return -1;
-    }
-    return git_credential_userpass_plaintext_new(out,
-                                                 data -> username.constData(),
-                                                 data -> token.constData());
-}
-
-
 GitError Repository::clone(){
 
     git_repository* repo = NULL;

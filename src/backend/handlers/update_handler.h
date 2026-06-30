@@ -5,6 +5,7 @@
 #include <git2.h>
 #include <QString>
 #include <QObject>
+#include <git_utils.h>
 
 class UpdateHandler : public QObject{
     Q_OBJECT

@@ -238,28 +238,6 @@ GitError Repository::fillLog(QList<CommitInfo>& list) const {
     return GitError();
 }
 
-struct LogFile {
-    QString file_path;
-    bool found;
-};
-
-static int diff_file_callback(const git_diff_delta* delta, float progress, 
-                              void* payload)
-{
-    (void)progress;
-    LogFile* file = static_cast<LogFile*>(payload);
-    
-    const QString old_path = delta->old_file.path ? QString::fromUtf8(delta->old_file.path) : QString();
-    const QString new_path = delta->new_file.path ? QString::fromUtf8(delta->new_file.path) : QString();
-    
-    if (old_path == file->file_path || new_path == file->file_path) {
-        file -> found = true;
-        return 1; 
-    }
-    
-    return 0;
-}
-
 GitError Repository::fillLog(QList<CommitInfo>& list, const QString& filePath) const{
     if (repo_ == NULL) {
         return GitError("repo is NULL", REPO_IS_NULL);

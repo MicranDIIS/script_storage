@@ -3,26 +3,32 @@ TARGET = mgit
 include(../../commoncore.pri)
 include(../../libcore.pri)
 
+CORE_PATH = $$PWD/core/
+HANDLERS_PATH = $$PWD/handlers/
+UTILS_PATH = $$PWD/utils/
+
+
 DEFINES += MGIT_LIBRARY
 
-INCLUDEPATH += $$PWD/core \  
-            $$PWD/handlers \
-            $$PWD/utils
+INCLUDEPATH += $${CORE_PATH} \  
+            $${HANDLERS_PATH} \
+            $${UTILS_PATH}
 
 HEADERS += \
         mgit.h \
-        $$PWD/core/repository.h \
-        $$PWD/handlers/update_handler.h \
-        $$PWD/utils/git_raii.h
+        $${CORE_PATH}/repository.h \
+        $${HANDLERS_PATH}/update_handler.h \
+        $${UTILS_PATH}/git_raii.h \
+        $${UTILS_PATH}/git_utils.h 
 
 
 SOURCES += \
-        $$PWD/core/repository.cpp \
-        $$PWD/core/network.cpp \
-        $$PWD/core/local.cpp \
-        $$PWD/handlers/update_handler.cpp \
-        $$PWD/utils/git_error.cpp
-
+        $${CORE_PATH}/repository.cpp \
+        $${CORE_PATH}/network.cpp \
+        $${CORE_PATH}/local.cpp \
+        $${HANDLERS_PATH}/update_handler.cpp \
+        $${UTILS_PATH}/git_error.cpp \
+        $${UTILS_PATH}/git_utils.cpp
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN
