@@ -6,6 +6,7 @@
 #include <QObject>
 #include <QTimer>
 #include <update_handler.h>
+#include <git_raii.h>
 
 enum Errors{
     OK = 0,

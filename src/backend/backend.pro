@@ -7,19 +7,21 @@ DEFINES += MGIT_LIBRARY
 
 INCLUDEPATH += $$PWD/core \  
             $$PWD/handlers \
+            $$PWD/utils
 
 HEADERS += \
         mgit.h \
         $$PWD/core/repository.h \
-        $$PWD/handlers/update_handler.h
+        $$PWD/handlers/update_handler.h \
+        $$PWD/utils/git_raii.h
 
 
 SOURCES += \
         $$PWD/core/repository.cpp \
         $$PWD/core/network.cpp \
         $$PWD/core/local.cpp \
-        $$PWD/utils/git_error.cpp \
-        $$PWD/handlers/update_handler.cpp
+        $$PWD/handlers/update_handler.cpp \
+        $$PWD/utils/git_error.cpp
 
 
 symbian {
