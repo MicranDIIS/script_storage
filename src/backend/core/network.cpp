@@ -1,8 +1,8 @@
 #include "repository.h"
+#include "git_raii.h"
 
 GitError Repository::clone(){
-
-    git_repository* repo = NULL;
+    GitRepositoryPtr repo;
     git_clone_options clone_opts = GIT_CLONE_OPTIONS_INIT;
     QByteArray branch = cfg_.branch.toUtf8();
     clone_opts.checkout_branch = branch.constData();
@@ -23,7 +23,6 @@ GitError Repository::clone(){
         return libgitError();
     }
 
-    git_repository_free(repo);
     return GitError();
 }
 
@@ -32,7 +31,6 @@ GitError Repository::fetch(){
         return GitError("repo is NULL", REPO_IS_NULL);
     }
 
-    git_remote* remote = NULL;
     git_fetch_options fetchopt = GIT_FETCH_OPTIONS_INIT;
     git_remote_callbacks callbacks = GIT_REMOTE_CALLBACKS_INIT;
 
@@ -45,6 +43,7 @@ GitError Repository::fetch(){
     fetchopt.callbacks = callbacks;
     fetchopt.update_fetchhead = 1;
 
+    GitRemotePtr remote;
     if(git_remote_lookup(&remote, repo_, "origin") != GIT_OK){
         return libgitError();
     }
@@ -59,12 +58,10 @@ GitError Repository::fetch(){
     refspec_array.count = 1;
     refspec_array.strings = refs;
 
-    if(git_remote_fetch(remote, &refspec_array, &fetchopt, NULL) != GIT_OK){
-        git_remote_free(remote);
+    if(git_remote_fetch(remote.get(), &refspec_array, &fetchopt, NULL) != GIT_OK){
         return libgitError();
     }
 
-    git_remote_free(remote);
     return GitError();
 }
 
@@ -74,20 +71,18 @@ GitError Repository::sync(){
         return err;
     }
 
-    git_object* obj = NULL;
     QString branch = QString("refs/remotes/origin/%1").arg(cfg_.branch);
     QByteArray branch_ = branch.toUtf8();
 
+    GitObjectPtr obj;
     if(git_revparse_single(&obj, repo_, branch_.constData()) != GIT_OK){
         return libgitError();
     }
 
-    if(git_reset(repo_, obj, GIT_RESET_HARD, NULL) != GIT_OK){
-        git_object_free(obj);
+    if(git_reset(repo_, obj.get(), GIT_RESET_HARD, NULL) != GIT_OK){
         return libgitError();
     }
 
-    git_object_free(obj);
     return GitError();
 }
 
@@ -103,7 +98,6 @@ GitError Repository::startCheckUpdatesActiveFile(const FileEventHandler& fileHan
     timer_.start(1000 * timeSec);
     return GitError();
 }
-
 
 void Repository::stopCheckUpdatesActiveFile(){
     timer_.stop();

@@ -30,6 +30,8 @@ SOURCES += \
         $${UTILS_PATH}/git_error.cpp \
         $${UTILS_PATH}/git_utils.cpp
 
+QMAKE_MOC = C:/QtSDK/Desktop/Qt/4.7.3/mingw/bin/moc.exe
+
 symbian {
     MMP_RULES += EXPORTUNFROZEN
     TARGET.UID3 = 0xE25539B8

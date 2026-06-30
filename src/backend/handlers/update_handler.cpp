@@ -1,5 +1,7 @@
 #include "update_handler.h"
 
+#include "git_raii.h"
+
 UpdateHandler::UpdateHandler(git_repository* repo, const FileEventHandler& Filehandler,
                              const QString& url, const QString& token,
                              const QString& username, const QString& branch) :
@@ -7,11 +9,10 @@ UpdateHandler::UpdateHandler(git_repository* repo, const FileEventHandler& Fileh
     username_(username), branch_(branch) {}
 
 void UpdateHandler::checkUpdatesActiveFile(){
-    git_remote* remote = NULL;
     QByteArray url = url_.toUtf8();
 
+    GitRemotePtr remote;
     if (git_remote_create_anonymous(&remote, repo_, url.constData()) != GIT_OK) {
-        git_remote_free(remote);
         return;
     }
 
@@ -23,16 +24,14 @@ void UpdateHandler::checkUpdatesActiveFile(){
     callback_.credentials = callback;
     callback_.payload = &creds;
 
-    if (git_remote_connect(remote, direction, &callback_, NULL, NULL) != GIT_OK) {
-        git_remote_free(remote);
+    if (git_remote_connect(remote.get(), direction, &callback_, NULL, NULL) != GIT_OK) {
         return;
     }
 
     const git_remote_head **heads;
     size_t count = 0;
-    if (git_remote_ls(&heads, &count, remote) != GIT_OK) {
-        git_remote_disconnect(remote);
-        git_remote_free(remote);
+    if (git_remote_ls(&heads, &count, remote.get()) != GIT_OK) {
+        git_remote_disconnect(remote.get());
         return;
     }
 
@@ -51,8 +50,7 @@ void UpdateHandler::checkUpdatesActiveFile(){
         }
     }
 
-    git_remote_disconnect(remote);
-    git_remote_free(remote);
+    git_remote_disconnect(remote.get());
 
     if (!branch_found) {
         return;
@@ -73,33 +71,25 @@ void UpdateHandler::checkUpdatesActiveFile(){
         return;
     }
 
-    git_commit* commit_local = NULL;
-    git_commit* commit_remote = NULL;
+    GitCommitPtr commit_local;
+    GitCommitPtr commit_remote;
 
     if (git_commit_lookup(&commit_local, repo_, &oid_local) != GIT_OK) {
-        git_commit_free(commit_local);
         return;
     }
 
     if (git_commit_lookup(&commit_remote, repo_, &oid_remote) != GIT_OK) {
-        git_commit_free(commit_local);
-        git_commit_free(commit_remote);
         return;
     }
 
-    git_tree* tree_local = NULL;
-    git_tree* tree_remote = NULL;
+    GitTreePtr tree_local;
+    GitTreePtr tree_remote;
 
-    if (git_commit_tree(&tree_local, commit_local) != GIT_OK) {
-        git_commit_free(commit_local);
-        git_commit_free(commit_remote);
+    if (git_commit_tree(&tree_local, commit_local.get()) != GIT_OK) {
         return;
     }
 
-    if (git_commit_tree(&tree_remote, commit_remote) != GIT_OK) {
-        git_commit_free(commit_local);
-        git_commit_free(commit_remote);
-        git_tree_free(tree_local);
+    if (git_commit_tree(&tree_remote, commit_remote.get()) != GIT_OK) {
         return;
     }
 
@@ -111,35 +101,18 @@ void UpdateHandler::checkUpdatesActiveFile(){
     opts.pathspec.strings = pathspec;
     opts.pathspec.count = 1;
 
-    git_diff* diff = NULL;
-    if (git_diff_tree_to_tree(&diff, repo_, tree_local, tree_remote, &opts) != GIT_OK) {
-        git_tree_free(tree_local);
-        git_tree_free(tree_remote);
-        git_commit_free(commit_local);
-        git_commit_free(commit_remote);
+    GitDiffPtr diff;
+    if (git_diff_tree_to_tree(&diff, repo_, tree_local.get(), tree_remote.get(), &opts) != GIT_OK) {
         return;
     }
 
     LogFile file = {Filehandler_.filePath, false};
 
-    if (git_diff_foreach(diff, diff_file_callback, NULL, NULL, NULL, &file) < 0) {
-        git_diff_free(diff);
-        git_tree_free(tree_local);
-        git_tree_free(tree_remote);
-        git_commit_free(commit_local);
-        git_commit_free(commit_remote);
+    if (git_diff_foreach(diff.get(), diff_file_callback, NULL, NULL, NULL, &file) < 0) {
         return;
     }
 
-
-    git_diff_free(diff);
-    git_tree_free(tree_local);
-    git_tree_free(tree_remote);
-    git_commit_free(commit_local);
-    git_commit_free(commit_remote);
-
-    if(file.found){
+    if (file.found) {
         Filehandler_.callback();
     }
-
 }

@@ -1,5 +1,5 @@
 #include "repository.h"
-
+#include "git_raii.h"
 
 GitError Repository::open(){
     QByteArray path = cfg_.path.toUtf8();
@@ -13,20 +13,20 @@ GitError Repository::open(){
 
 GitError Repository::fillStatus(QList<FileStatus>& list) const {
     if (repo_ == NULL) {
-        return GitError("repo is NULL",REPO_IS_NULL);
+        return GitError("repo is NULL", REPO_IS_NULL);
     }
 
-    git_status_list* status = NULL;
     git_status_options statopt = GIT_STATUS_OPTIONS_INIT;
     statopt.show = GIT_STATUS_SHOW_INDEX_AND_WORKDIR;
     statopt.flags = GIT_STATUS_OPT_RECURSE_UNTRACKED_DIRS |
                     GIT_STATUS_OPT_INCLUDE_UNTRACKED;
 
+    GitStatusListPtr status;
     if (git_status_list_new(&status, repo_, &statopt) != GIT_OK) {
         return libgitError();
     }
 
-    size_t len = git_status_list_entrycount(status);
+    size_t len = git_status_list_entrycount(status.get());
     list.clear();
     list.reserve(len);
     
@@ -43,7 +43,7 @@ GitError Repository::fillStatus(QList<FileStatus>& list) const {
         QString file_path_new;
         QString file_path_old;
         bool check = false;
-        const git_status_entry* entry = git_status_byindex(status, i);
+        const git_status_entry* entry = git_status_byindex(status.get(), i);
         
         if (entry == NULL || (entry->status & GIT_STATUS_CURRENT)) {
             continue;
@@ -139,7 +139,6 @@ GitError Repository::fillStatus(QList<FileStatus>& list) const {
         }
     }
 
-    git_status_list_free(status);
     return GitError();
 }
 
@@ -148,7 +147,7 @@ GitError Repository::reset() {
         return GitError("repo is NULL", REPO_IS_NULL);
     }
     
-    git_object* obj = NULL;
+    GitObjectPtr obj;
     
     if (git_revparse_single(&obj, repo_, "HEAD") != GIT_OK) {
         return libgitError();
@@ -158,51 +157,46 @@ GitError Repository::reset() {
     checopt.checkout_strategy = GIT_CHECKOUT_FORCE | 
                                 GIT_CHECKOUT_REMOVE_UNTRACKED | 
                                 GIT_CHECKOUT_REMOVE_IGNORED;
-    if (git_checkout_tree(repo_, obj, &checopt) != GIT_OK) {
-        git_object_free(obj);
+    if (git_checkout_tree(repo_, obj.get(), &checopt) != GIT_OK) {
         return libgitError();
     }
 
-    if (git_reset(repo_, obj, GIT_RESET_HARD, NULL) != GIT_OK) {
-        git_object_free(obj);
+    if (git_reset(repo_, obj.get(), GIT_RESET_HARD, NULL) != GIT_OK) {
         return libgitError();
     }
     
-    git_object_free(obj);
     return GitError();
 }
 
 GitError Repository::fillLog(QList<CommitInfo>& list) const {
     if (repo_ == NULL) {
-        return GitError("repo is NULL",REPO_IS_NULL);
+        return GitError("repo is NULL", REPO_IS_NULL);
     }
     
     list.clear();
     list.reserve(10);
     
-    git_revwalk* walker = NULL;
+    GitRevwalkPtr walker;
     
     if (git_revwalk_new(&walker, repo_) != GIT_OK) {
         return libgitError();
     }
     
-    git_revwalk_sorting(walker, GIT_SORT_TIME);
+    git_revwalk_sorting(walker.get(), GIT_SORT_TIME);
     
     git_oid oid_head;
     if (git_reference_name_to_id(&oid_head, repo_, "HEAD") != GIT_OK) {
-        git_revwalk_free(walker);
         return libgitError();
     }
     
-    if (git_revwalk_push(walker, &oid_head) != GIT_OK) {
-        git_revwalk_free(walker);
+    if (git_revwalk_push(walker.get(), &oid_head) != GIT_OK) {
         return libgitError();
     }
     
     git_oid oid;
-    while (git_revwalk_next(&oid, walker) == GIT_OK) {
-        git_commit* commit = NULL;
-        if (git_commit_lookup(&commit, repo_, &oid) != 0) {
+    while (git_revwalk_next(&oid, walker.get()) == GIT_OK) {
+        GitCommitPtr commit;
+        if (git_commit_lookup(&commit, repo_, &oid) != GIT_OK) {
             continue; 
         }
         
@@ -210,7 +204,7 @@ GitError Repository::fillLog(QList<CommitInfo>& list) const {
         git_oid_tostr(hash_str, sizeof(hash_str), &oid);
         QString commit_hash = QString::fromUtf8(hash_str);
         
-        const git_signature* author = git_commit_author(commit);
+        const git_signature* author = git_commit_author(commit.get());
         QString author_name, author_email;
         QDateTime author_time;
         if (author != NULL) {
@@ -220,7 +214,7 @@ GitError Repository::fillLog(QList<CommitInfo>& list) const {
             author_time = QDateTime::fromMSecsSinceEpoch(time_ms);
         }
         
-        const char* msg_raw = git_commit_message(commit);
+        const char* msg_raw = git_commit_message(commit.get());
         QString msg = msg_raw ? QString::fromUtf8(msg_raw) : "";
         
         CommitInfo info;
@@ -230,15 +224,12 @@ GitError Repository::fillLog(QList<CommitInfo>& list) const {
         info.commitHash = commit_hash;
         info.commitCreateTime = author_time;
         list.append(info);
-        
-        git_commit_free(commit);
     }
     
-    git_revwalk_free(walker);
     return GitError();
 }
 
-GitError Repository::fillLog(QList<CommitInfo>& list, const QString& filePath) const{
+GitError Repository::fillLog(QList<CommitInfo>& list, const QString& filePath) const {
     if (repo_ == NULL) {
         return GitError("repo is NULL", REPO_IS_NULL);
     }
@@ -246,53 +237,44 @@ GitError Repository::fillLog(QList<CommitInfo>& list, const QString& filePath) c
     list.clear();
     list.reserve(10);
 
-    git_revwalk* walker = NULL;
+    GitRevwalkPtr walker;
     
     if (git_revwalk_new(&walker, repo_) != GIT_OK) {
         return libgitError();
     }
     
-    git_revwalk_sorting(walker, GIT_SORT_TIME);
+    git_revwalk_sorting(walker.get(), GIT_SORT_TIME);
     
     git_oid oid_head;
     if (git_reference_name_to_id(&oid_head, repo_, "HEAD") != GIT_OK) {
-        git_revwalk_free(walker);
         return libgitError();
     }
     
-    if (git_revwalk_push(walker, &oid_head) != GIT_OK) {
-        git_revwalk_free(walker);
+    if (git_revwalk_push(walker.get(), &oid_head) != GIT_OK) {
         return libgitError();
     }
     
     git_oid oid;
-    while (git_revwalk_next(&oid, walker) == GIT_OK) {
-        git_commit* commit = NULL;
+    while (git_revwalk_next(&oid, walker.get()) == GIT_OK) {
+        GitCommitPtr commit;
         if (git_commit_lookup(&commit, repo_, &oid) != GIT_OK) {
             continue;
         }
 
-        git_tree* tree = NULL;
-        if (git_commit_tree(&tree, commit) != GIT_OK) {
-            git_commit_free(commit);
+        GitTreePtr tree;
+        if (git_commit_tree(&tree, commit.get()) != GIT_OK) {
             continue;
         }
 
-        git_tree* tree_parent = NULL;
-        if (git_commit_parentcount(commit) > 0) {
-            git_commit* parent = NULL;
-            if (git_commit_parent(&parent, commit, 0) != GIT_OK) {
-                git_tree_free(tree);
-                git_commit_free(commit);
+        GitTreePtr tree_parent;
+        if (git_commit_parentcount(commit.get()) > 0) {
+            GitCommitPtr parent;
+            if (git_commit_parent(&parent, commit.get(), 0) != GIT_OK) {
                 continue;
             }
-            if (git_commit_tree(&tree_parent, parent) != GIT_OK) {
-                git_commit_free(parent);
-                git_tree_free(tree);
-                git_commit_free(commit);
+            if (git_commit_tree(&tree_parent, parent.get()) != GIT_OK) {
                 continue;
             }
-            git_commit_free(parent);
         }
 
         QByteArray file_path = filePath.toUtf8();
@@ -302,22 +284,17 @@ GitError Repository::fillLog(QList<CommitInfo>& list, const QString& filePath) c
         opts.pathspec.strings = (char**)&file_path_;
         opts.pathspec.count = 1;
 
-        git_diff* diff = NULL;
-        if (git_diff_tree_to_tree(&diff, repo_, tree_parent, tree, &opts) != GIT_OK) {
-            git_tree_free(tree_parent);
-            git_tree_free(tree);
-            git_commit_free(commit);
+        GitDiffPtr diff;
+        if (git_diff_tree_to_tree(&diff, repo_, tree_parent.get(), tree.get(), &opts) != GIT_OK) {
             continue;
         }
 
         LogFile file = {filePath, false};
 
-        if(git_diff_foreach(diff, diff_file_callback, NULL, NULL, NULL, &file) < 0){
-            git_diff_free(diff);
-            git_tree_free(tree_parent);
-            git_tree_free(tree);
-            git_commit_free(commit);
-            continue;
+        if (git_diff_foreach(diff.get(), diff_file_callback, NULL, NULL, NULL, &file) < 0) {
+            if (!file.found) {
+                continue;
+            }
         }
 
         if (file.found) {
@@ -325,7 +302,7 @@ GitError Repository::fillLog(QList<CommitInfo>& list, const QString& filePath) c
             git_oid_tostr(hash_str, sizeof(hash_str), &oid);
             QString commit_hash = QString::fromUtf8(hash_str);
             
-            const git_signature* author = git_commit_author(commit);
+            const git_signature* author = git_commit_author(commit.get());
             QString author_name, author_email;
             QDateTime author_time;
             if (author != NULL) {
@@ -335,7 +312,7 @@ GitError Repository::fillLog(QList<CommitInfo>& list, const QString& filePath) c
                 author_time = QDateTime::fromMSecsSinceEpoch(time_ms);
             }
                         
-            const char* msg_raw = git_commit_message(commit);
+            const char* msg_raw = git_commit_message(commit.get());
             QString msg = msg_raw ? QString::fromUtf8(msg_raw) : "";
 
             CommitInfo info;
@@ -346,13 +323,7 @@ GitError Repository::fillLog(QList<CommitInfo>& list, const QString& filePath) c
             info.commitCreateTime = author_time;
             list.append(info);
         }
-
-        git_diff_free(diff);
-        git_tree_free(tree_parent);
-        git_tree_free(tree);
-        git_commit_free(commit);
     }
 
-    git_revwalk_free(walker);
     return GitError();
 }
