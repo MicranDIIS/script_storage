@@ -7,13 +7,16 @@ DEFINES += MGIT_LIBRARY
 
 HEADERS += \
         mgit.h \
-        repository.h 
+        repository.h \
+        updateHandler.h
+
 
 SOURCES += \
         repository.cpp \
         network.cpp \
         local.cpp \
-        gitError.cpp 
+        gitError.cpp \
+        updateHandler.cpp
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN

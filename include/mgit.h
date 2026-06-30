@@ -46,6 +46,13 @@ struct FileStatus{
 
 };
 
+typedef void (*callbackHandler) ();
+
+struct FileEventHandler{
+    callbackHandler callback;
+    QString filePath;
+};
+
 struct CommitInfo{
     QString authorName;
     QString authorEmail;
@@ -54,6 +61,7 @@ struct CommitInfo{
     QString commitHash;
     QDateTime commitCreateTime;
 };
+
 
 class MGITSHARED_EXPORT IRepository{
 public:
@@ -65,7 +73,6 @@ public:
     virtual const QString& getPath() const = 0;
     virtual const QString& getUsername() const = 0;
     virtual const QString& getToken() const = 0;
-
     /*
     * Открывает репозиторий
     */
@@ -80,7 +87,14 @@ public:
     * Не трогает локальные файлы
     */
     virtual GitError sync() = 0;
-
+    /*
+    * Начинает в проверять наличие обновлений в определенном интервале
+    */
+    virtual GitError startCheckUpdatesActiveFile(const FileEventHandler& handler,size_t timeSec) = 0;
+    /*
+    * Остановка проверки наличия обновлений
+    */
+    virtual void stopCheckUpdatesActiveFile() = 0;
     /*
     * Ресетит все к последнему коммиту. Локальные файлы удаляются
     */
