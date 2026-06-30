@@ -1,0 +1,9 @@
+.svn/
+**/build/*
+**/bin/*
+*.user*
+*.stash
+*.a
+lib/lib/*.dll
+lib/plugins/*.dll
+tools/LuaBindManager/Profiles
