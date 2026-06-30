@@ -90,7 +90,7 @@ public:
     /*
     * Начинает в проверять наличие обновлений в определенном интервале
     */
-    virtual void startCheckUpdatesActiveFile(const FileEventHandler& handler,size_t timeSec) = 0;
+    virtual GitError startCheckUpdatesActiveFile(const FileEventHandler& handler,size_t timeSec) = 0;
     /*
     * Остановка проверки наличия обновлений
     */

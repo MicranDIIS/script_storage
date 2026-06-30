@@ -10,6 +10,8 @@ HEADERS += \
         repository.h \
         updateHandler.h
 
+QMAKE_MOC = C:\QtSDK\Desktop\Qt\4.7.3\mingw\bin\moc.exe
+
 SOURCES += \
         repository.cpp \
         network.cpp \

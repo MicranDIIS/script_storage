@@ -10,7 +10,8 @@
 enum Errors{
     OK = 0,
     UNKNOW = 1,
-    REPO_IS_NULL = 2
+    REPO_IS_NULL = 2,
+    FILEHANDLER_IS_NOT_NULL = 3
 };
 
 enum STATUS_FLAG{
@@ -48,7 +49,7 @@ public:
     GitError clone();
     GitError sync();
 
-    void startCheckUpdatesActiveFile(const FileEventHandler& fileHandler,
+    GitError startCheckUpdatesActiveFile(const FileEventHandler& fileHandler,
                                      size_t timeSec);
     void stopCheckUpdatesActiveFile();
 
