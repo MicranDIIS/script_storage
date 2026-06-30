@@ -1,5 +1,5 @@
-#ifndef UPDATEHANDLER_H
-#define UPDATEHANDLER_H
+#ifndef UPDATE_HANDLER_H
+#define UPDATE_HANDLER_H
 
 #include <mgit.h>
 #include <git2.h>

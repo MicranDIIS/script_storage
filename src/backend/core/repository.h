@@ -5,7 +5,7 @@
 #include <git2.h>
 #include <QObject>
 #include <QTimer>
-#include "updateHandler.h"
+#include <update_handler.h>
 
 enum Errors{
     OK = 0,

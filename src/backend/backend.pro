@@ -5,18 +5,22 @@ include(../../libcore.pri)
 
 DEFINES += MGIT_LIBRARY
 
+INCLUDEPATH += $$PWD/core \  
+            $$PWD/handlers \
+
 HEADERS += \
         mgit.h \
-        repository.h \
-        updateHandler.h
+        $$PWD/core/repository.h \
+        $$PWD/handlers/update_handler.h
 
 
 SOURCES += \
-        repository.cpp \
-        network.cpp \
-        local.cpp \
-        gitError.cpp \
-        updateHandler.cpp
+        $$PWD/core/repository.cpp \
+        $$PWD/core/network.cpp \
+        $$PWD/core/local.cpp \
+        $$PWD/utils/git_error.cpp \
+        $$PWD/handlers/update_handler.cpp
+
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN

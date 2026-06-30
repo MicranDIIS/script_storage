@@ -1,4 +1,4 @@
-#include "updateHandler.h"
+#include "update_handler.h"
 
 struct GitData{
     QByteArray username;
