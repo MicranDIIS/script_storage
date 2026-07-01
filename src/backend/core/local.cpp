@@ -134,6 +134,26 @@ GitError Repository::reset() {
     return GitError();
 }
 
+static const char* DEBUG_BRANCH_NAME = "debug";
+static const char* REF_DEBUG_BRANCH_NAME = "refs/heads/debug";
+
+GitError Repository::startDebugMode(){
+    GitCommitPtr commit;
+    if(git_revparse_single((git_object**)&commit, repo_, HEAD) != GIT_OK){
+        return libgitError();
+    }
+
+    GitReferencePtr ref;
+    if(git_branch_create(&ref, repo_, DEBUG_BRANCH_NAME, commit.get(), 0) != GIT_OK){
+        return libgitError();
+    }
+
+    if(git_repository_set_head(repo_, REF_DEBUG_BRANCH_NAME) != GIT_OK){
+        return libgitError();
+    }
+    return GitError();
+}
+
 static CommitInfo getCommitInfo(const GitCommitPtr& commit, const git_oid* oid){
     char hash_str[GIT_OID_HEXSZ + 1];
     git_oid_tostr(hash_str, sizeof(hash_str), oid);
@@ -156,13 +176,14 @@ static CommitInfo getCommitInfo(const GitCommitPtr& commit, const git_oid* oid){
                       commit_hash, author_time);
 }
 
+static const int DEFAULT_SIZE_LIST = 20;
 GitError Repository::fillLog(QList<CommitInfo>& list) const {
     if (repo_ == NULL) {
         return GitError("repo is NULL", REPO_IS_NULL);
     }
     
     list.clear();
-    list.reserve(DEFAULT_SIZE_LIST_LOG);
+    list.reserve(DEFAULT_SIZE_LIST);
     
     GitRevwalkPtr walker;
     GitError err = GitRevwalkInit(walker);
@@ -189,7 +210,7 @@ GitError Repository::fillLog(QList<CommitInfo>& list, const QString& filePath) c
     }
 
     list.clear();
-    list.reserve(DEFAULT_SIZE_LIST_LOG);
+    list.reserve(DEFAULT_SIZE_LIST);
 
     GitRevwalkPtr walker;
     GitError err = GitRevwalkInit(walker);

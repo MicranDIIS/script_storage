@@ -40,7 +40,6 @@ private:
     GitError GitRevwalkInit(GitRevwalkPtr& walker) const;
     static const char* HEAD;
     static const char* ORIGIN;
-    static const int DEFAULT_SIZE_LIST_LOG;
 public:
     explicit Repository(const RepoConfig& cfg);
     ~Repository();
@@ -62,6 +61,7 @@ public:
     void stopCheckUpdatesActiveFile();
 
     GitError reset();
+    GitError startDebugMode();
     GitError fillStatus(QList<FileStatus>& list) const;
     GitError fillLog(QList<CommitInfo>& list) const;
     GitError fillLog(QList<CommitInfo>& list, const QString& filePath) const;

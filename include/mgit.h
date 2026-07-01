@@ -106,6 +106,10 @@ public:
     */
     virtual GitError reset() = 0;
     /*
+    * Запускает режим отладки
+    */
+    virtual GitError startDebugMode() = 0;
+    /*
     * Статус файлов в индексе и локальные
     */
     virtual GitError fillStatus(QList<FileStatus>& list) const = 0;

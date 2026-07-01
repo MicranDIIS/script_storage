@@ -15,9 +15,8 @@ QString Repository::getUsername() const {return QString::fromUtf8(cfg_.username)
 QString Repository::getToken() const {return QString::fromUtf8(cfg_.token);}
 bool Repository::isValid() const {return repo_ != NULL;}
 
-const char* Repository::HEAD;
-const char* Repository::ORIGIN;
-const int Repository::DEFAULT_SIZE_LIST_LOG = 20;
+const char* Repository::HEAD = "HEAD";
+const char* Repository::ORIGIN = "ORIGIN";
 
 GitError Repository::GitRevwalkInit(GitRevwalkPtr& walker) const{
     walker.reset();
