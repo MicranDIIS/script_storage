@@ -71,3 +71,5 @@ tools/LuaBindManager/Profiles
 #translations
 *.qm
 
+mgit.dll
+

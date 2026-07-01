@@ -4,22 +4,17 @@
 GitError Repository::clone(){
     GitRepositoryPtr repo;
     git_clone_options clone_opts = GIT_CLONE_OPTIONS_INIT;
-    QByteArray branch = cfg_.branch.toUtf8();
+    QByteArray branch = cfg_.branch;
     clone_opts.checkout_branch = branch.constData();
     git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
     clone_opts.checkout_opts = opts;
 
-    QByteArray url = cfg_.url.toUtf8();
-    QByteArray path = cfg_.path.toUtf8();
-
-    QByteArray username = cfg_.username.toUtf8();
-    QByteArray token = cfg_.token.toUtf8();
-    GitData creds(username, token);
+    GitData creds(cfg_.username, cfg_.token);
 
     clone_opts.fetch_opts.callbacks.credentials = callback;
     clone_opts.fetch_opts.callbacks.payload = &creds;
 
-    if(git_clone(&repo, url.constData(), path.constData(), &clone_opts) != GIT_OK){
+    if(git_clone(&repo, cfg_.url.constData(), cfg_.path.constData(), &clone_opts) != GIT_OK){
         return libgitError();
     }
 
@@ -34,9 +29,7 @@ GitError Repository::fetch(){
     git_fetch_options fetchopt = GIT_FETCH_OPTIONS_INIT;
     git_remote_callbacks callbacks = GIT_REMOTE_CALLBACKS_INIT;
 
-    QByteArray username = cfg_.username.toUtf8();
-    QByteArray token = cfg_.token.toUtf8();
-    GitData creds(username, token);
+    GitData creds(cfg_.username, cfg_.token);
 
     callbacks.credentials = callback;
     callbacks.payload = &creds;
@@ -44,12 +37,12 @@ GitError Repository::fetch(){
     fetchopt.update_fetchhead = 1;
 
     GitRemotePtr remote;
-    if(git_remote_lookup(&remote, repo_, "origin") != GIT_OK){
+    if(git_remote_lookup(&remote, repo_, ORIGIN) != GIT_OK){
         return libgitError();
     }
 
     QString refspec = QString("+refs/heads/%1:refs/remotes/origin/%1")
-                      .arg(cfg_.branch);
+                      .arg(QString::fromUtf8(cfg_.branch));
 
     QByteArray refspecs_ = refspec.toUtf8();
     char* refs[] = { refspecs_.data() };
@@ -71,7 +64,7 @@ GitError Repository::sync(){
         return err;
     }
 
-    QString branch = QString("refs/remotes/origin/%1").arg(cfg_.branch);
+    QString branch = QString("refs/remotes/origin/%1").arg(QString::fromUtf8(cfg_.branch));
     QByteArray branch_ = branch.toUtf8();
 
     GitObjectPtr obj;
@@ -104,6 +97,4 @@ void Repository::stopCheckUpdatesActiveFile(){
     delete handler_;
     handler_ = NULL;
 }
-
-
 

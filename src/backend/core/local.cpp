@@ -1,10 +1,7 @@
 #include "repository.h"
-#include "git_raii.h"
 
 GitError Repository::open(){
-    QByteArray path = cfg_.path.toUtf8();
-
-    if(git_repository_open(&repo_, path.constData()) != GIT_OK){
+    if(git_repository_open(&repo_, cfg_.path.constData()) != GIT_OK){
         return libgitError();
     }
 
@@ -32,16 +29,6 @@ GitError Repository::fillStatus(QList<FileStatus>& list) const {
     
     for (size_t i = 0; i < len; i++) {
         FileStatus stat;
-        stat.deleteToDir = false;
-        stat.deleteToHead = false;
-        stat.modFileToDir = false;
-        stat.modFileToHead = false;
-        stat.newToDir = false;
-        stat.newToHead = false;
-        stat.renameToDir = false;
-        stat.renameToHead = false;
-        QString file_path_new;
-        QString file_path_old;
         bool check = false;
         const git_status_entry* entry = git_status_byindex(status.get(), i);
         
@@ -57,38 +44,28 @@ GitError Repository::fillStatus(QList<FileStatus>& list) const {
 
         if (entry->head_to_index) {
             if (entry->status & GIT_STATUS_INDEX_NEW) {
-                file_path_new = QString::fromUtf8(entry->head_to_index->new_file.path);
-                file_path_old = "";
+                stat.pathNew = QString::fromUtf8(entry->head_to_index->new_file.path);
 
-                stat.pathNew = file_path_new;
-                stat.pathOld = file_path_old;
                 stat.newToHead = true;
                 check = true;
             }
             if (entry->status & GIT_STATUS_INDEX_RENAMED) {
-                file_path_new = QString::fromUtf8(entry->head_to_index->new_file.path);
-                file_path_old = QString::fromUtf8(entry->head_to_index->old_file.path);
+                stat.pathNew = QString::fromUtf8(entry->head_to_index->new_file.path);
+                stat.pathOld = QString::fromUtf8(entry->head_to_index->old_file.path);
 
-                stat.pathNew = file_path_new;
-                stat.pathOld = file_path_old;
                 stat.renameToHead = true;
                 check = true;
             }
             if (entry->status & GIT_STATUS_INDEX_DELETED) {
-                file_path_new = "";
-                file_path_old = QString::fromUtf8(entry->head_to_index->old_file.path);
+                stat.pathOld = QString::fromUtf8(entry->head_to_index->old_file.path);
 
-                stat.pathNew = file_path_new;
-                stat.pathOld = file_path_old;
                 stat.deleteToHead = true;
                 check = true;
             }
             if (entry->status & GIT_STATUS_INDEX_MODIFIED) {
-                file_path_new = QString::fromUtf8(entry->head_to_index->new_file.path);
-                file_path_old = file_path_new;
+                stat.pathNew = QString::fromUtf8(entry->head_to_index->new_file.path);
+                stat.pathOld = stat.pathNew;
 
-                stat.pathNew = file_path_new;
-                stat.pathOld = file_path_old;
                 stat.modFileToHead = true;
                 check = true;
             }
@@ -96,39 +73,28 @@ GitError Repository::fillStatus(QList<FileStatus>& list) const {
 
         if (entry->index_to_workdir) {
             if (entry->status & GIT_STATUS_WT_NEW) {
-                file_path_new = QString::fromUtf8(entry->index_to_workdir->new_file.path);
-                file_path_old = "";
+                stat.pathNew = QString::fromUtf8(entry->index_to_workdir->new_file.path);
 
-                
-                stat.pathNew = file_path_new;
-                stat.pathOld = file_path_old;
                 stat.newToDir = true;
                 check = true;
             }
             if (entry->status & GIT_STATUS_WT_RENAMED) {
-                file_path_new = QString::fromUtf8(entry->index_to_workdir->new_file.path);
-                file_path_old = QString::fromUtf8(entry->index_to_workdir->old_file.path);
+                stat.pathNew = QString::fromUtf8(entry->index_to_workdir->new_file.path);
+                stat.pathOld = QString::fromUtf8(entry->index_to_workdir->old_file.path);
                 
-                stat.pathNew = file_path_new;
-                stat.pathOld = file_path_old;
                 stat.renameToDir = true;
                 check = true;
             }
             if (entry->status & GIT_STATUS_WT_DELETED) {
-                file_path_new = "";
-                file_path_old = QString::fromUtf8(entry->index_to_workdir->old_file.path);
+                stat.pathOld = QString::fromUtf8(entry->index_to_workdir->old_file.path);
                 
-                stat.pathNew = file_path_new;
-                stat.pathOld = file_path_old;
                 stat.deleteToDir = true;
                 check = true;
             }
             if (entry->status & GIT_STATUS_WT_MODIFIED) {
-                file_path_new = QString::fromUtf8(entry->index_to_workdir->new_file.path);
-                file_path_old = file_path_new;
+                stat.pathNew = QString::fromUtf8(entry->index_to_workdir->new_file.path);
+                stat.pathOld = stat.pathNew;
                 
-                stat.pathNew = file_path_new;
-                stat.pathOld = file_path_old;
                 stat.modFileToDir = true;
                 check = true;
             }
@@ -149,7 +115,7 @@ GitError Repository::reset() {
     
     GitObjectPtr obj;
     
-    if (git_revparse_single(&obj, repo_, "HEAD") != GIT_OK) {
+    if (git_revparse_single(&obj, repo_, HEAD) != GIT_OK) {
         return libgitError();
     }
     
@@ -168,29 +134,40 @@ GitError Repository::reset() {
     return GitError();
 }
 
+static CommitInfo getCommitInfo(const GitCommitPtr& commit, const git_oid* oid){
+    char hash_str[GIT_OID_HEXSZ + 1];
+    git_oid_tostr(hash_str, sizeof(hash_str), oid);
+    QString commit_hash = QString::fromUtf8(hash_str);
+        
+    const git_signature* author = git_commit_author(commit.get());
+    QString author_name, author_email;
+    QDateTime author_time;
+    if (author != NULL) {
+        author_name = QString::fromUtf8(author->name);
+        author_email = QString::fromUtf8(author->email);
+        qint64 time_ms = static_cast<qint64>(author->when.time) * 1000;
+        author_time = QDateTime::fromMSecsSinceEpoch(time_ms);
+    }
+        
+    const char* msg_raw = git_commit_message(commit.get());
+    QString msg = msg_raw ? QString::fromUtf8(msg_raw) : "";
+
+    return CommitInfo(author_name, author_email, msg,
+                      commit_hash, author_time);
+}
+
 GitError Repository::fillLog(QList<CommitInfo>& list) const {
     if (repo_ == NULL) {
         return GitError("repo is NULL", REPO_IS_NULL);
     }
     
     list.clear();
-    list.reserve(10);
+    list.reserve(DEFAULT_SIZE_LIST_LOG);
     
     GitRevwalkPtr walker;
-    
-    if (git_revwalk_new(&walker, repo_) != GIT_OK) {
-        return libgitError();
-    }
-    
-    git_revwalk_sorting(walker.get(), GIT_SORT_TIME);
-    
-    git_oid oid_head;
-    if (git_reference_name_to_id(&oid_head, repo_, "HEAD") != GIT_OK) {
-        return libgitError();
-    }
-    
-    if (git_revwalk_push(walker.get(), &oid_head) != GIT_OK) {
-        return libgitError();
+    GitError err = GitRevwalkInit(walker);
+    if(!err.success){
+        return err;
     }
     
     git_oid oid;
@@ -199,31 +176,8 @@ GitError Repository::fillLog(QList<CommitInfo>& list) const {
         if (git_commit_lookup(&commit, repo_, &oid) != GIT_OK) {
             continue; 
         }
-        
-        char hash_str[GIT_OID_HEXSZ + 1];
-        git_oid_tostr(hash_str, sizeof(hash_str), &oid);
-        QString commit_hash = QString::fromUtf8(hash_str);
-        
-        const git_signature* author = git_commit_author(commit.get());
-        QString author_name, author_email;
-        QDateTime author_time;
-        if (author != NULL) {
-            author_name = QString::fromUtf8(author->name);
-            author_email = QString::fromUtf8(author->email);
-            qint64 time_ms = static_cast<qint64>(author->when.time) * 1000;
-            author_time = QDateTime::fromMSecsSinceEpoch(time_ms);
-        }
-        
-        const char* msg_raw = git_commit_message(commit.get());
-        QString msg = msg_raw ? QString::fromUtf8(msg_raw) : "";
-        
-        CommitInfo info;
-        info.authorName = author_name;
-        info.authorEmail = author_email;
-        info.commitMessage = msg;
-        info.commitHash = commit_hash;
-        info.commitCreateTime = author_time;
-        list.append(info);
+
+        list.append(getCommitInfo(commit, &oid));
     }
     
     return GitError();
@@ -235,23 +189,12 @@ GitError Repository::fillLog(QList<CommitInfo>& list, const QString& filePath) c
     }
 
     list.clear();
-    list.reserve(10);
+    list.reserve(DEFAULT_SIZE_LIST_LOG);
 
     GitRevwalkPtr walker;
-    
-    if (git_revwalk_new(&walker, repo_) != GIT_OK) {
-        return libgitError();
-    }
-    
-    git_revwalk_sorting(walker.get(), GIT_SORT_TIME);
-    
-    git_oid oid_head;
-    if (git_reference_name_to_id(&oid_head, repo_, "HEAD") != GIT_OK) {
-        return libgitError();
-    }
-    
-    if (git_revwalk_push(walker.get(), &oid_head) != GIT_OK) {
-        return libgitError();
+    GitError err = GitRevwalkInit(walker);
+    if(!err.success){
+        return err;
     }
     
     git_oid oid;
@@ -298,30 +241,7 @@ GitError Repository::fillLog(QList<CommitInfo>& list, const QString& filePath) c
         }
 
         if (file.found) {
-            char hash_str[GIT_OID_HEXSZ + 1];
-            git_oid_tostr(hash_str, sizeof(hash_str), &oid);
-            QString commit_hash = QString::fromUtf8(hash_str);
-            
-            const git_signature* author = git_commit_author(commit.get());
-            QString author_name, author_email;
-            QDateTime author_time;
-            if (author != NULL) {
-                author_name = QString::fromUtf8(author->name);
-                author_email = QString::fromUtf8(author->email);
-                qint64 time_ms = static_cast<qint64>(author->when.time) * 1000;
-                author_time = QDateTime::fromMSecsSinceEpoch(time_ms);
-            }
-                        
-            const char* msg_raw = git_commit_message(commit.get());
-            QString msg = msg_raw ? QString::fromUtf8(msg_raw) : "";
-
-            CommitInfo info;
-            info.authorName = author_name;
-            info.authorEmail = author_email;
-            info.commitMessage = msg;
-            info.commitHash = commit_hash;
-            info.commitCreateTime = author_time;
-            list.append(info);
+            list.append(getCommitInfo(commit, &oid));
         }
     }
 

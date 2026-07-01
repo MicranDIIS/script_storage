@@ -1,25 +1,20 @@
 #include "update_handler.h"
-
-#include "git_raii.h"
+#include <git_utils.h>
 
 UpdateHandler::UpdateHandler(git_repository* repo, const FileEventHandler& Filehandler,
-                             const QString& url, const QString& token,
-                             const QString& username, const QString& branch) :
+                             const QByteArray& url, const QByteArray& token,
+                             const QByteArray& username, const QByteArray& branch) :
     repo_(repo), Filehandler_(Filehandler), url_(url), token_(token),
     username_(username), branch_(branch) {}
 
 void UpdateHandler::checkUpdatesActiveFile(){
-    QByteArray url = url_.toUtf8();
-
     GitRemotePtr remote;
-    if (git_remote_create_anonymous(&remote, repo_, url.constData()) != GIT_OK) {
+    if (git_remote_create_anonymous(&remote, repo_, url_.constData()) != GIT_OK) {
         return;
     }
 
     git_direction direction = GIT_DIRECTION_FETCH;
-    QByteArray username = username_.toUtf8();
-    QByteArray token = token_.toUtf8();
-    GitData creds(username, token);
+    GitData creds(username_, token_); 
     git_remote_callbacks callback_ = GIT_REMOTE_CALLBACKS_INIT;
     callback_.credentials = callback;
     callback_.payload = &creds;
@@ -28,14 +23,14 @@ void UpdateHandler::checkUpdatesActiveFile(){
         return;
     }
 
-    const git_remote_head **heads;
+    const git_remote_head** heads;
     size_t count = 0;
     if (git_remote_ls(&heads, &count, remote.get()) != GIT_OK) {
         git_remote_disconnect(remote.get());
         return;
     }
 
-    QString branch_local = QString("refs/heads/%1").arg(branch_);
+    QString branch_local = QString("refs/heads/%1").arg(QString::fromUtf8(branch_));
     QString branch_remote_str = "";
     bool branch_found = false;
     git_oid oid_remote;
@@ -66,7 +61,8 @@ void UpdateHandler::checkUpdatesActiveFile(){
     }
 
     emit updateIsFound();
-    QByteArray remoteBranch = QString("refs/remotes/origin/%1").arg(branch_).toUtf8();
+    QByteArray remoteBranch = QString("refs/remotes/origin/%1")
+                             .arg(QString::fromUtf8(branch_)).toUtf8();
     if (git_reference_name_to_id(&oid_remote, repo_, remoteBranch.constData()) != GIT_OK) {
         return;
     }
@@ -94,8 +90,7 @@ void UpdateHandler::checkUpdatesActiveFile(){
     }
 
     QByteArray filePath_ = Filehandler_.filePath.toUtf8();
-    char* path = filePath_.data();
-    char* pathspec[1] = { path };
+    char* pathspec[] = { filePath_.data() };
 
     git_diff_options opts = GIT_DIFF_OPTIONS_INIT;
     opts.pathspec.strings = pathspec;

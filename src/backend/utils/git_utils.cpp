@@ -1,6 +1,5 @@
 #include "git_utils.h"
 
-
 int callback(git_credential **out,const char *url,
                          const char *username_from_url,
                          unsigned int allowed_types,
@@ -37,3 +36,5 @@ int diff_file_callback(const git_diff_delta* delta, float progress,
     
     return 0;
 }
+
+

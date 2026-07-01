@@ -2,7 +2,9 @@
 #define GIT_UTILS_H
 
 #include <QString>
+#include <mgit.h>
 #include <git2.h>
+#include "git_raii.h"
 
 struct GitData{
     QByteArray username;
@@ -24,4 +26,6 @@ struct LogFile {
 
 int diff_file_callback(const git_diff_delta* delta, float progress, 
                               void* payload);
+
+
 #endif

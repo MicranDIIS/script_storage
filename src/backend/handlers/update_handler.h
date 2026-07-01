@@ -5,21 +5,21 @@
 #include <git2.h>
 #include <QString>
 #include <QObject>
-#include <git_utils.h>
+#include <git_raii.h>
 
 class UpdateHandler : public QObject{
     Q_OBJECT
 private:
     git_repository* repo_;
     FileEventHandler Filehandler_;
-    QString url_;
-    QString token_;
-    QString username_;
-    QString branch_;
+    QByteArray url_;
+    QByteArray token_;
+    QByteArray username_;
+    QByteArray branch_;
 public:
     UpdateHandler(git_repository* repo, const FileEventHandler& Filehandler,
-                  const QString& url, const QString& token,
-                  const QString& username, const QString& branch);
+                  const QByteArray& url, const QByteArray& token,
+                  const QByteArray& username, const QByteArray& branch);
     ~UpdateHandler(){}
 signals:
     void updateIsFound();

@@ -26,11 +26,9 @@ SOURCES += \
         $${CORE_PATH}/repository.cpp \
         $${CORE_PATH}/network.cpp \
         $${CORE_PATH}/local.cpp \
-        $${HANDLERS_PATH}/update_handler.cpp \
         $${UTILS_PATH}/git_error.cpp \
+        $${HANDLERS_PATH}/update_handler.cpp \
         $${UTILS_PATH}/git_utils.cpp
-
-QMAKE_MOC = C:/QtSDK/Desktop/Qt/4.7.3/mingw/bin/moc.exe
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN
