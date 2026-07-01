@@ -40,7 +40,6 @@ private:
     GitError GitRevwalkInit(GitRevwalkPtr& walker) const;
     static const char* HEAD;
     static const char* ORIGIN;
-    static const int DEFAULT_SIZE_LIST_LOG;
 public:
     explicit Repository(const RepoConfig& cfg);
     ~Repository();

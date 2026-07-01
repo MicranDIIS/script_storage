@@ -156,13 +156,14 @@ static CommitInfo getCommitInfo(const GitCommitPtr& commit, const git_oid* oid){
                       commit_hash, author_time);
 }
 
+static const int DEFAULT_SIZE_LIST = 20;
 GitError Repository::fillLog(QList<CommitInfo>& list) const {
     if (repo_ == NULL) {
         return GitError("repo is NULL", REPO_IS_NULL);
     }
     
     list.clear();
-    list.reserve(DEFAULT_SIZE_LIST_LOG);
+    list.reserve(DEFAULT_SIZE_LIST);
     
     GitRevwalkPtr walker;
     GitError err = GitRevwalkInit(walker);
@@ -189,7 +190,7 @@ GitError Repository::fillLog(QList<CommitInfo>& list, const QString& filePath) c
     }
 
     list.clear();
-    list.reserve(DEFAULT_SIZE_LIST_LOG);
+    list.reserve(DEFAULT_SIZE_LIST);
 
     GitRevwalkPtr walker;
     GitError err = GitRevwalkInit(walker);
