@@ -94,7 +94,11 @@ GitError Repository::startCheckUpdatesActiveFile(const FileEventHandler& fileHan
 
 void Repository::stopCheckUpdatesActiveFile(){
     timer_.stop();
-    delete handler_;
-    handler_ = NULL;
+    if(handler_ != NULL){
+        disconnect(&timer_, SIGNAL(timeout()), handler_, SLOT(checkUpdatesActiveFile()));
+        disconnect(handler_, SIGNAL(updateIsFound()), this, SLOT(fetch()));
+        delete handler_;
+        handler_ = NULL;
+    }
 }
 
