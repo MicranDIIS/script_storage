@@ -44,6 +44,8 @@ struct FileStatus{
     bool deleteToDir;
     bool renameToDir;
 
+    FileStatus();
+
 };
 
 typedef void (*callbackHandler) ();
@@ -60,6 +62,10 @@ struct CommitInfo{
     QString commitMessage;
     QString commitHash;
     QDateTime commitCreateTime;
+
+    CommitInfo(const QString& authorName_, const QString& authorEmail_,
+               const QString& commitMessage_, const QString& commitHash_,
+               const QDateTime& commitCreateTime_);
 };
 
 
@@ -68,11 +74,11 @@ public:
     virtual ~IRepository() {}
 
     //обычные геттеры
-    virtual const QString& getUrl() const = 0;
-    virtual const QString& getBranch() const = 0;
-    virtual const QString& getPath() const = 0;
-    virtual const QString& getUsername() const = 0;
-    virtual const QString& getToken() const = 0;
+    virtual QString getUrl() const = 0;
+    virtual QString getBranch() const = 0;
+    virtual QString getPath() const = 0;
+    virtual QString getUsername() const = 0;
+    virtual QString getToken() const = 0;
     /*
     * Открывает репозиторий
     */

@@ -5,7 +5,9 @@
 #include <git2.h>
 #include <QObject>
 #include <QTimer>
-#include "updateHandler.h"
+#include <git_raii.h>
+#include <update_handler.h>
+#include <git_utils.h>
 
 enum Errors{
     OK = 0,
@@ -14,34 +16,39 @@ enum Errors{
     FILEHANDLER_IS_NOT_NULL = 3
 };
 
-enum STATUS_FLAG{
-    STATUS_NEW_TO_HEAD     = 1 << 0,
-    STATUS_MODFILE_TO_HEAD = 1 << 1,
-    STATUS_DELETE_TO_HEAD  = 1 << 2,
-    STATUS_RENAME_TO_HEAD  = 1 << 3,
-    STATUS_MODFILE_TO_DIR  = 1 << 4,
-    STATUS_DELETE_TO_DIR   = 1 << 5,
-    STATUS_RENAME_TO_DIR   = 1 << 6,
-    STATUS_NEW_TO_DIR      = 1 << 7
+struct RepoConfigBuf{
+    QByteArray url;
+    QByteArray branch;
+    QByteArray path;
+    QByteArray username;
+    QByteArray token;
+    RepoConfigBuf(const RepoConfig& cfg);
 };
 
 class Repository : public QObject , public IRepository{
     Q_OBJECT
 private:
     git_repository* repo_;
-    RepoConfig cfg_;
+    RepoConfigBuf cfg_;
     UpdateHandler* handler_;
 
     QTimer timer_;
+
+    Repository(const Repository&);
+    Repository& operator=(const Repository&);
+
+    GitError GitRevwalkInit(GitRevwalkPtr& walker) const;
+    static const char* HEAD;
+    static const char* ORIGIN;
 public:
-    Repository(const RepoConfig& cfg);
+    explicit Repository(const RepoConfig& cfg);
     ~Repository();
 
-    const QString& getUrl() const;
-    const QString& getBranch() const;
-    const QString& getPath() const;
-    const QString& getUsername() const;
-    const QString& getToken() const;
+    QString getUrl() const;
+    QString getBranch() const;
+    QString getPath() const;
+    QString getUsername() const;
+    QString getToken() const;
 
 
     GitError open();
@@ -62,8 +69,6 @@ public:
 private slots:
     GitError fetch();
 };
-
-
 
 //ф-ия получения ошибки из libgit2
 GitError libgitError();
