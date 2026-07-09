@@ -72,6 +72,15 @@ GitError Repository::sync(){
         return libgitError();
     }
 
+    git_checkout_options opt = GIT_CHECKOUT_OPTIONS_INIT;
+    opt.checkout_strategy = GIT_CHECKOUT_FORCE |
+                                GIT_CHECKOUT_REMOVE_UNTRACKED |
+                                GIT_CHECKOUT_REMOVE_IGNORED;
+
+    if(git_checkout_tree(repo_, obj.get(), &opt) != GIT_OK){
+        return libgitError();
+    }
+
     if(git_reset(repo_, obj.get(), GIT_RESET_HARD, NULL) != GIT_OK){
         return libgitError();
     }
