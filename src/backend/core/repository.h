@@ -65,6 +65,7 @@ public:
     GitError fillLog(QList<CommitInfo>& list) const;
     GitError fillLog(QList<CommitInfo>& list, const QString& filePath) const;
 
+    bool isValidRepo() const;
     bool isValid() const;
 private slots:
     GitError fetch();

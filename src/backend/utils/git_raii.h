@@ -3,6 +3,36 @@
 
 #include <git2.h>
 
+struct GitBranchIteratorDeleter{
+    static void cleanup(git_branch_iterator* ptr){
+        if(ptr) git_branch_iterator_free(ptr);
+    }
+};
+
+struct GitIndexDeleter{
+    static void cleanup(git_index* ptr){
+        if(ptr) git_index_free(ptr);
+    }
+};
+
+struct GitConfigDeleter{
+    static void cleanup(git_config* ptr){
+        if(ptr) git_config_free(ptr);
+    }
+};
+
+struct GitOdbDeleter{
+    static void cleanup(git_odb* ptr){
+        if(ptr) git_odb_free(ptr);
+    }
+};
+
+struct GitOdbObjectDeleter{
+    static void cleanup(git_odb_object* ptr){
+        if(ptr) git_odb_object_free(ptr);
+    }
+};
+
 struct GitRepositoryDeleter{
     static void cleanup(git_repository* ptr){
         if(ptr) git_repository_free(ptr);
@@ -98,6 +128,11 @@ public:
     }
 };
 
+typedef GitPtr<git_branch_iterator, GitBranchIteratorDeleter> GitBranchIteratorPtr;
+typedef GitPtr<git_index, GitIndexDeleter> GitIndexPtr;
+typedef GitPtr<git_config, GitConfigDeleter> GitConfigPtr;
+typedef GitPtr<git_odb, GitOdbDeleter> GitOdbPtr;
+typedef GitPtr<git_odb_object, GitOdbObjectDeleter> GitOdbObjectPtr;
 typedef GitPtr<git_repository, GitRepositoryDeleter> GitRepositoryPtr;
 typedef GitPtr<git_remote, GitRemoteDeleter> GitRemotePtr;
 typedef GitPtr<git_object, GitObjectDeleter> GitObjectPtr;

@@ -117,7 +117,10 @@ public:
     * Логи с коммитами в которых был изменен файл
     */
     virtual GitError fillLog(QList<CommitInfo>& list, const QString& filePath) const = 0;
-
+    /*
+    * проверка валидности .git
+    */
+    virtual bool isValidRepo() const;
     /*
     * Проверка валидности репозитория
     */
