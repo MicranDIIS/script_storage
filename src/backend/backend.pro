@@ -14,6 +14,7 @@ INCLUDEPATH += $${CORE_PATH} \
             $${HANDLERS_PATH} \
             $${UTILS_PATH}
 
+
 HEADERS += \
         mgit.h \
         $${CORE_PATH}/repository.h \

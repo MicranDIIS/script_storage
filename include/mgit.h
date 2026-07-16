@@ -120,7 +120,7 @@ public:
     /*
     * проверка валидности .git
     */
-    virtual bool isValidRepo() const;
+    virtual bool isValidRepo() const = 0;
     /*
     * Проверка валидности репозитория
     */
