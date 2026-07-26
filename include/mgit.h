@@ -117,6 +117,9 @@ public:
     * Логи с коммитами в которых был изменен файл
     */
     virtual GitError fillLog(QList<CommitInfo>& list, const QString& filePath) const = 0;
+    virtual GitError startDebugMode() = 0;
+    virtual GitError saveDebugFiles(const QString& commitMsg) = 0;
+    virtual GitError closeDebugMode() = 0;
     /*
     * проверка валидности .git
     */

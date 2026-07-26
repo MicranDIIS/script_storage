@@ -25,6 +25,7 @@ HEADERS += \
 
 SOURCES += \
         $${CORE_PATH}/repository.cpp \
+        $${CORE_PATH}/repository_debug.cpp \
         $${CORE_PATH}/network.cpp \
         $${CORE_PATH}/local.cpp \
         $${UTILS_PATH}/git_error.cpp \

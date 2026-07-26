@@ -65,6 +65,10 @@ public:
     GitError fillLog(QList<CommitInfo>& list) const;
     GitError fillLog(QList<CommitInfo>& list, const QString& filePath) const;
 
+    GitError startDebugMode();
+    GitError saveDebugFiles(const QString& commitMsg);
+    GitError closeDebugMode();
+
     bool isValidRepo() const;
     bool isValid() const;
 private slots:

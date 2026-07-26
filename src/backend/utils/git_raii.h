@@ -15,6 +15,12 @@ struct GitIndexDeleter{
     }
 };
 
+struct GitIndexConflictIteratorDeleter{
+    static void cleanup(git_index_conflict_iterator* ptr){
+        if(ptr) git_index_conflict_iterator_free(ptr);
+    }
+};
+
 struct GitConfigDeleter{
     static void cleanup(git_config* ptr){
         if(ptr) git_config_free(ptr);
@@ -87,6 +93,30 @@ struct GitReferenceDeleter{
     }
 };
 
+struct GitAnnotatedCommitDeleter{
+    static void cleanup(git_annotated_commit* ptr){
+        if(ptr) git_annotated_commit_free(ptr);
+    }
+};
+
+struct GitBlobDeleter{
+    static void cleanup(git_blob* ptr){
+        if(ptr) git_blob_free(ptr);
+    }
+};
+
+struct GitSignatureDeleter{
+    static void cleanup(git_signature* ptr){
+        if(ptr) git_signature_free(ptr);
+    }
+};
+
+struct GitBufDeleter{
+    static void cleanup(git_buf* ptr){
+        if(ptr) git_buf_dispose(ptr);
+    }
+};
+
 template<typename T, typename Deleter>
 class GitPtr{
 private:
@@ -124,23 +154,31 @@ public:
             if(ptr_) Deleter::cleanup(ptr_);
             ptr_ = ptr;
         }
+    }
 
+    operator bool() const{
+        return ptr_ != NULL;
     }
 };
 
-typedef GitPtr<git_branch_iterator, GitBranchIteratorDeleter> GitBranchIteratorPtr;
-typedef GitPtr<git_index, GitIndexDeleter> GitIndexPtr;
-typedef GitPtr<git_config, GitConfigDeleter> GitConfigPtr;
-typedef GitPtr<git_odb, GitOdbDeleter> GitOdbPtr;
-typedef GitPtr<git_odb_object, GitOdbObjectDeleter> GitOdbObjectPtr;
-typedef GitPtr<git_repository, GitRepositoryDeleter> GitRepositoryPtr;
-typedef GitPtr<git_remote, GitRemoteDeleter> GitRemotePtr;
-typedef GitPtr<git_object, GitObjectDeleter> GitObjectPtr;
-typedef GitPtr<git_commit,      GitCommitDeleter>      GitCommitPtr;
-typedef GitPtr<git_tree,        GitTreeDeleter>        GitTreePtr;
-typedef GitPtr<git_diff,        GitDiffDeleter>        GitDiffPtr;
-typedef GitPtr<git_revwalk,     GitRevwalkDeleter>     GitRevwalkPtr;
-typedef GitPtr<git_status_list, GitStatusListDeleter>  GitStatusListPtr;
-typedef GitPtr<git_reference,   GitReferenceDeleter>   GitReferencePtr;
+typedef GitPtr<git_branch_iterator,         GitBranchIteratorDeleter>         GitBranchIteratorPtr;
+typedef GitPtr<git_index,                   GitIndexDeleter>                   GitIndexPtr;
+typedef GitPtr<git_index_conflict_iterator, GitIndexConflictIteratorDeleter>   GitIndexConflictIteratorPtr;
+typedef GitPtr<git_config,                  GitConfigDeleter>                  GitConfigPtr;
+typedef GitPtr<git_odb,                     GitOdbDeleter>                     GitOdbPtr;
+typedef GitPtr<git_odb_object,              GitOdbObjectDeleter>               GitOdbObjectPtr;
+typedef GitPtr<git_repository,              GitRepositoryDeleter>              GitRepositoryPtr;
+typedef GitPtr<git_remote,                  GitRemoteDeleter>                  GitRemotePtr;
+typedef GitPtr<git_object,                  GitObjectDeleter>                  GitObjectPtr;
+typedef GitPtr<git_commit,                  GitCommitDeleter>                  GitCommitPtr;
+typedef GitPtr<git_tree,                    GitTreeDeleter>                    GitTreePtr;
+typedef GitPtr<git_diff,                    GitDiffDeleter>                    GitDiffPtr;
+typedef GitPtr<git_revwalk,                 GitRevwalkDeleter>                 GitRevwalkPtr;
+typedef GitPtr<git_status_list,             GitStatusListDeleter>              GitStatusListPtr;
+typedef GitPtr<git_reference,               GitReferenceDeleter>               GitReferencePtr;
+typedef GitPtr<git_annotated_commit,        GitAnnotatedCommitDeleter>         GitAnnotatedCommitPtr;
+typedef GitPtr<git_blob,                    GitBlobDeleter>                    GitBlobPtr;
+typedef GitPtr<git_signature,               GitSignatureDeleter>               GitSignaturePtr;
+typedef GitPtr<git_buf,                     GitBufDeleter>                     GitBufPtr;
 
-#endif 
+#endif

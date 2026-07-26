@@ -1,5 +1,4 @@
 #include "repository.h"
-#include "git_raii.h"
 
 GitError Repository::clone(){
     GitRepositoryPtr repo;
