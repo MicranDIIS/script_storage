@@ -49,7 +49,7 @@ public:
     QString getPath() const;
     QString getUsername() const;
     QString getToken() const;
-
+    GitError getTimeLastRemoteCommit(QTime &time) const;
 
     GitError open();
 

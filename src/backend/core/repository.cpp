@@ -18,6 +18,21 @@ bool Repository::isValid() const {return repo_ != NULL;}
 const char* Repository::HEAD = "HEAD";
 const char* Repository::ORIGIN = "origin";
 
+GitError Repository::getTimeLastRemoteCommit(QTime &time) const{
+    GitCommitPtr commit;
+    if(git_revparse_single((git_object**)&commit, repo_,
+                           (QByteArray("refs/remotes/origin/") + cfg_.branch).constData()) != GIT_OK){
+        return libgitError();
+    }
+
+    const git_signature* author = git_commit_author(commit.get());
+
+    QDateTime dateTime = QDateTime::fromMSecsSinceEpoch(1000 * author->when.time);
+    time = dateTime.time();
+
+    return GitError();
+}
+
 bool Repository::isValidRepo() const {
     if (repo_ == NULL) {
         return false;

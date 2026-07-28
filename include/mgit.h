@@ -79,6 +79,8 @@ public:
     virtual QString getPath() const = 0;
     virtual QString getUsername() const = 0;
     virtual QString getToken() const = 0;
+
+    virtual GitError getTimeLastRemoteCommit(QTime& time) const = 0;
     /*
     * Открывает репозиторий
     */

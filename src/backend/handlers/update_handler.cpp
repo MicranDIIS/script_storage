@@ -1,6 +1,8 @@
 #include "update_handler.h"
 #include <git_utils.h>
 
+static git_oid oid_curr = {0};
+
 UpdateHandler::UpdateHandler(git_repository* repo, const FileEventHandler& Filehandler,
                              const QByteArray& url, const QByteArray& token,
                              const QByteArray& username, const QByteArray& branch) :
@@ -56,9 +58,15 @@ void UpdateHandler::checkUpdatesActiveFile(){
         return;
     }
 
-    if (git_oid_cmp(&oid_local, &oid_remote) == 0) {
+    if (git_oid_cmp(&oid_curr, &oid_remote) == 0) {
         return;
     }
+
+    if (git_oid_cmp(&oid_local, &oid_remote) == 0) {
+        git_oid_cpy(&oid_curr, &oid_remote);
+        return;
+    }
+
 
     emit updateIsFound();
     QByteArray remoteBranch = QString("refs/remotes/origin/%1")
@@ -109,5 +117,6 @@ void UpdateHandler::checkUpdatesActiveFile(){
 
     if (file.found) {
         Filehandler_.callback();
+        git_oid_cpy(&oid_curr, &oid_remote);
     }
 }
