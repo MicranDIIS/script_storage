@@ -66,7 +66,8 @@ public:
     GitError fillLog(QList<CommitInfo>& list, const QString& filePath) const;
 
     GitError startDebugMode();
-    GitError saveDebugFiles(const QString& commitMsg);
+    GitError saveDebugFiles(const QString &authorName, const QString &authorEmail, const QString &commitMsg);
+    GitError mergeDebugFiles(const QString &filePath, const QString& authorName, const QString& authorEmail);
     GitError closeDebugMode();
 
     bool isValidRepo() const;

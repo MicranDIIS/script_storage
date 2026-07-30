@@ -3,6 +3,7 @@
 
 #include <git2.h>
 
+
 struct GitBranchIteratorDeleter{
     static void cleanup(git_branch_iterator* ptr){
         if(ptr) git_branch_iterator_free(ptr);

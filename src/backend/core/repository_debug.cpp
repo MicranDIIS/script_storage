@@ -483,7 +483,9 @@ GitError Repository::startDebugMode() {
 }
 
 
-GitError Repository::saveDebugFiles(const QString &commitMsg) {
+GitError Repository::saveDebugFiles(const QString& authorName,
+                                    const QString& authorEmail,
+                                    const QString &commitMsg) {
     if (!repo_) {
         return GitError(QString("Repository is not open"), -1);
     }
@@ -568,10 +570,11 @@ GitError Repository::saveDebugFiles(const QString &commitMsg) {
     }
 
     GitSignaturePtr signature;
-    if (git_signature_default(&signature, repo_) != GIT_OK) {
+    QByteArray sig_name = authorName.toUtf8();
+    QByteArray sig_email = authorEmail.toUtf8();
+    if(git_signature_now(&signature, sig_name.constData(), sig_email.constData()) != GIT_OK){
         return libgitError();
     }
-
     const git_commit* parents[1] = { parentCommit.get() };
     QByteArray msgUtf8 = commitMsg.toUtf8();
     QByteArray encoding("UTF-8");
@@ -651,5 +654,230 @@ GitError Repository::closeDebugMode() {
     }
 
     return GitError();
+}
+
+GitError Repository::mergeDebugFiles(const QString& filePath,
+                                     const QString& authorName,
+                                     const QString& authorEmail) {
+    QByteArray filePath_ = filePath.toUtf8();
+    const char* path = filePath_.constData();
+
+    git_oid our_oid;
+    QByteArray mainBranch = "refs/heads/" + cfg_.branch;
+    if (git_reference_name_to_id(&our_oid, repo_, mainBranch.constData()) != GIT_OK) {
+        return libgitError();
+    }
+
+    git_oid their_oid;
+    if (git_reference_name_to_id(&their_oid, repo_, "refs/heads/debug") != GIT_OK) {
+        return libgitError();
+    }
+
+    git_oid base_oid;
+    if (git_merge_base(&base_oid, repo_, &our_oid, &their_oid) != GIT_OK) {
+        return libgitError();
+    }
+
+    GitCommitPtr base_commit, our_commit, their_commit;
+    if (git_commit_lookup(&base_commit, repo_, &base_oid) != GIT_OK ||
+        git_commit_lookup(&our_commit, repo_, &our_oid) != GIT_OK ||
+        git_commit_lookup(&their_commit, repo_, &their_oid) != GIT_OK) {
+        return libgitError();
+    }
+
+    GitTreePtr base_tree, our_tree, their_tree;
+    if (git_commit_tree(&base_tree, base_commit.get()) != GIT_OK ||
+        git_commit_tree(&our_tree, our_commit.get()) != GIT_OK ||
+        git_commit_tree(&their_tree, their_commit.get()) != GIT_OK) {
+        return libgitError();
+    }
+
+    const git_tree_entry* base_entry = git_tree_entry_byname(base_tree.get(), path);
+    const git_tree_entry* our_entry = git_tree_entry_byname(our_tree.get(), path);
+    const git_tree_entry* their_entry = git_tree_entry_byname(their_tree.get(), path);
+
+    if (!base_entry || !our_entry || !their_entry) {
+        return GitError("File not found in one of the commits", -1);
+    }
+
+    GitBlobPtr base_blob, our_blob, their_blob;
+    if (git_blob_lookup(&base_blob, repo_, git_tree_entry_id(base_entry)) != GIT_OK ||
+        git_blob_lookup(&our_blob, repo_, git_tree_entry_id(our_entry)) != GIT_OK ||
+        git_blob_lookup(&their_blob, repo_, git_tree_entry_id(their_entry)) != GIT_OK) {
+        return libgitError();
+    }
+
+    git_merge_file_input base_input = GIT_MERGE_FILE_INPUT_INIT;
+    base_input.ptr = (const char*)git_blob_rawcontent(base_blob.get());
+    base_input.size = git_blob_rawsize(base_blob.get());
+    base_input.path = path;
+
+    git_merge_file_input our_input = GIT_MERGE_FILE_INPUT_INIT;
+    our_input.ptr = (const char*)git_blob_rawcontent(our_blob.get());
+    our_input.size = git_blob_rawsize(our_blob.get());
+    our_input.path = path;
+
+    git_merge_file_input their_input = GIT_MERGE_FILE_INPUT_INIT;
+    their_input.ptr = (const char*)git_blob_rawcontent(their_blob.get());
+    their_input.size = git_blob_rawsize(their_blob.get());
+    their_input.path = path;
+
+    git_merge_file_result result = {0};
+    git_merge_file_options opts = GIT_MERGE_FILE_OPTIONS_INIT;
+    opts.favor = GIT_MERGE_FILE_FAVOR_NORMAL;
+    opts.ancestor_label = "base";
+    opts.our_label = cfg_.branch.constData();
+    opts.their_label = "debug";
+
+    if (git_merge_file(&result, &base_input, &our_input, &their_input, &opts) != GIT_OK) {
+        git_merge_file_result_free(&result);
+        return libgitError();
+    }
+
+    bool hasConflicts = (result.automergeable == 0);
+
+    git_index* raw_index = NULL;
+    if (git_repository_index(&raw_index, repo_) != GIT_OK) {
+        git_merge_file_result_free(&result);
+        return libgitError();
+    }
+    GitIndexPtr index(raw_index);
+
+    git_oid merged_blob_oid;
+    if (git_blob_create_from_buffer(&merged_blob_oid, repo_, result.ptr, result.len) != GIT_OK) {
+        git_merge_file_result_free(&result);
+        return libgitError();
+    }
+
+    if (hasConflicts) {
+
+        git_oid base_blob_oid, our_blob_oid, their_blob_oid;
+
+        if (git_blob_create_from_buffer(&base_blob_oid, repo_,
+                                       git_blob_rawcontent(base_blob.get()),
+                                       git_blob_rawsize(base_blob.get())) != GIT_OK ||
+            git_blob_create_from_buffer(&our_blob_oid, repo_,
+                                       git_blob_rawcontent(our_blob.get()),
+                                       git_blob_rawsize(our_blob.get())) != GIT_OK ||
+            git_blob_create_from_buffer(&their_blob_oid, repo_,
+                                       git_blob_rawcontent(their_blob.get()),
+                                       git_blob_rawsize(their_blob.get())) != GIT_OK) {
+            git_merge_file_result_free(&result);
+            return libgitError();
+        }
+
+        git_index_entry ancestor_entry;
+        memset(&ancestor_entry, 0, sizeof(git_index_entry));
+        ancestor_entry.path = path;
+        ancestor_entry.mode = GIT_FILEMODE_BLOB;
+        ancestor_entry.id = base_blob_oid;
+        ancestor_entry.flags = (GIT_INDEX_STAGE_ANCESTOR << GIT_INDEX_ENTRY_STAGESHIFT);
+        git_index_add(index.get(), &ancestor_entry);
+
+        git_index_entry ours_entry;
+        memset(&ours_entry, 0, sizeof(git_index_entry));
+        ours_entry.path = path;
+        ours_entry.mode = GIT_FILEMODE_BLOB;
+        ours_entry.id = our_blob_oid;
+        ours_entry.flags = (GIT_INDEX_STAGE_OURS << GIT_INDEX_ENTRY_STAGESHIFT);
+        git_index_add(index.get(), &ours_entry);
+
+        git_index_entry theirs_entry;
+        memset(&theirs_entry, 0, sizeof(git_index_entry));
+        theirs_entry.path = path;
+        theirs_entry.mode = GIT_FILEMODE_BLOB;
+        theirs_entry.id = their_blob_oid;
+        theirs_entry.flags = (GIT_INDEX_STAGE_THEIRS << GIT_INDEX_ENTRY_STAGESHIFT);
+        git_index_add(index.get(), &theirs_entry);
+
+        if (git_index_write(index.get()) != GIT_OK) {
+            git_merge_file_result_free(&result);
+            return libgitError();
+        }
+
+        git_checkout_options checkout_opts = GIT_CHECKOUT_OPTIONS_INIT;
+        checkout_opts.checkout_strategy = GIT_CHECKOUT_FORCE | GIT_CHECKOUT_CONFLICT_STYLE_MERGE;
+
+        char* paths_array[] = { const_cast<char*>(path) };
+        git_strarray patharray = { paths_array, 1 };
+        checkout_opts.paths = patharray;
+
+        git_checkout_index(repo_, index.get(), &checkout_opts);
+
+        git_merge_file_result_free(&result);
+
+        QString conflictMsg = "Merge conflict";
+
+        return GitError(conflictMsg, -2);
+
+    } else {
+
+        git_index_entry entry;
+        memset(&entry, 0, sizeof(git_index_entry));
+        entry.path = path;
+        entry.mode = GIT_FILEMODE_BLOB;
+        entry.id = merged_blob_oid;
+
+        if (git_index_add(index.get(), &entry) != GIT_OK) {
+            git_merge_file_result_free(&result);
+            return libgitError();
+        }
+
+        if (git_index_write(index.get()) != GIT_OK) {
+            git_merge_file_result_free(&result);
+            return libgitError();
+        }
+
+        git_checkout_options checkout_opts = GIT_CHECKOUT_OPTIONS_INIT;
+        checkout_opts.checkout_strategy = GIT_CHECKOUT_FORCE | GIT_CHECKOUT_SAFE;
+
+        char* paths_array[] = { const_cast<char*>(path) };
+        git_strarray patharray = { paths_array, 1 };
+        checkout_opts.paths = patharray;
+
+        git_checkout_index(repo_, index.get(), &checkout_opts);
+
+        git_oid tree_oid;
+        if (git_index_write_tree(&tree_oid, index.get()) != GIT_OK) {
+            git_merge_file_result_free(&result);
+            return libgitError();
+        }
+
+        GitTreePtr tree;
+        if (git_tree_lookup(&tree, repo_, &tree_oid) != GIT_OK) {
+            git_merge_file_result_free(&result);
+            return libgitError();
+        }
+
+        GitCommitPtr parent_commit;
+        if (git_commit_lookup(&parent_commit, repo_, &our_oid) != GIT_OK) {
+            git_merge_file_result_free(&result);
+            return libgitError();
+        }
+
+        GitSignaturePtr signature;
+        QByteArray sig_name = authorName.toUtf8();
+        QByteArray sig_email = authorEmail.toUtf8();
+        if (git_signature_now(&signature, sig_name.constData(), sig_email.constData()) != GIT_OK){
+            return libgitError();
+        }
+
+        git_oid commit_oid;
+        QByteArray commitMsg = QString("Merge file %1 from debug branch").arg(filePath).toUtf8();
+        const git_commit* parents[] = { parent_commit.get() };
+
+        int result_commit = git_commit_create(&commit_oid, repo_, "HEAD",
+                                              signature.get(), signature.get(),
+                                              NULL, commitMsg.constData(),
+                                              tree.get(), 1, parents);
+
+        git_merge_file_result_free(&result);
+
+        if (result_commit != GIT_OK) {
+            return libgitError();
+        }
+
+        return GitError();
+    }
 }
 

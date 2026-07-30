@@ -119,8 +119,25 @@ public:
     * Логи с коммитами в которых был изменен файл
     */
     virtual GitError fillLog(QList<CommitInfo>& list, const QString& filePath) const = 0;
+    /*
+    * Запускает debug режим
+    */
     virtual GitError startDebugMode() = 0;
-    virtual GitError saveDebugFiles(const QString& commitMsg) = 0;
+    /*
+    * Сохраняет и коммитит измененные файлы
+    */
+    virtual GitError saveDebugFiles(const QString& authorName,
+                                    const QString& authorEmail,
+                                    const QString& commitMsg) = 0;
+    /*
+    * Сливает конкретный файл в основную ветку
+    */
+    virtual GitError mergeDebugFiles(const QString& filePath,
+                                     const QString& authorName,
+                                     const QString& authorEmail) = 0;
+    /*
+    * Закрывает debug режим
+    */
     virtual GitError closeDebugMode() = 0;
     /*
     * проверка валидности .git
