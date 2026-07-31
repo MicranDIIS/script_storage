@@ -7,15 +7,15 @@
 class DiffViewHighlighter : public QSyntaxHighlighter
 {
 public:
-    DiffViewHighlighter(QTextDocument* parent);
-    void setHighlightedLines(const QSet<int> &lines);
+    explicit DiffViewHighlighter(QTextDocument *parent = 0);
 
 protected:
     void highlightBlock(const QString& text);
 
 private:
-    QSet<int> highlightedLines;
-    QTextCharFormat linesFormat;
+    QTextCharFormat addFormat;
+    QTextCharFormat delFormat;
+    QTextCharFormat headerFormat;
 };
 
 #endif // DIFFVIEWHIGHLIGHTER_H

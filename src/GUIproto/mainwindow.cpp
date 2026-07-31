@@ -509,7 +509,7 @@ void MainWindow::openDiffForIndex(const QModelIndex &index)
         return;
     }
 
-    DiffViewerWindow *diffWindow = new DiffViewerWindow(this);
+    DiffViewerWindow *diffWindow = new DiffViewerWindow();
     diffWindow->setAttribute(Qt::WA_DeleteOnClose);
     diffWindow->setWindowTitle(tr("changes"));
     diffWindow->setFilePath(scriptPath);

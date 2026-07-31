@@ -47,7 +47,8 @@ HEADERS  += mainwindow.h \
     scriptfiltermodel.h \
     combofiltermodel.h \
     historywindow.h \
-    commitinfo.h
+    commitinfo.h \
+    diffviewerstructs.h
 
 FORMS    += mainwindow.ui \
     scriptwindow.ui \
@@ -66,4 +67,3 @@ TRANSLATIONS += $$PWD/app_ru.ts
 #=======
 RESOURCES += \
     resources.qrc
-

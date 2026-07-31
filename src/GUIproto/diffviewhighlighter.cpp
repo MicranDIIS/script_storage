@@ -2,21 +2,29 @@
 
 DiffViewHighlighter::DiffViewHighlighter(QTextDocument* parent): QSyntaxHighlighter(parent)
 {
-    linesFormat.setBackground(QColor(000, 255, 000));
+    addFormat.setBackground(QColor(200, 255, 200));
+    addFormat.setForeground(Qt::black);
+
+    delFormat.setBackground(QColor(255, 200, 200));
+    delFormat.setForeground(Qt::black);
+
+    headerFormat.setBackground(QColor(220, 220, 220));
+    headerFormat.setFontWeight(QFont::Bold);
 }
 
-void DiffViewHighlighter::setHighlightedLines(const QSet<int> &lines)
-{
-    highlightedLines = lines;
-    rehighlight();
-}
 
 void DiffViewHighlighter::highlightBlock(const QString& text)
 {
-    int current = currentBlock().blockNumber();
-
-    if (highlightedLines.contains(current))
+    if (text.startsWith("+ "))
     {
-        setFormat(0, text.length(), linesFormat);
+        setFormat(0, text.length(), addFormat);
+    }
+    else if (text.startsWith("- "))
+    {
+        setFormat(0, text.length(), delFormat);
+    }
+    else if(text.startsWith("@@"))
+    {
+        setFormat(0, text.length(), headerFormat);
     }
 }

@@ -2,6 +2,7 @@
 #define DIFFVIEWERWINDOW_H
 
 #include "diffviewhighlighter.h"
+#include "diffviewerstructs.h"
 
 #include <QWidget>
 #include <QFile>
@@ -26,6 +27,9 @@ private:
     QString scriptPath;
     void LoadFileText();
     DiffViewHighlighter * diffViewHighlighter;
+
+    QString buildUnifiedText(const DiffResult& result);
+    DiffResult makeMock();
 };
 
 #endif // DIFFVIEWERWINDOW_H
