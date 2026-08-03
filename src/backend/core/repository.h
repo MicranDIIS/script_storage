@@ -64,6 +64,7 @@ public:
     GitError fillStatus(QList<FileStatus>& list) const;
     GitError fillLog(QList<CommitInfo>& list) const;
     GitError fillLog(QList<CommitInfo>& list, const QString& filePath) const;
+    GitError fillDiff(DiffResult &diffRsult) const;
 
     bool isValidRepo() const;
     bool isValid() const;

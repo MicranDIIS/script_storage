@@ -27,6 +27,7 @@ SOURCES += \
         $${CORE_PATH}/repository.cpp \
         $${CORE_PATH}/network.cpp \
         $${CORE_PATH}/local.cpp \
+        $${CORE_PATH}/diff.cpp \
         $${UTILS_PATH}/git_error.cpp \
         $${HANDLERS_PATH}/update_handler.cpp \
         $${UTILS_PATH}/git_utils.cpp
