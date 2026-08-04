@@ -120,17 +120,27 @@
     </widget>
    </item>
    <item>
-    <widget class="QPlainTextEdit" name="ScriptPlainTextEdit">
+    <widget class="DiffEditor" name="ScriptPlainTextEdit">
      <property name="font">
       <font>
        <family>Courier New</family>
        <pointsize>10</pointsize>
       </font>
      </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
     </widget>
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>DiffEditor</class>
+   <extends>QPlainTextEdit</extends>
+   <header location="global">diffeditor.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

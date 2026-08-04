@@ -71,3 +71,4 @@ tools/LuaBindManager/Profiles
 #translations
 *.qm
 
+repo.ini

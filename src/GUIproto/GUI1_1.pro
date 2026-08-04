@@ -10,6 +10,8 @@
 include(../../commoncore.pri)
 include(../../appcore.pri)
 
+INCLUDEPATH += $$PWD
+
 #QT       += core gui
 DESTDIR = $${BIN_PATH}
 
@@ -34,7 +36,9 @@ SOURCES += main.cpp\
     viewmodel.cpp \
     scriptfiltermodel.cpp \
     combofiltermodel.cpp \
-    historywindow.cpp
+    historywindow.cpp \
+    diffeditor.cpp \
+    linenumberarea.cpp
 
 HEADERS  += mainwindow.h \
     scriptwindow.h \
@@ -48,7 +52,9 @@ HEADERS  += mainwindow.h \
     combofiltermodel.h \
     historywindow.h \
     commitinfo.h \
-    diffviewerstructs.h
+    diffviewerstructs.h \
+    diffeditor.h \
+    linenumberarea.h
 
 FORMS    += mainwindow.ui \
     scriptwindow.ui \

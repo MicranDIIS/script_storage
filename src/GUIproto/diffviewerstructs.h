@@ -6,7 +6,7 @@
 struct CommitMeta
 {
     QString author;
-    QString date;
+    QString date; //qtime
 };
 
 enum LineType
@@ -46,7 +46,7 @@ struct DiffResult
    // QString filePath;
     CommitMeta oldCommit;
     CommitMeta newCommit;
-    QVector<DiffHunk> hunks;
+    QVector<DiffHunk> hunks; //qlist
 };
 
 #endif // DIFFVIEWERSTRUCTS_H
