@@ -9,7 +9,7 @@ class DiffEditor : public QPlainTextEdit
 public:
     DiffEditor(QWidget *parent = 0);
 
-//    void lineNumberAreaPaintEvent(QPaintEvent *event);
+    void lineNumberAreaPaintEvent(QPaintEvent *event);
 //    int lineNumberAreaWidth();
 
 protected:

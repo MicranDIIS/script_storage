@@ -77,6 +77,11 @@ DiffResult DiffViewerWindow::makeMock()
     hunk.lines.append(DiffLine(Del,     6, -1, "MODE = basic"));
     hunk.lines.append(DiffLine(Add,    -1,  7, "MODE = advanced"));
     hunk.lines.append(DiffLine(Context, 7,  8, "END"));
+    for (int i = 9; i <= 50; ++i)
+    {
+        hunk.lines.append(DiffLine(Context, i, i,
+            QString("Line number %1").arg(i)));
+    }
 
     result.hunks.append(hunk);
 

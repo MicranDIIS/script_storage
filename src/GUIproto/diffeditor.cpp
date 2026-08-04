@@ -2,6 +2,8 @@
 
 #include "linenumberarea.h"
 
+#include <QDebug>
+
 DiffEditor::DiffEditor(QWidget *parent) : QPlainTextEdit(parent)
 {
     setViewportMargins(40, 0, 0, 0);
@@ -22,6 +24,29 @@ void DiffEditor::updateLineNumberArea(const QRect &rect, int dy)
 {
     Q_UNUSED(rect);
     Q_UNUSED(dy);
+    qDebug() << "update line numbers";
 
     lineNumberArea->update();
+}
+
+void DiffEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
+{
+    QPainter painter(lineNumberArea);
+    painter.setPen(QColor(Qt::black));
+
+    QTextBlock block = this->firstVisibleBlock();
+    int blockNumber = block.blockNumber();
+    int top = blockBoundingGeometry(block).translated(contentOffset()).top();
+
+    int y = top + fontMetrics().ascent();
+
+    while (block.isValid() && top <= this->height())
+    {
+        painter.drawText(20, y, QString::number(blockNumber+1));
+        top += blockBoundingRect(block).height();
+        y = top + fontMetrics().ascent();
+        block = block.next();
+        ++blockNumber;
+    }
+
 }
