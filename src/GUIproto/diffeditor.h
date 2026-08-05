@@ -12,7 +12,7 @@ public:
     DiffEditor(QWidget *parent = 0);
 
     void lineNumberAreaPaintEvent(QPaintEvent *event);
-//    int lineNumberAreaWidth();
+    int lineNumberAreaWidth();
     void setDiffLines(const QList<DiffLine> &lines);
 
 protected:
@@ -20,7 +20,7 @@ protected:
 
 private slots:
     void updateLineNumberArea(const QRect &rect, int dy);
-//    void updateLineNumberWidth(int newBlockCount);
+    void updateLineNumberWidth();
 
 private:
     QWidget *lineNumberArea;

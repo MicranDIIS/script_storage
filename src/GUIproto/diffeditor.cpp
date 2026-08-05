@@ -6,11 +6,9 @@
 
 DiffEditor::DiffEditor(QWidget *parent) : QPlainTextEdit(parent)
 {
-    setViewportMargins(40, 0, 0, 0);
-
     lineNumberArea = new LineNumberArea(this);
 
-//    connect(this, &DiffEditor::blockCountChanged, this, &DiffEditor::updateLineNumberAreaWidth);
+    connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberWidth));
     connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(updateLineNumberArea(QRect,int)));
 }
 
@@ -18,6 +16,36 @@ void DiffEditor::setDiffLines(const QList<DiffLine> &lines)
 {
     diffLines = lines;
     lineNumberArea->update();
+    updateLineNumberWidth();
+}
+
+int DiffEditor::lineNumberAreaWidth()
+{
+    int maxOld = 0;
+    int maxNew = 0;
+
+    for (int i = 0; i < diffLines.size(); ++i)
+    {
+        if (diffLines[i].oldNum > maxOld)
+            maxOld = diffLines[i].oldNum;
+
+        if (diffLines[i].newNum > maxNew)
+            maxNew = diffLines[i].newNum;
+    }
+
+    QFontMetrics fm(font());
+
+    int widthOld = fm.width(QString::number(maxOld));
+    int widthNew = fm.width(QString::number(maxNew));
+
+    int totalWidth = widthOld + widthNew + 20;
+
+    return totalWidth;
+}
+
+void DiffEditor::updateLineNumberWidth()
+{
+    setViewportMargins(lineNumberAreaWidth(), 0, 0, 0);
 }
 
 void DiffEditor::resizeEvent(QResizeEvent *event)
@@ -51,11 +79,6 @@ void DiffEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
 
     while (block.isValid() && top <= this->height())
     {
-//        painter.drawText(20, y, QString::number(blockNumber+1));
-//        top += blockBoundingRect(block).height();
-//        y = top + fontMetrics().ascent();
-//        block = block.next();
-//        ++blockNumber;
         if (blockNumber > 0 && blockNumber - 1 < diffLines.size())
         {
             int diffIndex = blockNumber - 1;
