@@ -51,7 +51,7 @@ void DiffEditor::updateLineNumberWidth()
 void DiffEditor::resizeEvent(QResizeEvent *event)
 {
     QPlainTextEdit::resizeEvent(event);
-    lineNumberArea->setGeometry(0, 0, 40, this->height());
+    lineNumberArea->setGeometry(0, 0, lineNumberAreaWidth(), this->height());
 }
 
 void DiffEditor::updateLineNumberArea(const QRect &rect, int dy)
@@ -70,7 +70,7 @@ void DiffEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
 
     QTextBlock block = this->firstVisibleBlock();
     int blockNumber = block.blockNumber();
-    int top = blockBoundingGeometry(block).translated(contentOffset()).top();
+    int top = qRound(blockBoundingGeometry(block).translated(contentOffset()).top());
 
     int y = top + fontMetrics().ascent();
 
@@ -95,7 +95,11 @@ void DiffEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
             }
         }
         top += blockBoundingRect(block).height();
-        y = top + fontMetrics().ascent();
+//        y = top + fontMetrics().ascent() + 2;
+
+        int baselineShift = fontMetrics().descent();
+        y = top + fontMetrics().ascent() + baselineShift;
+
         block = block.next();
         ++blockNumber;
     }
