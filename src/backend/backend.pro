@@ -7,7 +7,6 @@ CORE_PATH = $$PWD/core/
 HANDLERS_PATH = $$PWD/handlers/
 UTILS_PATH = $$PWD/utils/
 
-
 DEFINES += MGIT_LIBRARY
 
 INCLUDEPATH += $${CORE_PATH} \  

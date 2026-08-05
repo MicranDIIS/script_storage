@@ -881,3 +881,28 @@ GitError Repository::mergeDebugFiles(const QString& filePath,
     }
 }
 
+GitError Repository::forcedCloseDebugMode(){
+    if(!repo_){
+       return GitError(QString("Repository is not open"), -1);
+    }
+
+    QByteArray refname = QByteArray("refs/heads/") + cfg_.branch;
+
+    if(git_repository_set_head(repo_, refname.constData()) != GIT_OK){
+        return libgitError();
+    }
+
+    GitObjectPtr obj;
+    if(git_revparse_single(&obj, repo_, refname.constData()) != GIT_OK){
+        return libgitError();
+    }
+
+    git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
+    opts.checkout_strategy = GIT_CHECKOUT_FORCE;
+
+    if(git_checkout_tree(repo_, obj.get(), &opts) != GIT_OK){
+        return libgitError();
+    }
+
+    return GitError();
+}

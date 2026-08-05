@@ -140,6 +140,10 @@ public:
     */
     virtual GitError closeDebugMode() = 0;
     /*
+    * Принудительно закрывает debug режим
+    */
+    virtual GitError forcedCloseDebugMode() = 0;
+    /*
     * проверка валидности .git
     */
     virtual bool isValidRepo() const = 0;

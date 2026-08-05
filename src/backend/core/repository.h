@@ -69,6 +69,7 @@ public:
     GitError saveDebugFiles(const QString &authorName, const QString &authorEmail, const QString &commitMsg);
     GitError mergeDebugFiles(const QString &filePath, const QString& authorName, const QString& authorEmail);
     GitError closeDebugMode();
+    GitError forcedCloseDebugMode();
 
     bool isValidRepo() const;
     bool isValid() const;
