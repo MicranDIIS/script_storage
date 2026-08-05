@@ -1,6 +1,8 @@
 #ifndef DIFFEDITOR_H
 #define DIFFEDITOR_H
 
+#include "diffviewerstructs.h"
+
 #include <QPlainTextEdit>
 
 class DiffEditor : public QPlainTextEdit
@@ -11,6 +13,7 @@ public:
 
     void lineNumberAreaPaintEvent(QPaintEvent *event);
 //    int lineNumberAreaWidth();
+    void setDiffLines(const QList<DiffLine> &lines);
 
 protected:
     void resizeEvent(QResizeEvent *event);
@@ -21,6 +24,7 @@ private slots:
 
 private:
     QWidget *lineNumberArea;
+    QList<DiffLine> diffLines;
 };
 
 #endif // DIFFEDITOR_H

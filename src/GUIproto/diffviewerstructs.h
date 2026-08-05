@@ -2,6 +2,7 @@
 #define DIFFVIEWERSTRUCTS_H
 
 #include <QString>
+#include <QList>
 
 struct CommitMeta
 {
@@ -46,7 +47,7 @@ struct DiffResult
    // QString filePath;
     CommitMeta oldCommit;
     CommitMeta newCommit;
-    QVector<DiffHunk> hunks; //qlist
+    QList<DiffHunk> hunks; //qlist
 };
 
 #endif // DIFFVIEWERSTRUCTS_H

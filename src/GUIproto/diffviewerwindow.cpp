@@ -1,4 +1,4 @@
-#include "diffviewerwindow.h"
+    #include "diffviewerwindow.h"
 #include "ui_diffviewerwindow.h"
 #include "diffviewerstructs.h"
 
@@ -51,6 +51,8 @@ void DiffViewerWindow::LoadFileText()
     diffViewHighlighter = new DiffViewHighlighter(ui->ScriptPlainTextEdit->document());
 
     ui->ScriptPlainTextEdit->setPlainText(text);
+
+    ui->ScriptPlainTextEdit->setDiffLines(mock.hunks.first().lines);
 }
 
 DiffResult DiffViewerWindow::makeMock()
