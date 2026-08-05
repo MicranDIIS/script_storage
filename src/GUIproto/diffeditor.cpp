@@ -74,8 +74,8 @@ void DiffEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
 
     int y = top + fontMetrics().ascent();
 
-    int  oldX = 5;
-    int newX = 30;
+    int oldX = 5;
+    int newX = lineNumberAreaWidth() / 2 + 5;
 
     while (block.isValid() && top <= this->height())
     {
