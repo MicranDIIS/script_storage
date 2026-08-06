@@ -77,7 +77,7 @@ void DiffEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
     int oldX = 5;
     int newX = lineNumberAreaWidth() / 2 + 5;
 
-    while (block.isValid() && top <= this->height())
+    while (block.isValid() && top <= event->rect().bottom())
     {
         if (blockNumber > 0 && blockNumber - 1 < diffLines.size())
         {
@@ -86,6 +86,16 @@ void DiffEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
             if (diffIndex >= 0 && diffIndex < diffLines.size())
             {
                 const DiffLine &line = diffLines[diffIndex];
+                QRect r(2, top, lineNumberAreaWidth(), blockBoundingGeometry(block).height());
+
+                QColor addColor(200, 235, 200);
+                QColor delColor(240, 200, 200);
+
+                if (line.type == Add)
+                    painter.fillRect(r, addColor);
+
+                if (line.type == Del)
+                    painter.fillRect(r, delColor);
 
                 if (line.oldNum != -1)
                     painter.drawText(oldX, y, QString::number(line.oldNum));
@@ -94,11 +104,11 @@ void DiffEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
                     painter.drawText(newX, y, QString::number(line.newNum));
             }
         }
-        top += blockBoundingRect(block).height();
+        top += blockBoundingGeometry(block).height();
 //        y = top + fontMetrics().ascent() + 2;
 
         int baselineShift = fontMetrics().descent();
-        y = top + fontMetrics().ascent() + baselineShift;
+        y = top + fontMetrics().ascent() /*+ baselineShift*/;
 
         block = block.next();
         ++blockNumber;
