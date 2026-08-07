@@ -25,6 +25,10 @@ private slots:
 private:
     QWidget *lineNumberArea;
     QList<DiffLine> diffLines;
+    QList<int> changedStarts;
+    int currentChangedIndex;
+
+    QList<int> findChangedStarts(const QList<DiffLine> &lines);
 };
 
 #endif // DIFFEDITOR_H
