@@ -20,7 +20,7 @@ protected:
 
 private slots:
     void updateLineNumberArea(const QRect &rect, int dy);
-    void updateLineNumberWidth();
+    void updateLineNumberWidth(int /* newBlockCount */);
 
 private:
     QWidget *lineNumberArea;

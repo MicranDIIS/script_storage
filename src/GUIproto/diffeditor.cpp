@@ -8,7 +8,7 @@ DiffEditor::DiffEditor(QWidget *parent) : QPlainTextEdit(parent)
 {
     lineNumberArea = new LineNumberArea(this);
 
-    connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberWidth));
+    connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberWidth(int)));
     connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(updateLineNumberArea(QRect,int)));
 }
 
@@ -16,7 +16,7 @@ void DiffEditor::setDiffLines(const QList<DiffLine> &lines)
 {
     diffLines = lines;
     lineNumberArea->update();
-    updateLineNumberWidth();
+    updateLineNumberWidth(0);
 }
 
 int DiffEditor::lineNumberAreaWidth()
@@ -43,24 +43,28 @@ int DiffEditor::lineNumberAreaWidth()
     return totalWidth;
 }
 
-void DiffEditor::updateLineNumberWidth()
+void DiffEditor::updateLineNumberWidth(int)
 {
     setViewportMargins(lineNumberAreaWidth(), 0, 0, 0);
 }
 
 void DiffEditor::resizeEvent(QResizeEvent *event)
 {
+    QRect cr = contentsRect();
+
     QPlainTextEdit::resizeEvent(event);
-    lineNumberArea->setGeometry(0, 0, lineNumberAreaWidth(), this->height());
+    lineNumberArea->setGeometry(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height());
 }
 
 void DiffEditor::updateLineNumberArea(const QRect &rect, int dy)
 {
-    Q_UNUSED(rect);
-    Q_UNUSED(dy);
-//    qDebug() << "update line numbers";
+    if (dy)
+        lineNumberArea->scroll(0, dy);
+    else
+        lineNumberArea->update(0, rect.y(), lineNumberArea->width(), rect.height());
 
-    lineNumberArea->update();
+    if (rect.contains(viewport()->rect()))
+        updateLineNumberWidth(0);
 }
 
 void DiffEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
@@ -88,8 +92,8 @@ void DiffEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
                 const DiffLine &line = diffLines[diffIndex];
                 QRect r(2, top, lineNumberAreaWidth(), blockBoundingGeometry(block).height());
 
-                QColor addColor(200, 235, 200);
-                QColor delColor(240, 200, 200);
+                QColor addColor(200, 255, 200);
+                QColor delColor(255, 200, 200);
 
                 if (line.type == Add)
                     painter.fillRect(r, addColor);
@@ -105,10 +109,7 @@ void DiffEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
             }
         }
         top += blockBoundingGeometry(block).height();
-//        y = top + fontMetrics().ascent() + 2;
-
-        int baselineShift = fontMetrics().descent();
-        y = top + fontMetrics().ascent() /*+ baselineShift*/;
+        y = top + fontMetrics().ascent();
 
         block = block.next();
         ++blockNumber;
