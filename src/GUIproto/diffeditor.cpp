@@ -15,9 +15,12 @@ DiffEditor::DiffEditor(QWidget *parent) : QPlainTextEdit(parent)
 void DiffEditor::setDiffLines(const QList<DiffLine> &lines)
 {
     diffLines = lines;
+     changedStarts = findChangedStarts(lines);
     currentChangedIndex = -1;
-    changedStarts = findChangedStarts(lines);
     lineNumberArea->update();
+
+    goToNextChange();
+
     updateLineNumberWidth(0);
 }
 
@@ -25,15 +28,42 @@ QList<int> DiffEditor::findChangedStarts(const QList<DiffLine> &lines)
 {
     QList<int> changedStarts;
     for (int i = 0; i < lines.size(); ++i)
+    {
+        if (lines[i].type != Context &&
+            (i == 0 || lines[i - 1].type == Context))
         {
-            if (lines[i].type != Context &&
-                (i == 0 || lines[i - 1].type == Context))
-            {
-                changedStarts.append(i);
-            }
+            qDebug() << i+1;
+            changedStarts.append(i+1);
         }
-
+    }
     return changedStarts;
+}
+
+void DiffEditor::goToNextChange()
+{
+    if (changedStarts.isEmpty())
+    {
+        qDebug() << "empty condition";
+        return;
+    }
+    if (currentChangedIndex == -1)
+    {
+        qDebug() << "-1 condition";
+        currentChangedIndex = 0 ;
+    }
+    else
+    {
+        qDebug() << "else condition";
+
+        currentChangedIndex = (currentChangedIndex + 1) % changedStarts.size();
+    }
+    int blockNumber = changedStarts[currentChangedIndex];
+
+    QTextBlock block = document()->findBlockByNumber(blockNumber);
+
+    QTextCursor cursor(block);
+    setTextCursor(cursor);
+    centerCursor();
 }
 
 int DiffEditor::lineNumberAreaWidth()

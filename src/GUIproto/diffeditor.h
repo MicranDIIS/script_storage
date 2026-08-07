@@ -29,6 +29,7 @@ private:
     int currentChangedIndex;
 
     QList<int> findChangedStarts(const QList<DiffLine> &lines);
+    void goToNextChange();
 };
 
 #endif // DIFFEDITOR_H
