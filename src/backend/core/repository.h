@@ -54,6 +54,7 @@ public:
     GitError open();
 
     GitError clone();
+    GitError push() const;
     GitError sync();
 
     GitError startCheckUpdatesActiveFile(const FileEventHandler& fileHandler,

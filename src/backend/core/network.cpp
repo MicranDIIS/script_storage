@@ -87,6 +87,38 @@ GitError Repository::sync(){
     return GitError();
 }
 
+GitError Repository::push() const{
+    git_push_options opts;
+    GitRemotePtr remote;
+    git_remote_callbacks callbacks;
+    QByteArray refs = "refs/heads/" + cfg_.branch;
+    const char *refs_array[] = {refs.constData()};
+    const git_strarray refspecs = {
+        const_cast<char**>(refs_array),
+        1
+    };
+
+    if(git_remote_lookup(&remote, repo_, "origin") != GIT_OK){
+        return libgitError();
+    }
+
+    if(git_remote_init_callbacks(&callbacks, GIT_REMOTE_CALLBACKS_VERSION) != GIT_OK){
+        return libgitError();
+    }
+    callbacks.credentials = callback;
+
+    if(git_push_options_init(&opts, GIT_PUSH_OPTIONS_VERSION) != GIT_OK){
+        return libgitError();
+    }
+    opts.callbacks = callbacks;
+
+    if(git_remote_push(remote.get(), &refspecs, &opts) != GIT_OK){
+        return libgitError();
+    }
+
+    return GitError();
+}
+
 GitError Repository::startCheckUpdatesActiveFile(const FileEventHandler& fileHandler, size_t timeSec){
     if(handler_ != NULL){
         return GitError("fileHandler is not NULL", FILEHANDLER_IS_NOT_NULL);
