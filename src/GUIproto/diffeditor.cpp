@@ -19,7 +19,7 @@ void DiffEditor::setDiffLines(const QList<DiffLine> &lines)
     currentChangedIndex = -1;
     lineNumberArea->update();
 
-    goToNextChange();
+//    goToNextChange();
 
     updateLineNumberWidth(0);
 }
@@ -50,20 +50,37 @@ void DiffEditor::goToNextChange()
     {
         qDebug() << "-1 condition";
         currentChangedIndex = 0 ;
+        qDebug() << currentChangedIndex;
     }
     else
     {
         qDebug() << "else condition";
 
         currentChangedIndex = (currentChangedIndex + 1) % changedStarts.size();
+        qDebug() << currentChangedIndex;
     }
     int blockNumber = changedStarts[currentChangedIndex];
 
     QTextBlock block = document()->findBlockByNumber(blockNumber);
 
-    QTextCursor cursor(block);
-    setTextCursor(cursor);
-    centerCursor();
+    if (!block.isValid())
+            return;
+
+//    QTextCursor cursor(block);
+//    setTextCursor(cursor);
+//    verticalScrollBar()->setValue(verticalScrollBar()->maximum());
+//    ensureCursorVisible();
+    verticalScrollBar()->setValue(blockNumber);
+}
+
+void DiffEditor::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Right)
+    {
+        goToNextChange();
+        return;
+    }
+    QPlainTextEdit::keyPressEvent(event);
 }
 
 int DiffEditor::lineNumberAreaWidth()

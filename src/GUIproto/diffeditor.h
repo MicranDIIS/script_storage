@@ -17,6 +17,7 @@ public:
 
 protected:
     void resizeEvent(QResizeEvent *event);
+    void keyPressEvent(QKeyEvent *event);
 
 private slots:
     void updateLineNumberArea(const QRect &rect, int dy);

@@ -84,6 +84,10 @@ DiffResult DiffViewerWindow::makeMock()
         hunk.lines.append(DiffLine(Context, i, i,
             QString("Line number %1").arg(i)));
     }
+    hunk.lines.append(DiffLine(Context, 1,  1, "# Config file"));
+    hunk.lines.append(DiffLine(Del,     2, -1, "VERSION = 1"));
+    hunk.lines.append(DiffLine(Add,    -1,  2, "VERSION = 2"));
+    hunk.lines.append(DiffLine(Del,      3, -1, "ENABLE_LOG = false"));
 
     result.hunks.append(hunk);
 
