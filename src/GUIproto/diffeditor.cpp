@@ -59,8 +59,8 @@ void DiffEditor::goToNextChange()
         currentChangedIndex = (currentChangedIndex + 1) % changedStarts.size();
         qDebug() << currentChangedIndex;
     }
-    int blockNumber = changedStarts[currentChangedIndex];
 
+    int blockNumber = changedStarts[currentChangedIndex];
     QTextBlock block = document()->findBlockByNumber(blockNumber);
 
     if (!block.isValid())
@@ -73,11 +73,49 @@ void DiffEditor::goToNextChange()
     verticalScrollBar()->setValue(blockNumber);
 }
 
+void DiffEditor::goToPreviousChange()
+{
+    if (changedStarts.isEmpty())
+    {
+        qDebug() << "empty condition";
+        return;
+    }
+
+    int size = changedStarts.size();
+
+    if (currentChangedIndex == -1)
+    {
+        qDebug() << "-1 condition";
+        currentChangedIndex =  size - 1;
+        qDebug() << currentChangedIndex;
+    }
+    else
+    {
+        qDebug() << "else condition";
+
+        currentChangedIndex = (currentChangedIndex - 1 + size) % size;
+        qDebug() << currentChangedIndex;
+    }
+
+    int blockNumber = changedStarts[currentChangedIndex];
+    QTextBlock block = document()->findBlockByNumber(blockNumber);
+
+    if (!block.isValid())
+            return;
+
+    verticalScrollBar()->setValue(blockNumber);
+}
+
 void DiffEditor::keyPressEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Right)
     {
         goToNextChange();
+        return;
+    }
+    else if (event->key() == Qt::Key_Left)
+    {
+        goToPreviousChange();
         return;
     }
     QPlainTextEdit::keyPressEvent(event);
