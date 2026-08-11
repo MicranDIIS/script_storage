@@ -87,8 +87,8 @@ GitError Repository::sync(){
     return GitError();
 }
 
-GitError Repository::push() const{
-    git_push_options opts;
+GitError Repository::push(const authRemoteBuf& auth) const{
+    git_push_options opts = GIT_PUSH_OPTIONS_INIT;
     GitRemotePtr remote;
     git_remote_callbacks callbacks;
     QByteArray refs = "refs/heads/" + cfg_.branch;
@@ -105,6 +105,8 @@ GitError Repository::push() const{
     if(git_remote_init_callbacks(&callbacks, GIT_REMOTE_CALLBACKS_VERSION) != GIT_OK){
         return libgitError();
     }
+    GitData creds(auth.username, auth.token);
+    callbacks.payload = &creds;
     callbacks.credentials = callback;
 
     if(git_push_options_init(&opts, GIT_PUSH_OPTIONS_VERSION) != GIT_OK){

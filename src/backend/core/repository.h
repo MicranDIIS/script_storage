@@ -25,6 +25,12 @@ struct RepoConfigBuf{
     RepoConfigBuf(const RepoConfig& cfg);
 };
 
+struct authRemoteBuf{
+    QByteArray username;
+    QByteArray token;
+    authRemoteBuf(const authRemote& auth);
+};
+
 class Repository : public QObject , public IRepository{
     Q_OBJECT
 private:
@@ -54,7 +60,7 @@ public:
     GitError open();
 
     GitError clone();
-    GitError push() const;
+    GitError push(const authRemoteBuf& auth) const;
     GitError sync();
 
     GitError startCheckUpdatesActiveFile(const FileEventHandler& fileHandler,
