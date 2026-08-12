@@ -19,6 +19,7 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QCloseEvent>
+#include <QDir>
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -44,7 +45,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     setupPageConnect();
 
-//    qDebug() << QCoreApplication::applicationDirPath();
     if(!syncRepo()){
         QMessageBox::critical(this, tr("Repository error"), tr("Repository synchronization failed."));
     };
@@ -181,85 +181,88 @@ void MainWindow::loadState(){
     settings.endGroup();
 }
 
-// синхронизация или клонирование репозитория в локальную папку(все пути в конфиге repo.ini указываем)
- bool MainWindow::syncRepo(){
+bool MainWindow::syncRepo(){
 
-     if (m_repo)
-     {
-         deleteRepository(m_repo);
-         m_repo = 0;
-     }
+    if (m_repo)
+    {
+        deleteRepository(m_repo);
+        m_repo = 0;
+    }
 
-     QString repoConfigPath = QDir(QString(CONFIG_DIR)).absoluteFilePath("repo.ini");
-//     QString repoConfigPath = QDir(QApplication::applicationDirPath()).absoluteFilePath("repo.ini");
+    QString repoConfigPath = QDir(QString(CONFIG_DIR)).absoluteFilePath("repo.ini");
 
-     IniSettingReader reader;
-     RepoConfig repoConfig;
+    IniSettingReader reader;
+    RepoConfig repoConfig;
 
-     if (!reader.loadRepo(repoConfigPath, repoConfig)) {
-         if((repoConfig.path.isEmpty()||repoConfig.username.isEmpty()||repoConfig.token.isEmpty())&& !repoConfig.url.isEmpty()){
-             QMessageBox::warning(this,tr("Remote config error"), tr("Check the config settings for correct field filling:\n")+ repoConfigPath);
-             return false;
-         } else{
-             QMessageBox::critical(this,tr("Remote config error"), tr("Configuration file for remote could not be loaded:\n") + repoConfigPath);
-             return false;
-         }
-     }
+    if (!reader.loadRepo(repoConfigPath, repoConfig)) {
+        if((repoConfig.path.isEmpty()||repoConfig.username.isEmpty()||repoConfig.token.isEmpty())&& !repoConfig.url.isEmpty()){
+            QMessageBox::warning(this,tr("Remote config error"), tr("Check the config settings for correct field filling:\n")+ repoConfigPath);
+            return false;
+        } else{
+            QMessageBox::critical(this,tr("Remote config error"), tr("Configuration file for remote could not be loaded:\n") + repoConfigPath);
+            return false;
+        }
+    }
 
-     m_repoRoot = repoConfig.path;
+    m_repoRoot = repoConfig.path;
 
-//     qDebug() << "url:" << repoConfig.url;
-//     qDebug() << "branch:" << repoConfig.branch;
-//     qDebug() << "path:" << repoConfig.path;
-//     qDebug() << "username:" << repoConfig.username;
-//     qDebug() << "token is empty:" << repoConfig.token.isEmpty();
+    QDir repoDir(repoConfig.path);
+    QDir gitDir(repoDir.absoluteFilePath(".git"));
 
-     QDir repoDir(repoConfig.path);
-     QDir gitDir(repoDir.absoluteFilePath(".git"));
+    if (repoDir.exists() && !gitDir.exists()) {
+        QStringList entries = repoDir.entryList(QDir::NoDotAndDotDot | QDir::AllEntries);
+        if (!entries.isEmpty()) {
+            QMessageBox::critical(this, tr("Repository error"),tr("Folder for remote repositiry is not empty."));
+            return false;
+        }
+    }
 
-     if (repoDir.exists() && !gitDir.exists()) {
-         QStringList entries = repoDir.entryList(QDir::NoDotAndDotDot | QDir::AllEntries);
-         if (!entries.isEmpty()) {
-             QMessageBox::critical(this, tr("Repository error"),tr("Folder for remote repositiry is not empty."));
-             return false;
-         }
-     }
+    m_repo = createRepository(repoConfig);
+    if (!m_repo)
+    {
+        QMessageBox::critical(this, tr("Repository error"),
+                             tr("Repository object could not be created."));
+        return false;
+    }
 
-     m_repo = createRepository(repoConfig);
-     if (!m_repo)
-     {
-         QMessageBox::critical(this, tr("Repository error"),
-                              tr("Repository object could not be created."));
-         return false;
-     }
+    GitError err;
 
-     Gerror err;
+    if (!gitDir.exists()) {
+        err = m_repo->clone();
+        if (!err.success) {
+            QMessageBox::critical(this, tr("Repository error"),
+                                 tr("Repository clone failed:\n") + err.message);
+            deleteRepository(m_repo);
+            m_repo = 0;
+            return false;
+        }
+        err = m_repo->open();
+    } else {
+        err = m_repo->open();
+        if (!err.success) {
+            QMessageBox::critical(this, tr("Repository error"),
+                                 tr("Repository open failed:\n") + err.message);
+            deleteRepository(m_repo);
+            m_repo = 0;
+            return false;
+        }
+        err = m_repo->sync();
+    }
 
-     if (!gitDir.exists()) {
-         err = m_repo->clone();
-         if (err.hasError()) {
-             return false;
-         }
-         err = m_repo->open();
-     } else {
-         err = m_repo->open();
-         err = m_repo->sync();
-         }
-     if (err.hasError())
-     {
-         QMessageBox::critical(this, tr("Repository error"),tr("Repository synchronization failed:\n") + err.getMsg());
+    if (!err.success)
+    {
+        QMessageBox::critical(this, tr("Repository error"),
+                             tr("Repository synchronization failed:\n") + err.message);
 
-         deleteRepository(m_repo);
-         m_repo = 0;
-         return false;
-     }
+        deleteRepository(m_repo);
+        m_repo = 0;
+        return false;
+    }
 
-//     qDebug() << "[syncRepo] ok, repoRoot =" << m_repoRoot << "repo ptr =" << m_repo;
-     return true;
- }
+    return true;
+}
 
 
-// загрузка для проверки обхода директории
 void MainWindow::loadScripts()
 {
     basicScriptsModel->clear();
@@ -270,10 +273,6 @@ void MainWindow::loadScripts()
 
     QString configPath = QDir(QString(CONFIG_DIR)).absoluteFilePath("app_config.ini");
     QString headerPath = QDir(QString(CONFIG_DIR)).absoluteFilePath("header_ref.ini");
-
-    // ?????? .exe
-//    QString headerPath = QDir(QApplication::applicationDirPath()).absoluteFilePath("header_ref.ini");
-//    QString configPath = QDir(QApplication::applicationDirPath()).absoluteFilePath("header_ref.ini");
 
     if (!loader.loadConfig(configPath)) {
        QMessageBox::critical(this, tr("Config error"), tr("Configuration file could not be loaded:\n") + configPath);
@@ -288,7 +287,6 @@ void MainWindow::loadScripts()
         }
 
     QList<FindFileInfo> files = loader.scanSourcesAll();
-//    qDebug() << "all scanned files =" << files.size();
     QList<FindFileInfo> validFiles;
     QStringList invalidHeader;
 
@@ -300,14 +298,13 @@ void MainWindow::loadScripts()
         }
         validFiles.append(fileInfo);
     }
-//    qDebug() << "valid files =" << validFiles.size();
 
     basicScriptsModel->setFiles(validFiles);
     customScriptsModel->setFiles(validFiles);
     resetFilterState();
     loadState();
 
-    if(validFiles.size()!= files.size()){ //файлы с шапкой, не прошедшей валидацию не отображаются
+    if(validFiles.size()!= files.size()){
         QMessageBox::warning(this,tr("Invalid script headers"), tr("These files contain incorrect headers and could not be displayed:\n") +  invalidHeader.join("\n"));
     }
     delete reader;
@@ -467,7 +464,6 @@ void MainWindow::applyCategoryFilter()
    customFilterModel->setCategoryFilter(category);
 }
 
-//переключение режимов
 void MainWindow::showBasicPage()
 {
     ui->stackedWidget->setCurrentWidget(ui->pageBasic);
@@ -480,8 +476,6 @@ void MainWindow::showCustomPage()
 
 void MainWindow::showCustomContextMenu(const QPoint& pos)
 {
-//    qDebug() << "showContextMenu called, pos =" << pos;
-
     QModelIndex index = ui->listViewCustom->indexAt(pos);
     if (!index.isValid()) return;
 
@@ -543,11 +537,11 @@ QVector<GuiCommitInfo> convertCommitInfoToGuiCommitInfo(const QList<CommitInfo>&
         const CommitInfo &c = backendList.at(i);
 
         GuiCommitInfo g;
-        g.dateTime = c.getAuthorDateTime();
-        g.author = c.getAuthorName();
-        g.authorEmail = c.getAuthorEmail();
-        g.commitMessage = c.getCommitMsg();
-        g.commitHash = c.getCommitHash();
+        g.dateTime = c.commitCreateTime;
+        g.author = c.authorName;
+        g.authorEmail = c.authorEmail;
+        g.commitMessage = c.commitMessage;
+        g.commitHash = c.commitHash;
 
         guiHistory.append(g);
     }
@@ -578,10 +572,10 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
     }
 
     QList<CommitInfo> backendList;
-    Gerror err = m_repo->log(backendList, relPath);
-    if (err.hasError())
+    GitError err = m_repo->fillLog(backendList, relPath);
+    if (!err.success)
     {
-        QMessageBox::warning(this, tr("Git log error"), err.getMsg());
+        QMessageBox::warning(this, tr("Git log error"), err.message);
         return;
     }
 
@@ -609,8 +603,6 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
 
     m_historyWindows.insert(key, w);
     w->show();
-
-
 }
 
 void MainWindow::onHistoryWindowDestroyed(QObject* obj)
@@ -618,4 +610,3 @@ void MainWindow::onHistoryWindowDestroyed(QObject* obj)
     QString key = obj->property("historyKey").toString();
     m_historyWindows.remove(key);
 }
-

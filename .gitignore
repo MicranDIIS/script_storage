@@ -56,7 +56,7 @@ ui_*.h
 moc_*.cpp
 qrc_*.cpp
 qrc_*.cpp
-<<<<<<< HEAD
+
 
 .svn/
 **/build/*
@@ -71,4 +71,8 @@ tools/LuaBindManager/Profiles
 #translations
 *.qm
 
+
 repo.ini
+
+mgit.dll
+

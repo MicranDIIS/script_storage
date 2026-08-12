@@ -3,16 +3,35 @@ TARGET = mgit
 include(../../commoncore.pri)
 include(../../libcore.pri)
 
+CORE_PATH = $$PWD/core/
+HANDLERS_PATH = $$PWD/handlers/
+UTILS_PATH = $$PWD/utils/
+
+#QMAKE_MOC = C:/QtSDK/Desktop/Qt/4.7.3/mingw/bin/moc.exe
+
 DEFINES += MGIT_LIBRARY
+
+INCLUDEPATH += $${CORE_PATH} \  
+            $${HANDLERS_PATH} \
+            $${UTILS_PATH}
+
 
 HEADERS += \
         mgit.h \
-        repository.h 
+        $${CORE_PATH}/repository.h \
+        $${HANDLERS_PATH}/update_handler.h \
+        $${UTILS_PATH}/git_raii.h \
+        $${UTILS_PATH}/git_utils.h 
+
 
 SOURCES += \
-        repository.cpp \
-        network.cpp \
-        local.cpp
+        $${CORE_PATH}/repository.cpp \
+        $${CORE_PATH}/network.cpp \
+        $${CORE_PATH}/local.cpp \
+        $${CORE_PATH}/diff.cpp \
+        $${UTILS_PATH}/git_error.cpp \
+        $${HANDLERS_PATH}/update_handler.cpp \
+        $${UTILS_PATH}/git_utils.cpp
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN
