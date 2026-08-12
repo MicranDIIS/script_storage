@@ -7,6 +7,7 @@ CORE_PATH = $$PWD/core/
 HANDLERS_PATH = $$PWD/handlers/
 UTILS_PATH = $$PWD/utils/
 
+#QMAKE_MOC = C:/QtSDK/Desktop/Qt/4.7.3/mingw/bin/moc.exe
 
 DEFINES += MGIT_LIBRARY
 

@@ -23,6 +23,7 @@ struct MGITSHARED_EXPORT GitError{
 struct CommitMeta{
     QString author;
     QDateTime date;
+    QString message;
 };
 
 enum LineType{
@@ -154,7 +155,10 @@ public:
     * Логи с коммитами в которых был изменен файл
     */
     virtual GitError fillLog(QList<CommitInfo>& list, const QString& filePath) const = 0;
-    virtual GitError fillDiff(DiffResult& diffRsult) const = 0;
+    /*
+    * дифф с последним и предпоследним коммитом
+    */
+    virtual GitError fillDiff(DiffResult& diffResult, const QString& filePath) const = 0;
     /*
     * проверка валидности .git
     */

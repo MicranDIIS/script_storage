@@ -67,69 +67,66 @@ static int hunkCallback(
     return 0;
 }
 
-GitError Repository::fillDiff(DiffResult &diffResult) const {
-    git_diff_options opts = GIT_DIFF_OPTIONS_INIT;
-    opts.flags = GIT_DIFF_IGNORE_WHITESPACE;
+GitError Repository::fillDiff(DiffResult &diffResult, const QString& filePath) const{
+    if(repo_ == NULL){
+        return GitError("repo is NULL", REPO_IS_NULL);
+    }
 
-    GitCommitPtr head_commit;
-    if (git_revparse_single((git_object**)&head_commit, repo_, "HEAD") != GIT_OK) {
+    GitCommitPtr master_commit;
+    GitCommitPtr slave_commit;
+
+    if(git_revparse_single((git_object**)&slave_commit, repo_, HEAD) != GIT_OK){
         return libgitError();
     }
 
-    GitCommitPtr parent_commit;
-    int parent_result = git_commit_parent(&parent_commit, head_commit.get(), 0);
-
-    GitTreePtr head_tree;
-    if (git_commit_tree(&head_tree, head_commit.get()) != GIT_OK) {
+    if(git_commit_parent(&master_commit, slave_commit.get(), 0) != GIT_OK){
         return libgitError();
     }
 
-    GitTreePtr parent_tree;
+    const git_signature* master_signature = git_commit_author(master_commit.get());
+    const git_signature* slave_signature = git_commit_author(slave_commit.get());
 
-    if (parent_result == GIT_ENOTFOUND) {
-        git_oid empty_oid;
-        git_oid_fromstr(&empty_oid, "4b825dc642cb6eb9a060e54bf8d69288fbee4904");
-        if (git_tree_lookup(&parent_tree, repo_, &empty_oid) != GIT_OK) {
-            return libgitError();
-        }
-    } else if (parent_result != GIT_OK) {
+    diffResult.oldCommit.author = QString::fromUtf8(master_signature->name);
+    diffResult.newCommit.author = QString::fromUtf8(slave_signature->name);
+    qint64 time_ms = static_cast<qint64>(master_signature->when.time) * 1000;
+    diffResult.oldCommit.date = QDateTime::fromMSecsSinceEpoch(time_ms);
+    time_ms = static_cast<qint64>(slave_signature->when.time) * 1000;
+    diffResult.newCommit.date = QDateTime::fromMSecsSinceEpoch(time_ms);
+    diffResult.oldCommit.message = QString::fromUtf8(git_commit_message(master_commit.get()));
+    diffResult.newCommit.message = QString::fromUtf8(git_commit_message(slave_commit.get()));
+
+    GitTreePtr master_tree;
+    GitTreePtr slave_tree;
+    if(git_commit_tree(&master_tree, master_commit.get()) != GIT_OK){
         return libgitError();
-    } else {
-        if (git_commit_tree(&parent_tree, parent_commit.get()) != GIT_OK) {
-            return libgitError();
-        }
+    }
+    if(git_commit_tree(&slave_tree, slave_commit.get()) != GIT_OK){
+        return libgitError();
     }
 
     GitDiffPtr diff;
-    if (git_diff_tree_to_tree(&diff, repo_, parent_tree.get(), head_tree.get(), &opts) != GIT_OK) {
+    git_diff_options opts = GIT_DIFF_OPTIONS_INIT;
+
+    QByteArray filePath_ = filePath.toUtf8();
+    const char* pathspec_array[] = { filePath_.constData() };
+
+    opts.pathspec.count = 1;
+    opts.pathspec.strings = (char**)pathspec_array;
+
+    if(git_diff_tree_to_tree(&diff, repo_, master_tree.get(), slave_tree.get(), &opts) != GIT_OK){
         return libgitError();
     }
 
     diffResult.hunks.clear();
 
     if (git_diff_foreach(diff.get(),
-                         NULL,
-                         NULL,
-                         hunkCallback,
-                         diffCallback,
-                         &diffResult) != GIT_OK) {
-        return libgitError();
-    }
-
-    const git_signature *head_author = git_commit_author(head_commit.get());
-    diffResult.newCommit.author = QString::fromUtf8(head_author->name);
-    qint64 time_ms = static_cast<qint64>(head_author->when.time) * 1000;
-    diffResult.newCommit.date = QDateTime::fromMSecsSinceEpoch(time_ms);
-
-    if (parent_result == GIT_ENOTFOUND) {
-        diffResult.oldCommit.author = "Initial commit";
-        diffResult.oldCommit.date = QDateTime::fromMSecsSinceEpoch(0);
-    } else {
-        const git_signature *parent_author = git_commit_author(parent_commit.get());
-        diffResult.oldCommit.author = QString::fromUtf8(parent_author->name);
-        qint64 time_ms = static_cast<qint64>(parent_author->when.time) * 1000;
-        diffResult.oldCommit.date = QDateTime::fromMSecsSinceEpoch(time_ms);
-    }
+                          NULL,
+                          NULL,
+                          hunkCallback,
+                          diffCallback,
+                          &diffResult) != GIT_OK) {
+         return libgitError();
+     }
 
     return GitError();
 }
