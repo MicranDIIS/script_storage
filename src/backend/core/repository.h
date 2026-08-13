@@ -38,6 +38,8 @@ private:
     RepoConfigBuf cfg_;
     UpdateHandler* handler_;
 
+    QString debugFilePath;
+
     QTimer timer_;
 
     Repository(const Repository&);
@@ -55,7 +57,12 @@ public:
     QString getPath() const;
     QString getUsername() const;
     QString getToken() const;
+    QString getDebugFilePath() const;
     GitError getTimeLastRemoteCommit(QTime &time) const;
+
+    GitError setDebugFilePath(const QString &filePath);
+    GitError swapDebugFilePath(const QString &newFilePath);
+    GitError forgetDebugFilePath();
 
     GitError open();
 

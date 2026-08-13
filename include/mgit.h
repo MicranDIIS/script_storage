@@ -85,8 +85,20 @@ public:
     virtual QString getPath() const = 0;
     virtual QString getUsername() const = 0;
     virtual QString getToken() const = 0;
-
+    virtual QString getDebugFilePath() const = 0;
     virtual GitError getTimeLastRemoteCommit(QTime& time) const = 0;
+    /*
+    * Указывается относительный путь до отладчного файла
+    */
+    virtual GitError setDebugFilePath(const QString& filePath) = 0;
+    /*
+    * Меняет активный отладочный файл
+    */
+    virtual GitError swapDebugFilePath(const QString& newFilePath);
+    /*
+    * Забывает отладный файл и никакой файл не являвется отладочным
+    */
+    virtual GitError forgetDebugFilePath() = 0;
     /*
     * Открывает репозиторий
     */
