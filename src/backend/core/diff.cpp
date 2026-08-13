@@ -3,6 +3,24 @@
 DiffLine::DiffLine(LineType type_, int oldNum_, int newNum_, const QString &text_) :
     line(type_), oldNum(oldNum_), newNum(newNum_), text(text_) {}
 
+static int hunkCallback(
+    const git_diff_delta *delta,
+    const git_diff_hunk *hunk,
+    void *payload)
+{
+    DiffResult *result = static_cast<DiffResult*>(payload);
+
+    DiffHunk newHunk;
+    newHunk.oldStart = hunk->old_start;
+    newHunk.oldLines = hunk->old_lines;
+    newHunk.newStart = hunk->new_start;
+    newHunk.newLines = hunk->new_lines;
+    newHunk.header = QString::fromUtf8(hunk->header, hunk->header_len);
+    result->hunks.append(newHunk);
+
+    return 0;
+}
+
 static int diffCallback(
     const git_diff_delta *delta,
     const git_diff_hunk *hunk,
@@ -15,16 +33,6 @@ static int diffCallback(
         return 0;
     }
 
-    if (line->origin == 'H') {
-        DiffHunk newHunk;
-        newHunk.oldStart = hunk->old_start;
-        newHunk.oldLines = hunk->old_lines;
-        newHunk.newStart = hunk->new_start;
-        newHunk.newLines = hunk->new_lines;
-        newHunk.header = QString::fromUtf8(hunk->header, hunk->header_len);
-        result->hunks.append(newHunk);
-        return 0;
-    }
 
     if (line->origin == 'F') {
         return 0;
@@ -56,20 +64,21 @@ static int diffCallback(
     return 0;
 }
 
-static int hunkCallback(
-    const git_diff_delta *delta,
-    const git_diff_hunk *hunk,
-    void *payload)
-{
-    (void)delta;
-    (void)hunk;
-    (void)payload;
-    return 0;
-}
-
 GitError Repository::fillDiff(DiffResult &diffResult, const QString& filePath) const{
     if(repo_ == NULL){
         return GitError("repo is NULL", REPO_IS_NULL);
+    }
+
+    GitIndexPtr index;
+    QByteArray filePath_ = filePath.toUtf8();
+    if(git_repository_index(&index, repo_) != GIT_OK){
+        return libgitError();
+    }
+
+    const git_index_entry* entry = git_index_get_bypath(index.get(), filePath_.constData(),
+                                                        GIT_INDEX_STAGE_NORMAL);
+    if(entry == NULL){
+        return GitError("not found file", -1);
     }
 
     GitCommitPtr master_commit;
@@ -107,7 +116,6 @@ GitError Repository::fillDiff(DiffResult &diffResult, const QString& filePath) c
     GitDiffPtr diff;
     git_diff_options opts = GIT_DIFF_OPTIONS_INIT;
 
-    QByteArray filePath_ = filePath.toUtf8();
     const char* pathspec_array[] = { filePath_.constData() };
 
     opts.pathspec.count = 1;
