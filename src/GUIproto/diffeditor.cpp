@@ -15,12 +15,9 @@ DiffEditor::DiffEditor(QWidget *parent) : QPlainTextEdit(parent)
 void DiffEditor::setDiffLines(const QList<DiffLine> &lines)
 {
     diffLines = lines;
-     changedStarts = findChangedStarts(lines);
+    changedStarts = findChangedStarts(lines);
     currentChangedIndex = -1;
     lineNumberArea->update();
-
-//    goToNextChange();
-
     updateLineNumberWidth(0);
 }
 
@@ -29,8 +26,8 @@ QList<int> DiffEditor::findChangedStarts(const QList<DiffLine> &lines)
     QList<int> changedStarts;
     for (int i = 0; i < lines.size(); ++i)
     {
-        if (lines[i].line != CONTEXT &&
-            (i == 0 || lines[i - 1].line == CONTEXT))
+        if (lines[i].type != CONTEXT &&
+            (i == 0 || lines[i - 1].type == CONTEXT))
         {
             qDebug() << i+1;
             changedStarts.append(i+1);
@@ -66,10 +63,6 @@ void DiffEditor::goToNextChange()
     if (!block.isValid())
             return;
 
-//    QTextCursor cursor(block);
-//    setTextCursor(cursor);
-//    verticalScrollBar()->setValue(verticalScrollBar()->maximum());
-//    ensureCursorVisible();
     verticalScrollBar()->setValue(blockNumber);
 }
 
@@ -197,10 +190,10 @@ void DiffEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
                 QColor addColor(200, 255, 200);
                 QColor delColor(255, 200, 200);
 
-                if (line.line == ADD)
+                if (line.type == ADD)
                     painter.fillRect(r, addColor);
 
-                if (line.line == DEL)
+                if (line.type == DEL)
                     painter.fillRect(r, delColor);
 
                 if (line.oldNum != -1)

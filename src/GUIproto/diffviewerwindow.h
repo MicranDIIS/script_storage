@@ -30,8 +30,7 @@ private:
     DiffViewHighlighter * diffViewHighlighter;
     DiffResult m_result;
 
-    QString buildUnifiedText(const DiffResult& result);
-    DiffResult makeMock();
+    QString buildUnifiedText(const DiffResult& result);;
 };
 
 #endif // DIFFVIEWERWINDOW_H
