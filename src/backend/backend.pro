@@ -51,3 +51,9 @@ unix:!symbian {
     }
     INSTALLS += target
 }
+
+win32 {
+    QMAKE_MOC = C:\QtSDK\Desktop\Qt\4.7.3\mingw\bin\moc.exe
+    QMAKE_UIC = C:\QtSDK\Desktop\Qt\4.7.3\mingw\bin\uic.exe
+    QMAKE_RCC = C:\QtSDK\Desktop\Qt\4.7.3\mingw\bin\rcc.exe
+}

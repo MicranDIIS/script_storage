@@ -493,17 +493,54 @@ void MainWindow::showCustomContextMenu(const QPoint& pos)
 
 void MainWindow::openDiffForIndex(const QModelIndex &index)
 {
-    if (!index.isValid()) {
+    if (!index.isValid())
+    {
+        return;
+    }
+
+    if (!m_repo || m_repoRoot.isEmpty())
+    {
+        QMessageBox::warning(this, tr("Repository error"),
+                             tr("Repository is not initialized."));
         return;
     }
 
     QString scriptPath = index.data(ViewModel::FilePathRole).toString();
 
-    if (scriptPath.isEmpty()) {
+    if (scriptPath.isEmpty())
+    {
         return;
     }
 
-    DiffViewerWindow *diffWindow = new DiffViewerWindow();
+    QString relPath = QDir(m_repoRoot).relativeFilePath(scriptPath);
+    relPath.replace('\\', '/');
+
+    QMessageBox::information(this, "Debug", "relPath: " + relPath);
+
+    if (relPath.startsWith(".."))
+    {
+        QMessageBox::warning(this, tr("Repository error"),
+            tr("Selected file is outside the repository."));
+        return;
+    }
+
+    DiffResult diffResult;
+    GitError err = m_repo->fillDiff(diffResult, relPath);
+
+    if (!err.success)
+    {
+        QMessageBox::warning(this, tr("Git diff error"), err.message);
+        return;
+    }
+
+    if (diffResult.hunks.isEmpty())
+    {
+        QMessageBox::information(this, tr("No changes"),
+            tr("No changes found for this file."));
+        return;
+    }
+
+    DiffViewerWindow *diffWindow = new DiffViewerWindow(diffResult);
     diffWindow->setAttribute(Qt::WA_DeleteOnClose);
     diffWindow->setWindowTitle(tr("changes"));
     diffWindow->setFilePath(scriptPath);
@@ -518,12 +555,18 @@ void MainWindow::showBasicContextMenu(const QPoint& pos)
     QMenu contextMenu(this);
     QAction* openHistoryAction = contextMenu.addAction(tr("show history"));
 
+    QAction* openDiffAction = contextMenu.addAction(tr("show changes"));
+
     QPoint globalPos = ui->listViewBasic->viewport()->mapToGlobal(pos);
     QAction *selectedAction = contextMenu.exec(globalPos);
 
     if (selectedAction == openHistoryAction)
     {
         openHistoryForIndex(index);
+    }
+    else if (selectedAction == openDiffAction)
+    {
+        openDiffForIndex(index);
     }
 }
 
@@ -563,6 +606,8 @@ void MainWindow::openHistoryForIndex(const QModelIndex &index)
 
     QString relPath = QDir(m_repoRoot).relativeFilePath(scriptPath);
     relPath.replace('\\', '/');
+
+    QMessageBox::information(this, "Debug", "relPath: " + relPath);
 
     if (relPath.startsWith(".."))
     {

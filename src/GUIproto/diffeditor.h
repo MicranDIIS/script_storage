@@ -1,7 +1,8 @@
 #ifndef DIFFEDITOR_H
 #define DIFFEDITOR_H
 
-#include "diffviewerstructs.h"
+//#include "diffviewerstructs.h"
+#include "mgit.h"
 
 #include <QPlainTextEdit>
 

@@ -29,8 +29,8 @@ QList<int> DiffEditor::findChangedStarts(const QList<DiffLine> &lines)
     QList<int> changedStarts;
     for (int i = 0; i < lines.size(); ++i)
     {
-        if (lines[i].type != Context &&
-            (i == 0 || lines[i - 1].type == Context))
+        if (lines[i].line != CONTEXT &&
+            (i == 0 || lines[i - 1].line == CONTEXT))
         {
             qDebug() << i+1;
             changedStarts.append(i+1);
@@ -197,10 +197,10 @@ void DiffEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
                 QColor addColor(200, 255, 200);
                 QColor delColor(255, 200, 200);
 
-                if (line.type == Add)
+                if (line.line == ADD)
                     painter.fillRect(r, addColor);
 
-                if (line.type == Del)
+                if (line.line == DEL)
                     painter.fillRect(r, delColor);
 
                 if (line.oldNum != -1)

@@ -1,14 +1,16 @@
-    #include "diffviewerwindow.h"
+#include "diffviewerwindow.h"
 #include "ui_diffviewerwindow.h"
-#include "diffviewerstructs.h"
+//#include "diffviewerstructs.h"
+#include "mgit.h"
 
 #include <QFile>
 #include <QTextStream>
 #include <QSet>
 
-DiffViewerWindow::DiffViewerWindow(QWidget *parent) :
+DiffViewerWindow::DiffViewerWindow(const DiffResult &result, QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::DiffViewerWindow)
+    ui(new Ui::DiffViewerWindow),
+    m_result(result)
 {
     ui->setupUi(this);
     diffViewHighlighter = new DiffViewHighlighter(ui->ScriptPlainTextEdit->document());
@@ -40,64 +42,73 @@ void DiffViewerWindow::LoadFileText()
 //    testLines << 1 << 3 << 5 << 6 << 7;
 //    diffViewHighlighter->setHighlightedLines(testLines);
 
-    DiffResult mock = makeMock();
-    QString text = buildUnifiedText(mock);
+//    DiffResult mock = makeMock();
+//    QString text = buildUnifiedText(mock);
 
-    ui->currentCommitMetaLabel->setText(mock.newCommit.author + " " + mock.newCommit.date);
-    ui->previousCommitMetaLabel->setText(mock.oldCommit.author + " " + mock.oldCommit.date);
+//    ui->currentCommitMetaLabel->setText(mock.newCommit.author + " " + mock.newCommit.date);
+//    ui->previousCommitMetaLabel->setText(mock.oldCommit.author + " " + mock.oldCommit.date);
 
-    ui->fileLabel->setText(scriptPath);
+//    ui->fileLabel->setText(scriptPath);
 
-    diffViewHighlighter = new DiffViewHighlighter(ui->ScriptPlainTextEdit->document());
+//    diffViewHighlighter = new DiffViewHighlighter(ui->ScriptPlainTextEdit->document());
 
+//    ui->ScriptPlainTextEdit->setPlainText(text);
+
+//    ui->ScriptPlainTextEdit->setDiffLines(mock.hunks.first().lines);
+    if (m_result.hunks.isEmpty())
+    {
+        ui->ScriptPlainTextEdit->setPlainText(tr("No changes to display."));
+        return;
+    }
+    QString text = buildUnifiedText(m_result);
     ui->ScriptPlainTextEdit->setPlainText(text);
+    ui->ScriptPlainTextEdit->setDiffLines(m_result.hunks.first().lines);
 
-    ui->ScriptPlainTextEdit->setDiffLines(mock.hunks.first().lines);
 }
 
 DiffResult DiffViewerWindow::makeMock()
 {
-    DiffResult result;
+//    DiffResult result;
 
-    DiffHunk hunk;
-    hunk.oldStart = 1;
-    hunk.oldLines = 7;
-    hunk.newStart = 1;
-    hunk.newLines = 8;
+//    DiffHunk hunk;
+//    hunk.oldStart = 1;
+//    hunk.oldLines = 7;
+//    hunk.newStart = 1;
+//    hunk.newLines = 8;
 
-    hunk.header = "@@ -1,7 +1,8 @@";
+//    hunk.header = "@@ -1,7 +1,8 @@";
 
-    hunk.lines.clear();
-    hunk.lines.append(DiffLine(Context, 1,  1, "# Config file"));
-    hunk.lines.append(DiffLine(Del,     2, -1, "VERSION = 1"));
-    hunk.lines.append(DiffLine(Add,    -1,  2, "VERSION = 2"));
-    hunk.lines.append(DiffLine(Del,      3, -1, "ENABLE_LOG = false"));
-    hunk.lines.append(DiffLine(Add,    -1,  3, "ENABLE_LOG = true"));
-    hunk.lines.append(DiffLine(Context, 4,  4, "TIMEOUT = 30"));
-    hunk.lines.append(DiffLine(Add,    -1,  5, "RETRY = 3"));
-    hunk.lines.append(DiffLine(Context, 5,  6, "PATH = /usr/bin"));
-    hunk.lines.append(DiffLine(Del,     6, -1, "MODE = basic"));
-    hunk.lines.append(DiffLine(Add,    -1,  7, "MODE = advanced"));
-    hunk.lines.append(DiffLine(Context, 7,  8, "END"));
-    for (int i = 9; i <= 50; ++i)
-    {
-        hunk.lines.append(DiffLine(Context, i, i,
-            QString("Line number %1").arg(i)));
-    }
-    hunk.lines.append(DiffLine(Context, 1,  1, "# Config file"));
-    hunk.lines.append(DiffLine(Del,     2, -1, "VERSION = 1"));
-    hunk.lines.append(DiffLine(Add,    -1,  2, "VERSION = 2"));
-    hunk.lines.append(DiffLine(Del,      3, -1, "ENABLE_LOG = false"));
+//    hunk.lines.clear();
+//    hunk.lines.append(DiffLine(CONTEXT, 1,  1, "# Config file"));
+//    hunk.lines.append(DiffLine(DEL,     2, -1, "VERSION = 1"));
+//    hunk.lines.append(DiffLine(ADD,    -1,  2, "VERSION = 2"));
+//    hunk.lines.append(DiffLine(DEL,      3, -1, "ENABLE_LOG = false"));
+//    hunk.lines.append(DiffLine(ADD,    -1,  3, "ENABLE_LOG = true"));
+//    hunk.lines.append(DiffLine(CONTEXT, 4,  4, "TIMEOUT = 30"));
+//    hunk.lines.append(DiffLine(ADD,    -1,  5, "RETRY = 3"));
+//    hunk.lines.append(DiffLine(CONTEXT, 5,  6, "PATH = /usr/bin"));
+//    hunk.lines.append(DiffLine(DEL,     6, -1, "MODE = basic"));
+//    hunk.lines.append(DiffLine(ADD,    -1,  7, "MODE = advanced"));
+//    hunk.lines.append(DiffLine(CONTEXT, 7,  8, "END"));
+//    for (int i = 9; i <= 50; ++i)
+//    {
+//        hunk.lines.append(DiffLine(CONTEXT, i, i,
+//            QString("Line number %1").arg(i)));
+//    }
+//    hunk.lines.append(DiffLine(CONTEXT, 1,  1, "# Config file"));
+//    hunk.lines.append(DiffLine(DEL,     2, -1, "VERSION = 1"));
+//    hunk.lines.append(DiffLine(ADD,    -1,  2, "VERSION = 2"));
+//    hunk.lines.append(DiffLine(DEL,      3, -1, "ENABLE_LOG = false"));
 
-    result.hunks.append(hunk);
+//    result.hunks.append(hunk);
 
-    result.oldCommit.author = "Azaz232";
-    result.oldCommit.date = "29/05/2026";
+//    result.oldCommit.author = "Azaz232";
+////    result.oldCommit.date = "29/05/2026";
 
-    result.newCommit.author = "Azaz232";
-    result.newCommit.date = "30/07/2026";
+//    result.newCommit.author = "Azaz232";
+////    result.newCommit.date = "30/07/2026";
 
-    return result;
+//    return result;
 }
 
 QString DiffViewerWindow::buildUnifiedText(const DiffResult& result)
@@ -124,11 +135,11 @@ QString DiffViewerWindow::buildUnifiedText(const DiffResult& result)
 
              QString prefix;
 
-             if (line.type == Context)
+             if (line.line == CONTEXT)
                  prefix = "  ";
-             else if (line.type == Del)
+             else if (line.line == DEL)
                  prefix = "- ";
-             else if (line.type == Add)
+             else if (line.line == ADD)
                  prefix = "+ ";
 
              output.append(prefix + line.text);

@@ -81,7 +81,8 @@ defineTest(copyDirToDestDir) {
 #QMAKE_POST_LINK  = translate_subdirs.bat
 
 win32 {
-    QMAKE_UIC = $$[QT_INSTALL_BINS]/uic.exe
-    QMAKE_MOC = $$[QT_INSTALL_BINS]/moc.exe
-    QMAKE_RCC = $$[QT_INSTALL_BINS]/rcc.exe
+    QT_BINS = $$[QT_INSTALL_BINS]
+    QMAKE_UIC = $${QT_BINS}\\uic.exe
+    QMAKE_MOC = $${QT_BINS}\\moc.exe
+    QMAKE_RCC = $${QT_BINS}\\rcc.exe
 }
