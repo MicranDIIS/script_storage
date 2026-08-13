@@ -2,7 +2,6 @@
 #include <mgit.h>
 #include <QDebug>
 
-
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
@@ -19,9 +18,10 @@ int main(int argc, char *argv[])
     bool check = repo->isValidRepo();
     if(!check){
         qDebug() << "repo is not valid";
-    }else{
+    } else {
         qDebug() << "repo is valid";
     }
+
 
     return a.exec();
 }

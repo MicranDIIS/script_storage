@@ -1,7 +1,7 @@
 #include "repository.h"
 
 DiffLine::DiffLine(LineType type_, int oldNum_, int newNum_, const QString &text_) :
-    line(type_), oldNum(oldNum_), newNum(newNum_), text(text_) {}
+    type(type_), oldNum(oldNum_), newNum(newNum_), text(text_) {}
 
 static int hunkCallback(
     const git_diff_delta *delta,

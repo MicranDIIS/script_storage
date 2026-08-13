@@ -33,7 +33,7 @@ enum LineType{
 };
 
 struct DiffLine{
-    LineType line;
+    LineType type;
     int oldNum;
     int newNum;
     QString text;
