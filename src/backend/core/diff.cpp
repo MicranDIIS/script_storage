@@ -63,6 +63,61 @@ static int diffCallback(
 
     return 0;
 }
+static int get_commits_changes(GitCommitPtr& slave_commit,
+                               const GitRevwalkPtr& walker,
+                               git_repository* repo,
+                               const char* filePath){
+    while(true){
+        git_oid walk_oid;
+        int walk_code = git_revwalk_next(&walk_oid, walker.get());
+        if(walk_code == GIT_ITEROVER){
+            return -2;
+        }else if(walk_code != GIT_OK){
+            return -1;
+        }
+
+        GitCommitPtr curr_commit;
+        if(git_commit_lookup(&curr_commit, repo, &walk_oid) != GIT_OK){
+            return -1;
+        }
+
+        GitCommitPtr parent_commit;
+        if(git_commit_parent(&parent_commit, curr_commit.get(), 0) != GIT_OK){
+            return -2;
+        }
+
+        GitTreePtr curr_tree;
+        GitTreePtr parent_tree;
+        if(git_commit_tree(&curr_tree, curr_commit.get()) != GIT_OK){
+            return -1;
+        }
+        if(git_commit_tree(&parent_tree, parent_commit.get()) != GIT_OK){
+            return -1;
+        }
+
+        git_tree_entry* curr_entry = NULL;
+        git_tree_entry* parent_entry = NULL;
+
+        int curr_err = git_tree_entry_bypath(&curr_entry, curr_tree.get(), filePath);
+        int parent_err = git_tree_entry_bypath(&parent_entry, parent_tree.get(), filePath);
+
+        bool file_changed = false;
+
+        if(curr_err == GIT_OK && parent_err == GIT_OK){
+            if(!git_oid_equal(git_tree_entry_id(parent_entry), git_tree_entry_id(curr_entry))){
+                file_changed = true;
+            }
+        }
+
+        if(curr_entry) git_tree_entry_free(curr_entry);
+        if(parent_entry) git_tree_entry_free(parent_entry);
+
+        if(file_changed){
+            slave_commit.reset(curr_commit.release());
+            return 0;
+        }
+    }
+}
 
 GitError Repository::fillDiff(DiffResult &diffResult, const QString& filePath) const{
     if(repo_ == NULL){
@@ -75,21 +130,36 @@ GitError Repository::fillDiff(DiffResult &diffResult, const QString& filePath) c
         return libgitError();
     }
 
-    const git_index_entry* entry = git_index_get_bypath(index.get(), filePath_.constData(),
-                                                        GIT_INDEX_STAGE_NORMAL);
-    if(entry == NULL){
-        return GitError("not found file", -1);
-    }
-
     GitCommitPtr master_commit;
-    GitCommitPtr slave_commit;
-
-    if(git_revparse_single((git_object**)&slave_commit, repo_, HEAD) != GIT_OK){
+    if(git_revparse_single((git_object**)&master_commit, repo_, "HEAD") != GIT_OK){
         return libgitError();
     }
 
-    if(git_commit_parent(&master_commit, slave_commit.get(), 0) != GIT_OK){
+    GitTreePtr master_tree;
+    if(git_commit_tree(&master_tree, master_commit.get()) != GIT_OK){
         return libgitError();
+    }
+
+    git_tree_entry* tree_entry;
+    if(git_tree_entry_bypath(&tree_entry, master_tree.get(), filePath_.constData()) != GIT_OK){
+        return libgitError();
+    }
+
+    git_tree_entry_free(tree_entry);
+
+    GitCommitPtr slave_commit;
+    GitRevwalkPtr walker;
+    GitError err = GitRevwalkInit(walker);
+    if(!err.success){
+        return libgitError();
+    }
+
+    int check = get_commits_changes(slave_commit, walker,
+                                    repo_, filePath_.constData());
+    if(check == -1){
+        return libgitError();
+    }else if(check == -2){
+        return GitError("not found commits", -101);
     }
 
     const git_signature* master_signature = git_commit_author(master_commit.get());
@@ -104,7 +174,6 @@ GitError Repository::fillDiff(DiffResult &diffResult, const QString& filePath) c
     diffResult.oldCommit.message = QString::fromUtf8(git_commit_message(master_commit.get()));
     diffResult.newCommit.message = QString::fromUtf8(git_commit_message(slave_commit.get()));
 
-    GitTreePtr master_tree;
     GitTreePtr slave_tree;
     if(git_commit_tree(&master_tree, master_commit.get()) != GIT_OK){
         return libgitError();
