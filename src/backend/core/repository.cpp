@@ -107,11 +107,32 @@ GitError Repository::swapDebugFilePath(const QString &newFilePath){
         return libgitError();
     }
 
-    git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
-    opts.checkout_strategy = GIT_CHECKOUT_FORCE;
+    const git_oid* oid;
+    oid = git_commit_id((git_commit*)headObj.get());
+    if(git_oid_equal(&debugCtx.parent_oid, oid)){
+        git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
+        opts.checkout_strategy = GIT_CHECKOUT_FORCE;
 
-    if(git_reset(repo_, parentCommit.get(), GIT_RESET_HARD, &opts) != GIT_OK){
-        return libgitError();
+        const char* pathStr = newFilePath_.constData();
+
+        char* pathArray[] = {const_cast<char*>(pathStr)};
+
+        git_strarray paths;
+        paths.strings = pathArray;
+        paths.count = 1;
+
+        opts.paths = paths;
+
+        if(git_checkout_tree(repo_, parentCommit.get(), &opts) != GIT_OK){
+            return libgitError();
+        }
+    }else{
+        git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
+        opts.checkout_strategy = GIT_CHECKOUT_FORCE;
+
+        if(git_reset(repo_, parentCommit.get(), GIT_RESET_HARD, &opts) != GIT_OK){
+            return libgitError();
+        }
     }
 
     debugCtx.debugFilePath = newFilePath_;
