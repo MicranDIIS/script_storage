@@ -13,7 +13,7 @@ QString Repository::getBranch() const {return QString::fromUtf8(cfg_.branch);}
 QString Repository::getPath() const {return QString::fromUtf8(cfg_.path);}
 QString Repository::getUsername() const {return QString::fromUtf8(cfg_.username);}
 QString Repository::getToken() const {return QString::fromUtf8(cfg_.token);}
-QString Repository::getDebugFilePath() const {return debugFilePath;}
+QString Repository::getDebugFilePath() const {return debugCtx.debugFilePath;}
 bool Repository::isValid() const {return repo_ != NULL;}
 
 const char* Repository::HEAD = "HEAD";
@@ -53,7 +53,7 @@ static int check_file_in_head(const GitObjectPtr& obj, const char* filePath){
 }
 
 GitError Repository::setDebugFilePath(const QString &filePath){
-    if(!debugFilePath.isEmpty()){
+    if(!debugCtx.debugFilePath.isEmpty()){
         return GitError("debugFile is not empty", -1);
     }
 
@@ -63,67 +63,59 @@ GitError Repository::setDebugFilePath(const QString &filePath){
         return libgitError();
     }
 
+    if(git_object_type(obj.get()) != GIT_OBJECT_COMMIT){
+        return GitError("HEAD is not a commit", -1);
+    }
+
     if(check_file_in_head(obj, filePath_.constData()) != 0){
         return GitError("file not found in HEAD", -1);
     }
 
-    debugFilePath = filePath;
+    const git_oid* oid = git_commit_id((git_commit*)obj.get());
+    if(!oid){
+        return GitError("failed to get commit id", -1);
+    }
+
+    debugCtx.debugFilePath = filePath_;
+    debugCtx.parent_oid = *oid;
+
     return GitError();
 }
 
 GitError Repository::swapDebugFilePath(const QString &newFilePath){
+    if(debugCtx.debugFilePath.isEmpty()){
+        return GitError("debugFilePath is empty", -1);
+    }
+
+    if(git_oid_iszero(&debugCtx.parent_oid)){
+        return GitError("parent commit not set", -1);
+    }
+
     QByteArray newFilePath_ = newFilePath.toUtf8();
 
-    GitObjectPtr obj;
-    if(git_revparse_single(&obj, repo_, "HEAD") != GIT_OK){
+    GitObjectPtr headObj;
+    if(git_revparse_single(&headObj, repo_, "HEAD") != GIT_OK){
         return libgitError();
     }
 
-    if(check_file_in_head(obj, newFilePath_.constData()) != 0){
+    if(check_file_in_head(headObj, newFilePath_.constData()) != 0){
         return GitError("file not found in HEAD", -1);
     }
 
+    GitObjectPtr parentCommit;
+    if(git_object_lookup(&parentCommit, repo_, &debugCtx.parent_oid, GIT_OBJECT_COMMIT) != GIT_OK){
+        return libgitError();
+    }
+
     git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
-    opts.checkout_strategy = GIT_CHECKOUT_FORCE |
-                             GIT_CHECKOUT_DISABLE_PATHSPEC_MATCH;
+    opts.checkout_strategy = GIT_CHECKOUT_FORCE;
 
-    git_strarray paths;
-    paths.strings = (char**)newFilePath_.constData();
-    paths.count = 1;
-    opts.paths = paths;
-
-    if(git_checkout_tree(repo_, obj.get(), &opts) != GIT_OK){
+    if(git_reset(repo_, parentCommit.get(), GIT_RESET_HARD, &opts) != GIT_OK){
         return libgitError();
     }
 
-    return GitError();
-}
+    debugCtx.debugFilePath = newFilePath_;
 
-GitError Repository::forgetDebugFilePath(){
-    if(debugFilePath.isEmpty()){
-        return GitError("debugFile is empty", -1);
-    }
-
-    GitObjectPtr obj;
-    if(git_revparse_single(&obj, repo_, "HEAD") != GIT_OK){
-        return libgitError();
-    }
-
-    QByteArray debugFilePath_ = debugFilePath.toUtf8();
-    git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
-    opts.checkout_strategy = GIT_CHECKOUT_FORCE |
-                             GIT_CHECKOUT_DISABLE_PATHSPEC_MATCH;
-
-    git_strarray paths;
-    paths.strings = (char**)debugFilePath_.constData();
-    paths.count = 1;
-    opts.paths = paths;
-
-    if(git_checkout_tree(repo_, obj.get(), &opts) != GIT_OK){
-        return libgitError();
-    }
-
-    debugFilePath = "";
     return GitError();
 }
 

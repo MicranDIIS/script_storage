@@ -13,6 +13,8 @@ INCLUDEPATH += $${CORE_PATH} \
             $${HANDLERS_PATH} \
             $${UTILS_PATH}
 
+#QMAKE_MOC = C:\QtSDK\Desktop\Qt\4.7.3\mingw\bin\moc.exe
+
 HEADERS += \
         mgit.h \
         $${CORE_PATH}/repository.h \

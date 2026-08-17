@@ -94,11 +94,7 @@ public:
     /*
     * Меняет активный отладочный файл
     */
-    virtual GitError swapDebugFilePath(const QString& newFilePath);
-    /*
-    * Забывает отладный файл и никакой файл не являвется отладочным
-    */
-    virtual GitError forgetDebugFilePath() = 0;
+    virtual GitError swapDebugFilePath(const QString& newFilePath) = 0;
     /*
     * Открывает репозиторий
     */

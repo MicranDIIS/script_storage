@@ -25,6 +25,11 @@ struct RepoConfigBuf{
     RepoConfigBuf(const RepoConfig& cfg);
 };
 
+struct DebugContext{
+    QByteArray debugFilePath;
+    git_oid parent_oid;
+};
+
 struct authRemoteBuf{
     QByteArray username;
     QByteArray token;
@@ -38,7 +43,7 @@ private:
     RepoConfigBuf cfg_;
     UpdateHandler* handler_;
 
-    QString debugFilePath;
+    DebugContext debugCtx;
 
     QTimer timer_;
 
