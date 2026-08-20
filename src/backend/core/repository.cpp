@@ -255,9 +255,6 @@ RepoConfigBuf::RepoConfigBuf(const RepoConfig& cfg) :
                              path(cfg.path.toUtf8()), username(cfg.username.toUtf8()),
                              token(cfg.token.toUtf8()) {}
 
-authRemoteBuf::authRemoteBuf(const authRemote& auth) :
-                             username(auth.username.toUtf8()),
-                             token(auth.token.toUtf8()){}
 
 IRepository* createRepository(const RepoConfig& cfg){
     git_libgit2_init();

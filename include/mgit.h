@@ -34,8 +34,6 @@ struct authRemote{
     QString token;
 };
 
-typedef struct authRemoteBuf authRemoteBuf;
-
 struct FileStatus{
     QString pathNew;
     QString pathOld;
@@ -107,7 +105,7 @@ public:
     /*
     * пушит изменения при 0 конфликтов
     */
-    virtual GitError push(const authRemoteBuf& auth) const = 0;
+    virtual GitError push(const authRemote& auth) const = 0;
     /*
     * Фетчит ветку из конфига и ресетит до актуального состояния после фетча
     * Не трогает локальные файлы

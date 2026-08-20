@@ -72,7 +72,7 @@ public:
     GitError open();
 
     GitError clone();
-    GitError push(const authRemoteBuf& auth) const;
+    GitError push(const authRemote& auth) const;
     GitError sync();
 
     GitError startCheckUpdatesActiveFile(const FileEventHandler& fileHandler,
