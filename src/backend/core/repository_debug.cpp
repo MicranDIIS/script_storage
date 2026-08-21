@@ -654,11 +654,10 @@ GitError Repository::closeDebugMode() {
     return GitError();
 }
 
-GitError Repository::mergeDebugFiles(const QString& filePath,
-                                     const QString& authorName,
-                                     const QString& authorEmail) {
-    QByteArray filePath_ = filePath.toUtf8();
-    const char* path = filePath_.constData();
+GitError Repository::mergeDebugFiles(const QString& authorName,
+                                     const QString& authorEmail,
+                                     const QString& commitMsg) {
+    const char* path = debugCtx.debugFilePath.constData();
 
     git_oid our_oid;
     QByteArray mainBranch = "refs/heads/" + cfg_.branch;
@@ -748,66 +747,7 @@ GitError Repository::mergeDebugFiles(const QString& filePath,
     }
 
     if (hasConflicts) {
-
-        git_oid base_blob_oid, our_blob_oid, their_blob_oid;
-
-        if (git_blob_create_from_buffer(&base_blob_oid, repo_,
-                                       git_blob_rawcontent(base_blob.get()),
-                                       git_blob_rawsize(base_blob.get())) != GIT_OK ||
-            git_blob_create_from_buffer(&our_blob_oid, repo_,
-                                       git_blob_rawcontent(our_blob.get()),
-                                       git_blob_rawsize(our_blob.get())) != GIT_OK ||
-            git_blob_create_from_buffer(&their_blob_oid, repo_,
-                                       git_blob_rawcontent(their_blob.get()),
-                                       git_blob_rawsize(their_blob.get())) != GIT_OK) {
-            git_merge_file_result_free(&result);
-            return libgitError();
-        }
-
-        git_index_entry ancestor_entry;
-        memset(&ancestor_entry, 0, sizeof(git_index_entry));
-        ancestor_entry.path = path;
-        ancestor_entry.mode = GIT_FILEMODE_BLOB;
-        ancestor_entry.id = base_blob_oid;
-        ancestor_entry.flags = (GIT_INDEX_STAGE_ANCESTOR << GIT_INDEX_ENTRY_STAGESHIFT);
-        git_index_add(index.get(), &ancestor_entry);
-
-        git_index_entry ours_entry;
-        memset(&ours_entry, 0, sizeof(git_index_entry));
-        ours_entry.path = path;
-        ours_entry.mode = GIT_FILEMODE_BLOB;
-        ours_entry.id = our_blob_oid;
-        ours_entry.flags = (GIT_INDEX_STAGE_OURS << GIT_INDEX_ENTRY_STAGESHIFT);
-        git_index_add(index.get(), &ours_entry);
-
-        git_index_entry theirs_entry;
-        memset(&theirs_entry, 0, sizeof(git_index_entry));
-        theirs_entry.path = path;
-        theirs_entry.mode = GIT_FILEMODE_BLOB;
-        theirs_entry.id = their_blob_oid;
-        theirs_entry.flags = (GIT_INDEX_STAGE_THEIRS << GIT_INDEX_ENTRY_STAGESHIFT);
-        git_index_add(index.get(), &theirs_entry);
-
-        if (git_index_write(index.get()) != GIT_OK) {
-            git_merge_file_result_free(&result);
-            return libgitError();
-        }
-
-        git_checkout_options checkout_opts = GIT_CHECKOUT_OPTIONS_INIT;
-        checkout_opts.checkout_strategy = GIT_CHECKOUT_FORCE | GIT_CHECKOUT_CONFLICT_STYLE_MERGE;
-
-        char* paths_array[] = { const_cast<char*>(path) };
-        git_strarray patharray = { paths_array, 1 };
-        checkout_opts.paths = patharray;
-
-        git_checkout_index(repo_, index.get(), &checkout_opts);
-
-        git_merge_file_result_free(&result);
-
-        QString conflictMsg = "Merge conflict";
-
-        return GitError(conflictMsg, -2);
-
+        return GitError("merge Conflict", -102);
     } else {
 
         git_index_entry entry;
@@ -861,12 +801,14 @@ GitError Repository::mergeDebugFiles(const QString& filePath,
         }
 
         git_oid commit_oid;
-        QByteArray commitMsg = QString("Merge file %1 from debug branch").arg(filePath).toUtf8();
+        QByteArray commitMsg_ = QString(QString("Merge file %1 from debug branch")
+                                .arg(QString::fromUtf8(debugCtx.debugFilePath))
+                                + "\n" + commitMsg).toUtf8();
         const git_commit* parents[] = { parent_commit.get() };
 
         int result_commit = git_commit_create(&commit_oid, repo_, "HEAD",
                                               signature.get(), signature.get(),
-                                              NULL, commitMsg.constData(),
+                                              NULL, commitMsg_.constData(),
                                               tree.get(), 1, parents);
 
         git_merge_file_result_free(&result);

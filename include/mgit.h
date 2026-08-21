@@ -148,9 +148,9 @@ public:
     /*
     * Сливает конкретный файл в основную ветку
     */
-    virtual GitError mergeDebugFiles(const QString& filePath,
-                                     const QString& authorName,
-                                     const QString& authorEmail) = 0;
+    virtual GitError mergeDebugFiles(const QString& authorName,
+                                     const QString& authorEmail,
+                                     const QString& commitMsg) = 0;
     /*
     * Закрывает debug режим
     */
