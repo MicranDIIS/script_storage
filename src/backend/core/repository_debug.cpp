@@ -482,7 +482,6 @@ GitError Repository::startDebugMode() {
     return updateDebugBranch(repo_, basicBranchRef, debugBranchRef, debugBranchName);
 }
 
-
 GitError Repository::saveDebugFiles(const QString& authorName,
                                     const QString& authorEmail,
                                     const QString &commitMsg) {
@@ -517,12 +516,11 @@ GitError Repository::saveDebugFiles(const QString& authorName,
         return libgitError();
     }
 
-    git_strarray paths = {NULL, 0};
-    if (git_index_add_all(index.get(), &paths, GIT_INDEX_ADD_DEFAULT, NULL, NULL) != GIT_OK) {
+    if(git_index_clear(index.get()) != GIT_OK){
         return libgitError();
     }
 
-    if (git_index_update_all(index.get(), &paths, NULL, NULL) != GIT_OK) {
+    if(git_index_add_bypath(index.get(), debugCtx.debugFilePath.constData()) != GIT_OK){
         return libgitError();
     }
 
@@ -556,7 +554,7 @@ GitError Repository::saveDebugFiles(const QString& authorName,
     }
 
     if (git_oid_equal(git_tree_id(newTree.get()), git_tree_id(headTree.get()))) {
-        return GitError(QString("Nothing to commit"), 0);
+        return GitError(QString("file is not update"), 0);
     }
 
     git_oid parentOid;
