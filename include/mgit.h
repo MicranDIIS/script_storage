@@ -97,7 +97,6 @@ public:
     * Открывает репозиторий
     */
     virtual GitError open() = 0;
-
     /*
     * Клонирует только ветку заданную в конфиге
     */
@@ -139,6 +138,10 @@ public:
     * Запускает debug режим
     */
     virtual GitError startDebugMode() = 0;
+    /*
+    * Синхронизирует все кроме отладночного файла
+    */
+    virtual GitError syncDebugFiles() = 0;
     /*
     * Сохраняет и коммитит измененные файлы
     */

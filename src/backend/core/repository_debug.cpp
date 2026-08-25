@@ -244,7 +244,7 @@ static GitError resolveConflicts(git_repository* repo, const QSet<QString>& /* p
     return GitError();
 }
 
-static GitError createMergeCommit(git_repository* repo, git_commit* basicCommit) {
+/*static GitError createMergeCommit(git_repository* repo, git_commit* basicCommit) {
     GitIndexPtr index;
     if (git_repository_index(&index, repo) != GIT_OK) {
         return libgitError();
@@ -297,7 +297,7 @@ static GitError createMergeCommit(git_repository* repo, git_commit* basicCommit)
     }
 
     return libgitError();
-}
+}*/
 
 static GitError abortMergeAndRestore(git_repository* repo, const git_oid& originalDebugOid) {
     git_repository_state_cleanup(repo);
@@ -435,11 +435,6 @@ static GitError updateDebugBranch(git_repository* repo,
     }
 
     if (!hasConflicts) {
-        GitError commitError = createMergeCommit(repo, basicCommit);
-        if (!commitError.success) {
-            abortMergeAndRestore(repo, debugOidBeforeMerge);
-            return commitError;
-        }
         return GitError();
     }
 
@@ -467,6 +462,25 @@ GitError Repository::startDebugMode() {
     if (git_repository_head(&head, repo_) != GIT_OK) {
         return libgitError();
     }
+
+    GitReferencePtr debugRef;
+    int error = git_reference_lookup(&debugRef, repo_, debugBranchRef.constData());
+
+    if (error == GIT_ENOTFOUND) {
+        return createDebugBranch(repo_, basicBranchRef, debugBranchName);
+    }
+
+    if (error != GIT_OK) {
+        return libgitError();
+    }
+
+    return updateDebugBranch(repo_, basicBranchRef, debugBranchRef, debugBranchName);
+}
+
+GitError Repository::syncDebugFiles(){
+    QByteArray debugBranchName("debug");
+    QByteArray debugBranchRef = QByteArray("refs/heads/") + debugBranchName;
+    QByteArray basicBranchRef = QByteArray("refs/heads/") + cfg_.branch;
 
     GitReferencePtr debugRef;
     int error = git_reference_lookup(&debugRef, repo_, debugBranchRef.constData());
