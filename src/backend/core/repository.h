@@ -91,6 +91,7 @@ public:
     GitError mergeDebugFiles(const QString &filePath, const QString& authorName, const QString& authorEmail);
     GitError closeDebugMode();
     GitError forcedCloseDebugMode();
+    GitError deleteDebugBranch();
 
     bool isValidRepo() const;
     bool isValid() const;

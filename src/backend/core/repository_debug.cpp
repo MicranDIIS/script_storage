@@ -872,3 +872,49 @@ GitError Repository::forcedCloseDebugMode(){
 
     return GitError();
 }
+
+GitError Repository::deleteDebugBranch(){
+    const char* branch_name = NULL;
+
+    GitReferencePtr ref;
+    if(git_repository_head(&ref, repo_) != GIT_OK){
+        return libgitError();
+    }
+
+    branch_name = git_reference_shorthand(ref.get());
+
+    if(strcmp("debug", branch_name) != 0){
+        ref.reset();
+        if(git_reference_lookup(&ref, repo_, "refs/heads/debug") != GIT_OK){
+            return libgitError();
+        }
+        if(git_branch_delete(ref.get()) != GIT_OK){
+            return libgitError();
+        }
+        return GitError();
+    }
+
+    QByteArray main_branch = QByteArray("refs/heads/") + cfg_.branch;
+    if(git_repository_set_head(repo_, main_branch.constData()) != GIT_OK){
+        return libgitError();
+    }
+
+    GitObjectPtr obj;
+    if(git_revparse_single(&obj, repo_, "HEAD") != GIT_OK){
+        return libgitError();
+    }
+
+    git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
+    opts.checkout_strategy = GIT_CHECKOUT_FORCE;
+
+    if(git_checkout_tree(repo_, obj.get(), &opts) != GIT_OK){
+        return libgitError();
+    }
+
+
+    if(git_branch_delete(ref.get()) != GIT_OK){
+        return libgitError();
+    }
+
+    return GitError();
+}

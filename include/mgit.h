@@ -167,6 +167,10 @@ public:
     */
     virtual GitError forcedCloseDebugMode() = 0;
     /*
+    * Удаляет ветку debug
+    */
+    virtual GitError deleteDebugBranch() = 0;
+    /*
     * проверка валидности .git
     */
     virtual bool isValidRepo() const = 0;
