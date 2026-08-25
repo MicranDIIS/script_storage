@@ -143,6 +143,10 @@ public:
     */
     virtual GitError syncDebugFiles() = 0;
     /*
+    * проверяет наличие дебаг ветки
+    */
+    virtual bool isDebugEnable() const = 0;
+    /*
     * Сохраняет и коммитит измененные файлы
     */
     virtual GitError saveDebugFiles(const QString& authorName,

@@ -474,7 +474,19 @@ GitError Repository::startDebugMode() {
         return libgitError();
     }
 
-    return updateDebugBranch(repo_, basicBranchRef, debugBranchRef, debugBranchName);
+    return GitError();
+}
+
+bool Repository::isDebugEnable() const{
+    QByteArray debugBranchName("debug");
+    QByteArray debugBranchRef = QByteArray("refs/heads/") + debugBranchName;
+
+    GitReferencePtr debugRef;
+    if(git_reference_lookup(&debugRef, repo_, debugBranchName.constData()) != GIT_OK){
+        return false;
+    }
+
+    return true;
 }
 
 GitError Repository::syncDebugFiles(){
