@@ -482,7 +482,7 @@ bool Repository::isDebugEnable() const{
     QByteArray debugBranchRef = QByteArray("refs/heads/") + debugBranchName;
 
     GitReferencePtr debugRef;
-    if(git_reference_lookup(&debugRef, repo_, debugBranchName.constData()) != GIT_OK){
+    if(git_reference_lookup(&debugRef, repo_, debugBranchRef.constData()) != GIT_OK){
         return false;
     }
 
