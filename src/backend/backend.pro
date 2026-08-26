@@ -7,13 +7,14 @@ CORE_PATH = $$PWD/core/
 HANDLERS_PATH = $$PWD/handlers/
 UTILS_PATH = $$PWD/utils/
 
+#QMAKE_MOC = C:\QtSDK\Desktop\Qt\4.7.3\mingw\bin\moc.exe
+
 DEFINES += MGIT_LIBRARY
 
 INCLUDEPATH += $${CORE_PATH} \  
             $${HANDLERS_PATH} \
             $${UTILS_PATH}
 
-#QMAKE_MOC = C:\QtSDK\Desktop\Qt\4.7.3\mingw\bin\moc.exe
 
 HEADERS += \
         mgit.h \
@@ -25,12 +26,13 @@ HEADERS += \
 
 SOURCES += \
         $${CORE_PATH}/repository.cpp \
-        $${CORE_PATH}/repository_debug.cpp \
         $${CORE_PATH}/network.cpp \
         $${CORE_PATH}/local.cpp \
+        $${CORE_PATH}/diff.cpp \
         $${UTILS_PATH}/git_error.cpp \
         $${HANDLERS_PATH}/update_handler.cpp \
-        $${UTILS_PATH}/git_utils.cpp
+        $${UTILS_PATH}/git_utils.cpp \
+        $${CORE_PATH}/repository_debug.cpp
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN

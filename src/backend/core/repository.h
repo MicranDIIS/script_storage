@@ -83,6 +83,7 @@ public:
     GitError fillStatus(QList<FileStatus>& list) const;
     GitError fillLog(QList<CommitInfo>& list) const;
     GitError fillLog(QList<CommitInfo>& list, const QString& filePath) const;
+    GitError fillDiff(DiffResult &diffResult, const QString &filePath) const;
 
     GitError startDebugMode();
     bool isDebugEnable() const;

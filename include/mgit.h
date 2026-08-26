@@ -20,6 +20,44 @@ struct MGITSHARED_EXPORT GitError{
     GitError(const QString& message_, int code_);
 };
 
+struct CommitMeta{
+    QString author;
+    QDateTime date;
+    QString message;
+};
+
+enum LineType{
+    CONTEXT,
+    ADD,
+    DEL
+};
+
+struct DiffLine{
+    LineType type;
+    int oldNum;
+    int newNum;
+    QString text;
+
+    DiffLine(LineType type_, int oldNum_, int newNum_,
+             const QString& text_);
+};
+
+struct DiffHunk{
+    int oldStart;
+    int oldLines;
+    int newStart;
+    int newLines;
+
+    QString header;
+    QList<DiffLine> lines;
+};
+
+struct DiffResult{
+    CommitMeta oldCommit;
+    CommitMeta newCommit;
+    QList<DiffHunk> hunks;
+};
+
 //конфиг нашего репозитория
 struct RepoConfig{
     QString url;
@@ -134,6 +172,10 @@ public:
     * Логи с коммитами в которых был изменен файл
     */
     virtual GitError fillLog(QList<CommitInfo>& list, const QString& filePath) const = 0;
+    /*
+    * дифф с последним и предпоследним коммитом
+    */
+    virtual GitError fillDiff(DiffResult& diffResult, const QString& filePath) const = 0;
     /*
     * Запускает debug режим
     */

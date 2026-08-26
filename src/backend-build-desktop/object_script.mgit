@@ -1,0 +1,12 @@
+INPUT(
+./..\..\build\debug\mgit\obj\repository.o
+./..\..\build\debug\mgit\obj\network.o
+./..\..\build\debug\mgit\obj\local.o
+./..\..\build\debug\mgit\obj\diff.o
+./..\..\build\debug\mgit\obj\git_error.o
+./..\..\build\debug\mgit\obj\update_handler.o
+./..\..\build\debug\mgit\obj\git_utils.o
+./..\..\build\debug\mgit\obj\repository_debug.o
+./..\..\build\debug\mgit\obj\moc_repository.o
+./..\..\build\debug\mgit\obj\moc_update_handler.o
+);
