@@ -63,35 +63,44 @@ static int diffCallback(
 
     return 0;
 }
-static int get_commits_changes(GitCommitPtr& slave_commit,
-                               const GitRevwalkPtr& walker,
-                               git_repository* repo,
-                               const char* filePath){
-    while(true){
+static int get_two_last_commits_for_file(GitCommitPtr& latest_commit,
+                                         GitCommitPtr& previous_commit,
+                                         const GitRevwalkPtr& walker,
+                                         git_repository* repo,
+                                         const char* filePath) {
+    bool found_first = false;
+
+    while (true) {
         git_oid walk_oid;
         int walk_code = git_revwalk_next(&walk_oid, walker.get());
-        if(walk_code == GIT_ITEROVER){
-            return -2;
-        }else if(walk_code != GIT_OK){
+        if (walk_code == GIT_ITEROVER) {
+            return found_first ? 0 : -2;
+        } else if (walk_code != GIT_OK) {
             return -1;
         }
 
         GitCommitPtr curr_commit;
-        if(git_commit_lookup(&curr_commit, repo, &walk_oid) != GIT_OK){
+        if (git_commit_lookup(&curr_commit, repo, &walk_oid) != GIT_OK) {
             return -1;
+        }
+
+        unsigned int parent_count = git_commit_parentcount(curr_commit.get());
+        if (parent_count == 0) {
+            if (!found_first) {
+                latest_commit.reset(curr_commit.release());
+                return 0;
+            }
+            continue;
         }
 
         GitCommitPtr parent_commit;
-        if(git_commit_parent(&parent_commit, curr_commit.get(), 0) != GIT_OK){
-            return -2;
-        }
-
-        GitTreePtr curr_tree;
-        GitTreePtr parent_tree;
-        if(git_commit_tree(&curr_tree, curr_commit.get()) != GIT_OK){
+        if (git_commit_parent(&parent_commit, curr_commit.get(), 0) != GIT_OK) {
             return -1;
         }
-        if(git_commit_tree(&parent_tree, parent_commit.get()) != GIT_OK){
+
+        GitTreePtr curr_tree, parent_tree;
+        if (git_commit_tree(&curr_tree, curr_commit.get()) != GIT_OK ||
+            git_commit_tree(&parent_tree, parent_commit.get()) != GIT_OK) {
             return -1;
         }
 
@@ -103,107 +112,102 @@ static int get_commits_changes(GitCommitPtr& slave_commit,
 
         bool file_changed = false;
 
-        if(curr_err == GIT_OK && parent_err == GIT_OK){
-            if(!git_oid_equal(git_tree_entry_id(parent_entry), git_tree_entry_id(curr_entry))){
+        if (curr_err == GIT_OK && parent_err == GIT_OK) {
+            if (!git_oid_equal(git_tree_entry_id(parent_entry), git_tree_entry_id(curr_entry))) {
                 file_changed = true;
             }
+        } else if (curr_err == GIT_OK && parent_err != GIT_OK) {
+            file_changed = true;
         }
 
-        if(curr_entry) git_tree_entry_free(curr_entry);
-        if(parent_entry) git_tree_entry_free(parent_entry);
+        if (curr_entry) git_tree_entry_free(curr_entry);
+        if (parent_entry) git_tree_entry_free(parent_entry);
 
-        if(file_changed){
-            slave_commit.reset(curr_commit.release());
-            return 0;
+        if (file_changed) {
+            if (!found_first) {
+                latest_commit.reset(curr_commit.release());
+                found_first = true;
+            } else {
+                previous_commit.reset(curr_commit.release());
+                return 0;
+            }
         }
     }
 }
 
-GitError Repository::fillDiff(DiffResult &diffResult, const QString& filePath) const{
-    if(repo_ == NULL){
+
+GitError Repository::fillDiff(DiffResult &diffResult, const QString& filePath) const {
+    if (repo_ == NULL) {
         return GitError("repo is NULL", REPO_IS_NULL);
     }
 
-    GitIndexPtr index;
     QByteArray filePath_ = filePath.toUtf8();
-    if(git_repository_index(&index, repo_) != GIT_OK){
-        return libgitError();
+    if (filePath_.startsWith('/')) {
+        filePath_ = filePath_.mid(1);
     }
 
-    GitCommitPtr master_commit;
-    if(git_revparse_single((git_object**)&master_commit, repo_, "HEAD") != GIT_OK){
-        return libgitError();
-    }
-
-    GitTreePtr master_tree;
-    if(git_commit_tree(&master_tree, master_commit.get()) != GIT_OK){
-        return libgitError();
-    }
-
-    git_tree_entry* tree_entry;
-    if(git_tree_entry_bypath(&tree_entry, master_tree.get(), filePath_.constData()) != GIT_OK){
-        return libgitError();
-    }
-
-    git_tree_entry_free(tree_entry);
-
-    GitCommitPtr slave_commit;
     GitRevwalkPtr walker;
     GitError err = GitRevwalkInit(walker);
-    if(!err.success){
+    if (!err.success) {
         return libgitError();
     }
 
-    int check = get_commits_changes(slave_commit, walker,
-                                    repo_, filePath_.constData());
-    if(check == -1){
+    GitCommitPtr latest_commit;
+    GitCommitPtr previous_commit;
+
+    int check = get_two_last_commits_for_file(latest_commit, previous_commit,
+                                              walker, repo_, filePath_.constData());
+    if (check == -1) {
         return libgitError();
-    }else if(check == -2){
-        return GitError("not found commits", -101);
+    } else if (check == -2 || !latest_commit.get()) {
+        return GitError("No commits found for this file", -101);
     }
 
-    const git_signature* master_signature = git_commit_author(master_commit.get());
-    const git_signature* slave_signature = git_commit_author(slave_commit.get());
+    GitTreePtr latest_tree;
+    GitTreePtr previous_tree;
 
-    diffResult.oldCommit.author = QString::fromUtf8(master_signature->name);
-    diffResult.newCommit.author = QString::fromUtf8(slave_signature->name);
-    qint64 time_ms = static_cast<qint64>(master_signature->when.time) * 1000;
-    diffResult.oldCommit.date = QDateTime::fromMSecsSinceEpoch(time_ms);
-    time_ms = static_cast<qint64>(slave_signature->when.time) * 1000;
-    diffResult.newCommit.date = QDateTime::fromMSecsSinceEpoch(time_ms);
-    diffResult.oldCommit.message = QString::fromUtf8(git_commit_message(master_commit.get()));
-    diffResult.newCommit.message = QString::fromUtf8(git_commit_message(slave_commit.get()));
-
-    GitTreePtr slave_tree;
-    if(git_commit_tree(&master_tree, master_commit.get()) != GIT_OK){
+    if (git_commit_tree(&latest_tree, latest_commit.get()) != GIT_OK) {
         return libgitError();
     }
-    if(git_commit_tree(&slave_tree, slave_commit.get()) != GIT_OK){
-        return libgitError();
+
+    const git_signature* latest_sig = git_commit_author(latest_commit.get());
+    diffResult.newCommit.author = QString::fromUtf8(latest_sig->name);
+    diffResult.newCommit.date = QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(latest_sig->when.time) * 1000);
+    diffResult.newCommit.message = QString::fromUtf8(git_commit_message(latest_commit.get()));
+
+    if (previous_commit.get()) {
+        const git_signature* prev_sig = git_commit_author(previous_commit.get());
+        diffResult.oldCommit.author = QString::fromUtf8(prev_sig->name);
+        diffResult.oldCommit.date = QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(prev_sig->when.time) * 1000);
+        diffResult.oldCommit.message = QString::fromUtf8(git_commit_message(previous_commit.get()));
+
+        if (git_commit_tree(&previous_tree, previous_commit.get()) != GIT_OK) {
+            return libgitError();
+        }
+    } else {
+        diffResult.oldCommit.author = "-";
+        diffResult.oldCommit.message = "Initial commit for this file";
     }
 
     GitDiffPtr diff;
     git_diff_options opts = GIT_DIFF_OPTIONS_INIT;
+    const char* pathStr = filePath_.constData();
+    char* pathArray[] = {const_cast<char*>(pathStr)};
 
-    const char* pathspec_array[] = { filePath_.constData() };
+    git_strarray paths;
+    paths.count = 1;
+    paths.strings = pathArray;
+    opts.pathspec = paths;
 
-    opts.pathspec.count = 1;
-    opts.pathspec.strings = (char**)pathspec_array;
-
-    if(git_diff_tree_to_tree(&diff, repo_, master_tree.get(), slave_tree.get(), &opts) != GIT_OK){
+    if (git_diff_tree_to_tree(&diff, repo_, previous_tree.get(), latest_tree.get(), &opts) != GIT_OK) {
         return libgitError();
     }
 
     diffResult.hunks.clear();
 
-    if (git_diff_foreach(diff.get(),
-                          NULL,
-                          NULL,
-                          hunkCallback,
-                          diffCallback,
-                          &diffResult) != GIT_OK) {
+    if (git_diff_foreach(diff.get(), NULL, NULL, hunkCallback, diffCallback, &diffResult) != GIT_OK) {
          return libgitError();
-     }
+    }
 
     return GitError();
 }
