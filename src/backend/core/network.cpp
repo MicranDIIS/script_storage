@@ -87,7 +87,8 @@ GitError Repository::sync(){
     return GitError();
 }
 
-GitError Repository::push(const authRemote& auth) const{
+GitError Repository::push(const QString& login,
+                          const QString& password) const{
     git_push_options opts = GIT_PUSH_OPTIONS_INIT;
     GitRemotePtr remote;
     git_remote_callbacks callbacks;
@@ -106,10 +107,10 @@ GitError Repository::push(const authRemote& auth) const{
         return libgitError();
     }
 
-    QByteArray username = auth.username.toUtf8();
-    QByteArray token = auth.token.toUtf8();
+    QByteArray login_ = login.toUtf8();
+    QByteArray password_ = password.toUtf8();
 
-    GitData creds(username.constData(), token.constData());
+    GitData creds(login_.constData(), password_.constData());
     callbacks.payload = &creds;
     callbacks.credentials = callback;
 

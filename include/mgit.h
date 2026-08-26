@@ -67,11 +67,6 @@ struct RepoConfig{
     QString token;
 };
 
-struct authRemote{
-    QString username;
-    QString token;
-};
-
 struct FileStatus{
     QString pathNew;
     QString pathOld;
@@ -142,7 +137,8 @@ public:
     /*
     * пушит изменения при 0 конфликтов
     */
-    virtual GitError push(const authRemote& auth) const = 0;
+    virtual GitError push(const QString& login,
+                          const QString& password) const = 0;
     /*
     * Фетчит ветку из конфига и ресетит до актуального состояния после фетча
     * Не трогает локальные файлы

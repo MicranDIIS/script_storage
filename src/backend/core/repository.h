@@ -30,11 +30,6 @@ struct DebugContext{
     git_oid parent_oid;
 };
 
-struct authRemoteBuf{
-    QByteArray username;
-    QByteArray token;
-    authRemoteBuf(const authRemote& auth);
-};
 
 class Repository : public QObject , public IRepository{
     Q_OBJECT
@@ -72,7 +67,8 @@ public:
     GitError open();
 
     GitError clone();
-    GitError push(const authRemote& auth) const;
+    GitError push(const QString& login,
+                  const QString& password) const;
     GitError sync();
 
     GitError startCheckUpdatesActiveFile(const FileEventHandler& fileHandler,
