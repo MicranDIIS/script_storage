@@ -474,7 +474,7 @@ GitError Repository::startDebugMode() {
         return libgitError();
     }
 
-    return GitError();
+    return updateDebugBranch(repo_, basicBranchRef, debugBranchRef, debugBranchName);
 }
 
 bool Repository::isDebugEnable() const{
