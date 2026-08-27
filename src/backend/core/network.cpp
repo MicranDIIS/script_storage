@@ -89,6 +89,14 @@ GitError Repository::sync(){
 
 GitError Repository::push(const QString& login,
                           const QString& password) const{
+
+    QString push_url = cfg_.url;
+    push_url.replace(cfg_.username + ":" + cfg_.token, "");
+    QByteArray push_url_ = push_url.toUtf8();
+    if(git_remote_set_pushurl(repo_, "origin", push_url_.constData()) != GIT_OK){
+        return libgitError();
+    }
+
     git_push_options opts = GIT_PUSH_OPTIONS_INIT;
     GitRemotePtr remote;
     git_remote_callbacks callbacks;
