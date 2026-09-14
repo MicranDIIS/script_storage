@@ -84,6 +84,9 @@ public:
     GitError startDebugMode();
     bool isDebugEnable() const;
     GitError syncDebugFiles();
+    GitError mergeMainFileToDebug(const QString& authorName,
+                         const QString& authorEmail,
+                         const QString& commitMsg);
     GitError saveDebugFiles(const QString &authorName, const QString &authorEmail, const QString &commitMsg);
     GitError mergeDebugFiles(const QString &filePath, const QString& authorName, const QString& authorEmail);
     GitError closeDebugMode();

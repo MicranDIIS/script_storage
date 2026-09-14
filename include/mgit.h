@@ -181,6 +181,12 @@ public:
     */
     virtual GitError syncDebugFiles() = 0;
     /*
+    * Сливает конкретный файл из основной ветки в debug
+    */
+    virtual GitError mergeMainFileToDebug(const QString& authorName,
+                                          const QString& authorEmail,
+                                          const QString& commitMsg) = 0;
+    /*
     * проверяет наличие дебаг ветки
     */
     virtual bool isDebugEnable() const = 0;
