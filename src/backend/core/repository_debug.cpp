@@ -1211,29 +1211,16 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
         return libgitError();
     }
 
-    QFile file(QString::fromUtf8(path));
+    git_checkout_options checkoutOpts = GIT_CHECKOUT_OPTIONS_INIT;
+    checkoutOpts.checkout_strategy = GIT_CHECKOUT_FORCE;
 
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-        git_merge_file_result_free(&result);
+    char* paths[] = { const_cast<char*>(path) };
+    git_strarray pathArray = { paths, 1 };
+    checkoutOpts.paths = pathArray;
 
-        return GitError(
-            QString("Cannot write merged file"),
-            -1
-        );
+    if (git_checkout_index(repo_, index.get(), &checkoutOpts) != GIT_OK) {
+        return libgitError();
     }
-
-    if (file.write((const char*)result.ptr,
-                   result.len) != result.len) {
-        file.close();
-        git_merge_file_result_free(&result);
-
-        return GitError(
-            QString("Cannot write merged file"),
-            -1
-        );
-    }
-
-    file.close();
 
 
     if (hasConflicts) {
@@ -1337,7 +1324,7 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
 
     if (git_commit_create(&commitOid,
                           repo_,
-                          "HEAD",
+                          "refs/heads/debug",
                           signature.get(),
                           signature.get(),
                           "UTF-8",
