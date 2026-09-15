@@ -996,21 +996,21 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
     }
 
 
-    const git_tree_entry* baseEntry =
-        git_tree_entry_byname(baseTree.get(), path);
-
-    const git_tree_entry* mainEntry =
-        git_tree_entry_byname(mainTree.get(), path);
-
-    const git_tree_entry* debugEntry =
-        git_tree_entry_byname(debugTree.get(), path);
-
-    if (!baseEntry || !mainEntry || !debugEntry) {
-        return GitError(
-            QString("File not found in one of the commits"),
-            -1
-        );
+    git_tree_entry* baseEntry = NULL;
+    if(git_tree_entry_bypath(&baseEntry ,baseTree.get(), path) != GIT_OK){
+        return libgitError();
     }
+
+    git_tree_entry* mainEntry = NULL;
+    if(git_tree_entry_bypath(&mainEntry ,mainTree.get(), path) != GIT_OK){
+        return libgitError();
+    }
+
+    git_tree_entry* debugEntry = NULL;
+    if(git_tree_entry_bypath(&debugEntry ,debugTree.get(), path) != GIT_OK){
+        return libgitError();
+    }
+
 
     // Проверяем, что это обычные файлы.
     if (git_tree_entry_type(baseEntry) != GIT_OBJECT_BLOB ||
@@ -1335,5 +1335,8 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
         return libgitError();
     }
 
+    git_tree_entry_free(baseEntry);
+    git_tree_entry_free(mainEntry);
+    git_tree_entry_free(debugEntry);
     return GitError();
 }
