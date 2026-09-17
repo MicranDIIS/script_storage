@@ -934,7 +934,6 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
     QByteArray mainBranch = QByteArray("refs/heads/") + cfg_.branch;
     QByteArray debugBranch = "refs/heads/debug";
 
-
     GitReferencePtr head;
     if (git_repository_head(&head, repo_) != GIT_OK) {
         return libgitError();
@@ -971,7 +970,6 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
         return libgitError();
     }
 
-
     git_oid baseOid;
 
     if (git_merge_base(&baseOid, repo_, &mainOid, &debugOid) != GIT_OK) {
@@ -984,7 +982,6 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
         return libgitError();
     }
 
-
     GitTreePtr baseTree;
     GitTreePtr mainTree;
     GitTreePtr debugTree;
@@ -995,56 +992,56 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
         return libgitError();
     }
 
-
     git_tree_entry* baseEntry = NULL;
-    if(git_tree_entry_bypath(&baseEntry ,baseTree.get(), path) != GIT_OK){
+    if (git_tree_entry_bypath(&baseEntry, baseTree.get(), path) != GIT_OK) {
         return libgitError();
     }
 
     git_tree_entry* mainEntry = NULL;
-    if(git_tree_entry_bypath(&mainEntry ,mainTree.get(), path) != GIT_OK){
+    if (git_tree_entry_bypath(&mainEntry, mainTree.get(), path) != GIT_OK) {
+        git_tree_entry_free(baseEntry);
         return libgitError();
     }
 
     git_tree_entry* debugEntry = NULL;
-    if(git_tree_entry_bypath(&debugEntry ,debugTree.get(), path) != GIT_OK){
+    if (git_tree_entry_bypath(&debugEntry, debugTree.get(), path) != GIT_OK) {
+        git_tree_entry_free(baseEntry);
+        git_tree_entry_free(mainEntry);
         return libgitError();
     }
 
-
-    // Проверяем, что это обычные файлы.
     if (git_tree_entry_type(baseEntry) != GIT_OBJECT_BLOB ||
         git_tree_entry_type(mainEntry) != GIT_OBJECT_BLOB ||
         git_tree_entry_type(debugEntry) != GIT_OBJECT_BLOB) {
+        git_tree_entry_free(baseEntry);
+        git_tree_entry_free(mainEntry);
+        git_tree_entry_free(debugEntry);
         return GitError(
             QString("Target path is not a regular file"),
             -1
         );
     }
 
-
     GitBlobPtr baseBlob;
     GitBlobPtr debugBlob;
     GitBlobPtr mainBlob;
 
-    if (git_blob_lookup(&baseBlob,
-                        repo_,
-                        git_tree_entry_id(baseEntry)) != GIT_OK ||
-        git_blob_lookup(&debugBlob,
-                        repo_,
-                        git_tree_entry_id(debugEntry)) != GIT_OK ||
-        git_blob_lookup(&mainBlob,
-                        repo_,
-                        git_tree_entry_id(mainEntry)) != GIT_OK) {
+    if (git_blob_lookup(&baseBlob, repo_, git_tree_entry_id(baseEntry)) != GIT_OK ||
+        git_blob_lookup(&debugBlob, repo_, git_tree_entry_id(debugEntry)) != GIT_OK ||
+        git_blob_lookup(&mainBlob, repo_, git_tree_entry_id(mainEntry)) != GIT_OK) {
+        git_tree_entry_free(baseEntry);
+        git_tree_entry_free(mainEntry);
+        git_tree_entry_free(debugEntry);
         return libgitError();
     }
 
-
     if (git_oid_equal(git_tree_entry_id(baseEntry),
                       git_tree_entry_id(mainEntry))) {
+        git_tree_entry_free(baseEntry);
+        git_tree_entry_free(mainEntry);
+        git_tree_entry_free(debugEntry);
         return GitError(QString("Main branch has not changed this file"), 0);
     }
-
 
     if (git_oid_equal(git_tree_entry_id(baseEntry),
                       git_tree_entry_id(debugEntry))) {
@@ -1052,6 +1049,9 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
         GitIndexPtr index;
 
         if (git_repository_index(&index, repo_) != GIT_OK) {
+            git_tree_entry_free(baseEntry);
+            git_tree_entry_free(mainEntry);
+            git_tree_entry_free(debugEntry);
             return libgitError();
         }
 
@@ -1063,43 +1063,48 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
         entry.id = *git_tree_entry_id(mainEntry);
 
         if (git_index_add(index.get(), &entry) != GIT_OK) {
+            git_tree_entry_free(baseEntry);
+            git_tree_entry_free(mainEntry);
+            git_tree_entry_free(debugEntry);
             return libgitError();
         }
 
         if (git_index_write(index.get()) != GIT_OK) {
+            git_tree_entry_free(baseEntry);
+            git_tree_entry_free(mainEntry);
+            git_tree_entry_free(debugEntry);
             return libgitError();
         }
 
-        git_checkout_options checkoutOpts =
-            GIT_CHECKOUT_OPTIONS_INIT;
-
+        git_checkout_options checkoutOpts = GIT_CHECKOUT_OPTIONS_INIT;
         checkoutOpts.checkout_strategy = GIT_CHECKOUT_FORCE;
 
-        char* paths[] = {
-            const_cast<char*>(path)
-        };
-
-        git_strarray pathArray = {
-            paths,
-            1
-        };
-
+        char* paths[] = { const_cast<char*>(path) };
+        git_strarray pathArray = { paths, 1 };
         checkoutOpts.paths = pathArray;
 
         if (git_checkout_index(repo_, index.get(), &checkoutOpts) != GIT_OK) {
+            git_tree_entry_free(baseEntry);
+            git_tree_entry_free(mainEntry);
+            git_tree_entry_free(debugEntry);
             return libgitError();
         }
-
 
         git_oid treeOid;
 
         if (git_index_write_tree(&treeOid, index.get()) != GIT_OK) {
+            git_tree_entry_free(baseEntry);
+            git_tree_entry_free(mainEntry);
+            git_tree_entry_free(debugEntry);
             return libgitError();
         }
 
         GitTreePtr tree;
 
         if (git_tree_lookup(&tree, repo_, &treeOid) != GIT_OK) {
+            git_tree_entry_free(baseEntry);
+            git_tree_entry_free(mainEntry);
+            git_tree_entry_free(debugEntry);
             return libgitError();
         }
 
@@ -1111,6 +1116,9 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
         if (git_signature_now(&signature,
                               sigName.constData(),
                               sigEmail.constData()) != GIT_OK) {
+            git_tree_entry_free(baseEntry);
+            git_tree_entry_free(mainEntry);
+            git_tree_entry_free(debugEntry);
             return libgitError();
         }
 
@@ -1120,15 +1128,13 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
                 .arg(commitMsg)
                 .toUtf8();
 
-        const git_commit* parents[] = {
-            debugCommit.get()
-        };
+        const git_commit* parents[] = { debugCommit.get() };
 
         git_oid commitOid;
 
         if (git_commit_create(&commitOid,
                               repo_,
-                              "HEAD",
+                              "refs/heads/debug",
                               signature.get(),
                               signature.get(),
                               "UTF-8",
@@ -1136,45 +1142,36 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
                               tree.get(),
                               1,
                               parents) != GIT_OK) {
+            git_tree_entry_free(baseEntry);
+            git_tree_entry_free(mainEntry);
+            git_tree_entry_free(debugEntry);
             return libgitError();
         }
 
+        git_tree_entry_free(baseEntry);
+        git_tree_entry_free(mainEntry);
+        git_tree_entry_free(debugEntry);
         return GitError();
     }
 
 
-    git_merge_file_input baseInput =
-        GIT_MERGE_FILE_INPUT_INIT;
-
-    baseInput.ptr =
-        (const char*)git_blob_rawcontent(baseBlob.get());
-    baseInput.size =
-        git_blob_rawsize(baseBlob.get());
+    git_merge_file_input baseInput = GIT_MERGE_FILE_INPUT_INIT;
+    baseInput.ptr = (const char*)git_blob_rawcontent(baseBlob.get());
+    baseInput.size = git_blob_rawsize(baseBlob.get());
     baseInput.path = path;
 
-    git_merge_file_input oursInput =
-        GIT_MERGE_FILE_INPUT_INIT;
-
-    oursInput.ptr =
-        (const char*)git_blob_rawcontent(debugBlob.get());
-    oursInput.size =
-        git_blob_rawsize(debugBlob.get());
+    git_merge_file_input oursInput = GIT_MERGE_FILE_INPUT_INIT;
+    oursInput.ptr = (const char*)git_blob_rawcontent(debugBlob.get());
+    oursInput.size = git_blob_rawsize(debugBlob.get());
     oursInput.path = path;
 
-    git_merge_file_input theirsInput =
-        GIT_MERGE_FILE_INPUT_INIT;
-
-    theirsInput.ptr =
-        (const char*)git_blob_rawcontent(mainBlob.get());
-    theirsInput.size =
-        git_blob_rawsize(mainBlob.get());
+    git_merge_file_input theirsInput = GIT_MERGE_FILE_INPUT_INIT;
+    theirsInput.ptr = (const char*)git_blob_rawcontent(mainBlob.get());
+    theirsInput.size = git_blob_rawsize(mainBlob.get());
     theirsInput.path = path;
 
-    git_merge_file_options mergeOpts =
-        GIT_MERGE_FILE_OPTIONS_INIT;
-
+    git_merge_file_options mergeOpts = GIT_MERGE_FILE_OPTIONS_INIT;
     mergeOpts.favor = GIT_MERGE_FILE_FAVOR_NORMAL;
-
     mergeOpts.ancestor_label = "base";
     mergeOpts.our_label = "debug";
     mergeOpts.their_label = cfg_.branch.constData();
@@ -1186,42 +1183,42 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
                        &oursInput,
                        &theirsInput,
                        &mergeOpts) != GIT_OK) {
-        git_merge_file_result_free(&result);
+        git_tree_entry_free(baseEntry);
+        git_tree_entry_free(mainEntry);
+        git_tree_entry_free(debugEntry);
         return libgitError();
     }
 
-    bool hasConflicts =
-        (result.automergeable == 0);
+    bool hasConflicts = (result.automergeable == 0);
 
+    {
+        QFile f(QString::fromUtf8(path));
+        if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            git_merge_file_result_free(&result);
+            git_tree_entry_free(baseEntry);
+            git_tree_entry_free(mainEntry);
+            git_tree_entry_free(debugEntry);
+            return GitError(
+                QString("Cannot open %1 for writing: %2")
+                    .arg(QString::fromUtf8(path), f.errorString()),
+                -1
+            );
+        }
+        if (result.len > 0 && result.ptr) {
+            f.write(result.ptr, result.len);
+        }
+        f.close();
+    }
 
     GitIndexPtr index;
 
     if (git_repository_index(&index, repo_) != GIT_OK) {
         git_merge_file_result_free(&result);
+        git_tree_entry_free(baseEntry);
+        git_tree_entry_free(mainEntry);
+        git_tree_entry_free(debugEntry);
         return libgitError();
     }
-
-    git_oid resultBlobOid;
-
-    if (git_blob_create_from_buffer(&resultBlobOid,
-                                    repo_,
-                                    result.ptr,
-                                    result.len) != GIT_OK) {
-        git_merge_file_result_free(&result);
-        return libgitError();
-    }
-
-    git_checkout_options checkoutOpts = GIT_CHECKOUT_OPTIONS_INIT;
-    checkoutOpts.checkout_strategy = GIT_CHECKOUT_FORCE;
-
-    char* paths[] = { const_cast<char*>(path) };
-    git_strarray pathArray = { paths, 1 };
-    checkoutOpts.paths = pathArray;
-
-    if (git_checkout_index(repo_, index.get(), &checkoutOpts) != GIT_OK) {
-        return libgitError();
-    }
-
 
     if (hasConflicts) {
 
@@ -1250,15 +1247,24 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
                                    &ours,
                                    &theirs) != GIT_OK) {
             git_merge_file_result_free(&result);
+            git_tree_entry_free(baseEntry);
+            git_tree_entry_free(mainEntry);
+            git_tree_entry_free(debugEntry);
             return libgitError();
         }
 
         if (git_index_write(index.get()) != GIT_OK) {
             git_merge_file_result_free(&result);
+            git_tree_entry_free(baseEntry);
+            git_tree_entry_free(mainEntry);
+            git_tree_entry_free(debugEntry);
             return libgitError();
         }
 
         git_merge_file_result_free(&result);
+        git_tree_entry_free(baseEntry);
+        git_tree_entry_free(mainEntry);
+        git_tree_entry_free(debugEntry);
 
         return GitError(
             QString("Merge conflict in file %1")
@@ -1266,6 +1272,21 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
             1
         );
     }
+
+    git_oid resultBlobOid;
+
+    if (git_blob_create_from_buffer(&resultBlobOid,
+                                    repo_,
+                                    result.ptr,
+                                    result.len) != GIT_OK) {
+        git_merge_file_result_free(&result);
+        git_tree_entry_free(baseEntry);
+        git_tree_entry_free(mainEntry);
+        git_tree_entry_free(debugEntry);
+        return libgitError();
+    }
+
+    git_merge_file_result_free(&result);
 
     git_index_entry entry;
     memset(&entry, 0, sizeof(entry));
@@ -1275,27 +1296,34 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
     entry.id = resultBlobOid;
 
     if (git_index_add(index.get(), &entry) != GIT_OK) {
-        git_merge_file_result_free(&result);
+        git_tree_entry_free(baseEntry);
+        git_tree_entry_free(mainEntry);
+        git_tree_entry_free(debugEntry);
         return libgitError();
     }
 
     if (git_index_write(index.get()) != GIT_OK) {
-        git_merge_file_result_free(&result);
+        git_tree_entry_free(baseEntry);
+        git_tree_entry_free(mainEntry);
+        git_tree_entry_free(debugEntry);
         return libgitError();
     }
-
-    git_merge_file_result_free(&result);
-
 
     git_oid treeOid;
 
     if (git_index_write_tree(&treeOid, index.get()) != GIT_OK) {
+        git_tree_entry_free(baseEntry);
+        git_tree_entry_free(mainEntry);
+        git_tree_entry_free(debugEntry);
         return libgitError();
     }
 
     GitTreePtr tree;
 
     if (git_tree_lookup(&tree, repo_, &treeOid) != GIT_OK) {
+        git_tree_entry_free(baseEntry);
+        git_tree_entry_free(mainEntry);
+        git_tree_entry_free(debugEntry);
         return libgitError();
     }
 
@@ -1307,6 +1335,9 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
     if (git_signature_now(&signature,
                           sigName.constData(),
                           sigEmail.constData()) != GIT_OK) {
+        git_tree_entry_free(baseEntry);
+        git_tree_entry_free(mainEntry);
+        git_tree_entry_free(debugEntry);
         return libgitError();
     }
 
@@ -1316,9 +1347,7 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
             .arg(commitMsg)
             .toUtf8();
 
-    const git_commit* parents[] = {
-        debugCommit.get()
-    };
+    const git_commit* parents[] = { debugCommit.get() };
 
     git_oid commitOid;
 
@@ -1332,6 +1361,9 @@ GitError Repository::mergeMainFileToDebug(const QString& authorName,
                           tree.get(),
                           1,
                           parents) != GIT_OK) {
+        git_tree_entry_free(baseEntry);
+        git_tree_entry_free(mainEntry);
+        git_tree_entry_free(debugEntry);
         return libgitError();
     }
 
